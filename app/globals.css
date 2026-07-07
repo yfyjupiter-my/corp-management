@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   HQ Slate — design tokens (reverse-extracted from themes.html · DESIGN.md §2)
+   Components read ONLY from these tokens. Nothing is hard-coded per component.
+   ========================================================================= */
+:root {
+  /* ---- Typography ---- */
+  --font-head: "Lexend", system-ui, sans-serif;
+  --font-body: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ---- Surfaces ---- */
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;
+
+  /* ---- Sidebar (deep navy rail) ---- */
+  --sidebar: #0f172a;
+  --sidebar-fg: #c7d2e4;
+  --sidebar-active: #1e293b;
+  --sidebar-active-fg: #ffffff;
+
+  /* ---- Brand + action ---- */
+  --primary: #1e3a5f;
+  --primary-fg: #ffffff;
+  --accent: #0369a1;
+  --accent-fg: #ffffff;
+  --accent-weak: #e7f0f7;
+
+  /* ---- Text ---- */
+  --fg: #101828;
+  --fg-muted: #5a6779;
+  --fg-subtle: #8592a6;
+
+  /* ---- Lines ---- */
+  --border: #dde3ec;
+  --border-strong: #c4cddb;
+
+  /* ---- Status (fg + bg tint pairs) ---- */
+  --ok: #0e7c4a;
+  --ok-bg: #e4f4ec;
+  --warn: #b4690e;
+  --warn-bg: #fbefdd;
+  --danger: #c0342b;
+  --danger-bg: #fbe7e6;
+  --info: #0369a1;
+  --info-bg: #e7f0f7;
+
+  /* ---- Radius ---- */
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation ---- */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+
+  /* ---- Focus ring ---- */
+  --ring: 0 0 0 3px rgba(3, 105, 161, 0.25);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--fg);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-head);
+    margin: 0;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* ---- Eyebrow / section label ---- */
+  .eyebrow {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+
+  /* ---- Route/theme fade ---- */
+  .fadein {
+    animation: fade 0.35s ease;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
