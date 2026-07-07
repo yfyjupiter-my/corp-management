@@ -1,0 +1,626 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe Blueprint — Corp Management Platform (SEA IT Registry)</title>
+<style>
+  :root{
+    --ink:#333;--line:#999;--line-2:#bbb;--fill:#e8e8e8;--fill-2:#f2f2f2;
+    --fill-3:#dcdcdc;--paper:#fafafa;--note:#6b6b6b;--anno-bg:#fffbe6;--anno-line:#d9c98c;
+    --radius:4px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:#e4e4e4;line-height:1.4;font-size:14px;
+  }
+  /* ---- App chrome ---- */
+  .toolbar{
+    position:sticky;top:0;z-index:50;background:#2b2b2b;color:#fff;
+    display:flex;align-items:center;gap:16px;padding:10px 20px;flex-wrap:wrap;
+  }
+  .toolbar h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.3px}
+  .toolbar .sub{font-size:12px;color:#aaa}
+  .switch{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .switch button{
+    font:inherit;font-size:12px;padding:6px 14px;border:1px solid #555;background:#3a3a3a;
+    color:#ddd;border-radius:20px;cursor:pointer;
+  }
+  .switch button.active{background:#fff;color:#222;border-color:#fff;font-weight:600}
+
+  .stage{max-width:1200px;margin:0 auto;padding:24px 16px 80px}
+  .set{display:none}
+  .set.active{display:block}
+  .set-head{margin:8px 2px 20px}
+  .set-head h2{margin:0 0 4px;font-size:18px}
+  .set-head p{margin:0;color:var(--note);font-size:13px;max-width:760px}
+  .screen-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;
+    margin:26px 2px 8px;font-weight:700;border-top:1px dashed #b5b5b5;padding-top:14px;
+  }
+
+  /* ---- Generic wireframe primitives (grayscale) ---- */
+  .frame{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.05)}
+  .row{display:flex}
+  .box{background:var(--fill);border:1px solid var(--line-2);border-radius:var(--radius)}
+  .ph{background:repeating-linear-gradient(135deg,var(--fill) 0 10px,var(--fill-2) 10px 20px);
+    border:1px dashed var(--line-2);border-radius:var(--radius)}
+  .barline{height:9px;background:var(--fill-3);border-radius:5px;margin:6px 0}
+  .barline.s{width:40%}.barline.m{width:65%}.barline.l{width:88%}.barline.xs{width:24%}
+  .pill{display:inline-block;padding:4px 10px;background:var(--fill);border:1px solid var(--line-2);
+    border-radius:12px;font-size:11px;color:#555;margin:2px}
+  .btn{display:inline-block;padding:6px 14px;background:#cfcfcf;border:1px solid var(--line);
+    border-radius:var(--radius);font-size:12px;color:#444}
+  .btn.primary{background:#8f8f8f;color:#fff;border-color:#7a7a7a}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--fill-3);border:1px solid var(--line-2)}
+  .logo{width:26px;height:26px;border-radius:6px;background:#8f8f8f;border:1px solid #777;flex:0 0 auto}
+  .input{height:30px;background:#fff;border:1px solid var(--line-2);border-radius:var(--radius)}
+  .flag{width:22px;height:15px;background:var(--fill-3);border:1px solid var(--line-2);border-radius:2px;flex:0 0 auto}
+  .grid{display:grid;gap:14px}
+  .muted{color:var(--note);font-size:12px}
+
+  /* annotation callouts */
+  .anno{position:relative;background:var(--anno-bg);border:1px solid var(--anno-line);
+    border-radius:var(--radius);font-size:11px;color:#7a6a2e;padding:6px 9px;line-height:1.35}
+  .anno b{color:#5f531f}
+  .anno-num{display:inline-block;min-width:16px;height:16px;line-height:16px;text-align:center;
+    background:#7a6a2e;color:#fff;border-radius:50%;font-size:10px;margin-right:5px;font-weight:700}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:0 2px 18px;font-size:11px;color:#777}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:26px;height:14px;border-radius:3px;display:inline-block}
+
+  /* Set A — sidebar shell */
+  .sa-shell{min-height:620px}
+  .sa-side{width:210px;flex:0 0 auto;border-right:1px solid var(--line);background:#f4f4f4;padding:14px 12px}
+  .sa-main{flex:1;display:flex;flex-direction:column}
+  .sa-top{height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 16px;background:#fff}
+  .sa-body{padding:18px;flex:1}
+  .navitem{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);margin-bottom:3px}
+  .navitem .ico{width:16px;height:16px;background:var(--fill-3);border-radius:3px;flex:0 0 auto}
+  .navitem.active{background:#dcdcdc;font-weight:600}
+  .card{padding:14px;background:#fff;border:1px solid var(--line-2);border-radius:var(--radius)}
+  .kpi{font-size:26px;font-weight:700;color:#555}
+  .table{width:100%;border-collapse:collapse;background:#fff}
+  .table th,.table td{border:1px solid #e0e0e0;padding:8px 10px;text-align:left;font-size:12px}
+  .table th{background:#efefef;color:#555;font-weight:600}
+
+  /* Set B — top nav, tabbed detail */
+  .sb-top{height:56px;display:flex;align-items:center;gap:18px;padding:0 20px;border-bottom:1px solid var(--line);background:#fff}
+  .sb-tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);background:#f2f2f2;padding:0 12px}
+  .sb-tab{padding:11px 16px;font-size:12px;color:#666;border-bottom:2px solid transparent}
+  .sb-tab.active{background:#fff;border-bottom-color:#7a7a7a;color:#222;font-weight:600}
+
+  /* Set C — command / split view */
+  .sc-rail{width:60px;flex:0 0 auto;background:#2f2f2f;display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:16px}
+  .sc-railico{width:30px;height:30px;border-radius:7px;background:#555}
+  .sc-railico.active{background:#ccc}
+  .sc-list{width:300px;flex:0 0 auto;border-right:1px solid var(--line);background:#f6f6f6}
+  .sc-listhead{padding:12px 14px;border-bottom:1px solid var(--line)}
+  .sc-item{padding:11px 14px;border-bottom:1px solid #e6e6e6}
+  .sc-item.active{background:#e2e2e2}
+  .sc-detail{flex:1;background:#fff;padding:18px}
+  @media(max-width:820px){
+    .sa-side{display:none}.sc-list{display:none}.sc-rail{display:none}
+    .row.resp{flex-direction:column}
+  }
+</style>
+
+<div class="toolbar">
+  <div class="logo" style="width:22px;height:22px"></div>
+  <div>
+    <h1>Corp Management — Wireframe Blueprint</h1>
+    <div class="sub">SEA IT Infrastructure Registry · medium-fidelity · grayscale · structure only</div>
+  </div>
+  <div class="switch" role="tablist">
+    <button data-set="A" class="active">Set A · Sidebar Console</button>
+    <button data-set="B">Set B · Top-Nav Workspace</button>
+    <button data-set="C">Set C · Command Split-View</button>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="legend">
+    <span><i class="swatch box"></i> filled block = component region</span>
+    <span><i class="swatch ph"></i> hatched = image / placeholder</span>
+    <span><i class="swatch" style="background:var(--fill-3)"></i> bar = text line</span>
+    <span><i class="swatch" style="background:var(--anno-bg);border:1px solid var(--anno-line)"></i> yellow = annotation</span>
+  </div>
+
+  <!-- ================= SET A : SIDEBAR CONSOLE ================= -->
+  <section class="set active" data-set="A">
+    <div class="set-head">
+      <h2>Set A — Persistent Sidebar Console</h2>
+      <p>Left country/module navigation is always visible. Dense, data-desk feel for HQ admins who move between countries and record types frequently. Detail records open on full pages.</p>
+    </div>
+
+    <div class="screen-label">A1 · Landing Dashboard</div>
+    <div class="frame row sa-shell">
+      <aside class="sa-side">
+        <div class="row" style="align-items:center;gap:8px;margin-bottom:16px">
+          <div class="logo"></div><div class="barline m" style="margin:0"></div>
+        </div>
+        <div class="muted" style="margin:6px 4px">COUNTRIES</div>
+        <div class="navitem active"><span class="flag"></span> Malaysia <span class="pill" style="margin-left:auto">12</span></div>
+        <div class="navitem"><span class="flag"></span> Vietnam <span class="pill" style="margin-left:auto">8</span></div>
+        <div class="navitem"><span class="flag"></span> Thailand <span class="pill" style="margin-left:auto">6</span></div>
+        <div class="navitem"><span class="flag"></span> Indonesia <span class="pill" style="margin-left:auto">9</span></div>
+        <div class="muted" style="margin:14px 4px 4px">MODULES</div>
+        <div class="navitem"><span class="ico"></span> Sites</div>
+        <div class="navitem"><span class="ico"></span> Network</div>
+        <div class="navitem"><span class="ico"></span> CCTV</div>
+        <div class="navitem"><span class="ico"></span> Renewals</div>
+        <div class="navitem"><span class="ico"></span> Audit log</div>
+        <div class="navitem"><span class="ico"></span> Users &amp; roles</div>
+      </aside>
+      <div class="sa-main">
+        <div class="sa-top">
+          <div class="input" style="flex:1;max-width:420px;display:flex;align-items:center;padding:0 10px" >
+            <span class="muted">🔍 Global search — sites, hostnames, IPs, circuit IDs, cameras…</span>
+          </div>
+          <span class="pill">Role: HQ Admin</span>
+          <div class="avatar" style="margin-left:auto"></div>
+        </div>
+        <div class="sa-body">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div class="barline m" style="height:14px;width:220px"></div>
+            <span class="btn">Window: 90 days ▾</span>
+          </div>
+          <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="card"><div class="muted">Sites active</div><div class="kpi">35</div><div class="barline s"></div></div>
+            <div class="card"><div class="muted">Cameras (act/faulty)</div><div class="kpi">210/6</div><div class="barline s"></div></div>
+            <div class="card"><div class="muted">Circuits expiring ≤90d</div><div class="kpi">4</div><div class="barline s"></div></div>
+            <div class="card"><div class="muted">Stale records</div><div class="kpi">11</div><div class="barline s"></div></div>
+          </div>
+          <div class="anno" style="margin:14px 0"><span class="anno-num">1</span><b>Per-country cards below.</b> Each card = one country summary (site count, device count, camera health, expiring circuits, stale count). Clicking a card scopes the whole console to that country.</div>
+          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="card">
+              <div class="row" style="align-items:center;gap:10px"><span class="flag"></span><div class="barline s" style="margin:0"></div><span class="pill" style="margin-left:auto">MY · pilot</span></div>
+              <div class="row" style="gap:10px;margin-top:10px">
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Sites</div><b>12</b></div>
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Devices</div><b>64</b></div>
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Cams</div><b>88</b></div>
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Expiring</div><b>2</b></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="row" style="align-items:center;gap:10px"><span class="flag"></span><div class="barline s" style="margin:0"></div></div>
+              <div class="row" style="gap:10px;margin-top:10px">
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Sites</div><b>8</b></div>
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Devices</div><b>40</b></div>
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Cams</div><b>52</b></div>
+                <div class="box" style="flex:1;padding:8px"><div class="muted">Expiring</div><b>1</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">A2 · Site → Network detail (list within a site)</div>
+    <div class="frame row sa-shell" style="min-height:auto">
+      <aside class="sa-side" style="min-height:420px">
+        <div class="navitem"><span class="ico"></span> ◀ Back to Malaysia</div>
+        <div class="muted" style="margin:12px 4px 4px">SITE: KL HQ</div>
+        <div class="navitem active"><span class="ico"></span> Network</div>
+        <div class="navitem"><span class="ico"></span> CCTV</div>
+        <div class="navitem"><span class="ico"></span> Overview</div>
+        <div class="muted" style="margin:12px 4px 4px">NETWORK SUB</div>
+        <div class="navitem"><span class="ico"></span> ISP circuits</div>
+        <div class="navitem"><span class="ico"></span> Devices</div>
+        <div class="navitem"><span class="ico"></span> IP scheme / VLANs</div>
+        <div class="navitem"><span class="ico"></span> VPN / WAN links</div>
+      </aside>
+      <div class="sa-main">
+        <div class="sa-top">
+          <div class="barline m" style="width:200px"></div>
+          <span class="btn primary" style="margin-left:auto">+ Add device</span>
+          <span class="btn">CSV import (v1.1)</span>
+        </div>
+        <div class="sa-body">
+          <div class="anno" style="margin-bottom:12px"><span class="anno-num">2</span>Data table per record type. Row shows key fields + <b>“Verify — still accurate”</b> one-click action and <b>last_verified_at</b> freshness chip.</div>
+          <table class="table">
+            <thead><tr><th>Type</th><th>Brand / model</th><th>Hostname</th><th>Mgmt IP</th><th>Firmware</th><th>Warranty end</th><th>Verified</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>Router</td><td>▬▬▬</td><td>gw-kl-01</td><td>10.10.0.1</td><td>—</td><td>2027-03</td><td><span class="pill">fresh</span></td><td>⋯</td></tr>
+              <tr><td>Firewall</td><td>▬▬▬</td><td>fw-kl-01</td><td>10.10.0.2</td><td>—</td><td>2026-11</td><td><span class="pill">stale</span></td><td>⋯</td></tr>
+              <tr><td>Switch</td><td>▬▬▬</td><td>sw-kl-03</td><td>10.10.0.5</td><td>—</td><td>—</td><td><span class="pill">fresh</span></td><td>⋯</td></tr>
+            </tbody>
+          </table>
+          <div class="anno" style="margin-top:12px"><span class="anno-num">3</span>Credential column is a <b>reference link</b> (“↗ password manager”) — never the secret itself (MVP non-goal).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">A3 · Renewals view</div>
+    <div class="frame sa-body" style="min-height:auto">
+      <div class="row" style="gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <span class="pill">Window: 30 / 60 / 90 ▾</span><span class="pill">Country: All ▾</span><span class="pill">Type: Contract + Warranty ▾</span>
+      </div>
+      <table class="table">
+        <thead><tr><th>Due date</th><th>Country</th><th>Site</th><th>What</th><th>Provider / item</th><th>Days left</th></tr></thead>
+        <tbody>
+          <tr><td>2026-08-14</td><td>MY</td><td>KL HQ</td><td>ISP contract end</td><td>▬▬▬</td><td><span class="pill">38d</span></td></tr>
+          <tr><td>2026-09-02</td><td>VN</td><td>Hanoi</td><td>Warranty end</td><td>fw-hn-01</td><td><span class="pill">57d</span></td></tr>
+          <tr><td>2026-09-28</td><td>MY</td><td>Penang</td><td>ISP contract end</td><td>▬▬▬</td><td><span class="pill">83d</span></td></tr>
+        </tbody>
+      </table>
+      <div class="anno" style="margin-top:12px"><span class="anno-num">4</span>MVP = in-app visibility only. Email nudges are v1.1 (no send controls shown here).</div>
+    </div>
+
+    <div class="screen-label">A4 · Create record — full page (Add network device)</div>
+    <div class="frame row sa-shell" style="min-height:auto">
+      <aside class="sa-side" style="min-height:520px">
+        <div class="navitem"><span class="ico"></span> ◀ Back to KL HQ · Network</div>
+        <div class="muted" style="margin:12px 4px 4px">CREATE</div>
+        <div class="navitem active"><span class="ico"></span> Network device</div>
+        <div class="navitem"><span class="ico"></span> ISP circuit</div>
+        <div class="navitem"><span class="ico"></span> IP scheme / VLAN</div>
+        <div class="navitem"><span class="ico"></span> VPN / WAN link</div>
+      </aside>
+      <div class="sa-main">
+        <div class="sa-top">
+          <div class="barline m" style="width:200px"></div>
+          <span class="btn" style="margin-left:auto">Cancel</span>
+          <span class="btn primary">Save device</span>
+        </div>
+        <div class="sa-body">
+          <div class="anno" style="margin-bottom:14px"><span class="anno-num">5</span>Full-page create keeps the console context (breadcrumb shows target country + site). Fields = PRD-required only. Same Zod schema client + server; inline errors under each field.</div>
+          <div class="row" style="gap:8px;margin-bottom:14px"><span class="pill">Country: MY (locked)</span><span class="pill">Site: KL HQ (locked)</span></div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div class="muted" style="font-weight:600;margin-bottom:10px">IDENTITY</div>
+            <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+              <div><div class="muted">Type *</div><div class="input" style="width:100%"></div></div>
+              <div><div class="muted">Brand / model</div><div class="input" style="width:100%"></div></div>
+              <div><div class="muted">Hostname *</div><div class="input" style="width:100%"></div></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div class="muted" style="font-weight:600;margin-bottom:10px">NETWORK</div>
+            <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+              <div><div class="muted">Mgmt IP *</div><div class="input" style="width:100%"></div></div>
+              <div><div class="muted">Firmware</div><div class="input" style="width:100%"></div></div>
+              <div><div class="muted">VLAN</div><div class="input" style="width:100%"></div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="muted" style="font-weight:600;margin-bottom:10px">LIFECYCLE &amp; REFERENCES</div>
+            <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+              <div><div class="muted">Warranty end</div><div class="input" style="width:100%"></div></div>
+              <div style="grid-column:span 2"><div class="muted">Credential ref (↗ password manager link — not the secret)</div><div class="input" style="width:100%"></div></div>
+            </div>
+            <div class="muted" style="margin-top:10px">Notes</div><div class="box" style="height:60px"></div>
+          </div>
+          <div class="anno" style="margin-top:14px"><span class="anno-num">6</span>On save → record created with <b>last_verified_at = now</b>, actor written to audit log, returns to the site’s Network list.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">A5 · Login — centered card (invite-only)</div>
+    <div class="frame" style="display:flex;align-items:center;justify-content:center;min-height:420px;background:#f0f0f0">
+      <div class="card" style="width:360px">
+        <div class="row" style="align-items:center;gap:10px;justify-content:center;margin-bottom:14px">
+          <div class="logo"></div><div class="barline m" style="margin:0;width:130px"></div>
+        </div>
+        <b style="font-size:16px">Sign in</b>
+        <div class="muted" style="margin:4px 0 16px">Use your invited work account.</div>
+        <div class="muted">Email</div><div class="input" style="width:100%;margin-bottom:10px"></div>
+        <div class="muted">Password</div><div class="input" style="width:100%;margin-bottom:8px"></div>
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
+          <span class="muted">☐ Remember me</span><span class="muted">Forgot password?</span>
+        </div>
+        <div class="btn primary" style="width:100%;text-align:center">Sign in</div>
+        <div class="anno" style="margin-top:14px"><span class="anno-num">7</span>Supabase Auth (email/password; magic link optional). <b>No public sign-up</b> — accounts invited by HQ admin. Post-login lands on the country/role-scoped dashboard (A1).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SET B : TOP-NAV WORKSPACE ================= -->
+  <section class="set" data-set="B">
+    <div class="set-head">
+      <h2>Set B — Top-Nav Workspace with Tabbed Records</h2>
+      <p>Horizontal primary nav + breadcrumb. A single site opens as a workspace with tabbed sections (Overview / Network / CCTV / Maintenance). Roomier forms; better for country managers focused on one country.</p>
+    </div>
+
+    <div class="screen-label">B1 · Dashboard (country manager view — scoped to one country)</div>
+    <div class="frame">
+      <div class="sb-top">
+        <div class="logo"></div>
+        <div class="row" style="gap:16px"><span class="pill">Dashboard</span><span class="muted">Sites</span><span class="muted">Network</span><span class="muted">CCTV</span><span class="muted">Renewals</span></div>
+        <div class="input" style="width:240px;margin-left:auto"></div>
+        <span class="pill">Country Mgr · MY</span><div class="avatar"></div>
+      </div>
+      <div style="padding:18px">
+        <div class="anno" style="margin-bottom:14px"><span class="anno-num">1</span>Country manager sees <b>only their country</b> — no country switcher. RLS-enforced, not just UI hiding (403 on cross-country API access).</div>
+        <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="card"><div class="muted">My sites</div><div class="kpi">12</div></div>
+          <div class="card"><div class="muted">Camera health</div><div class="kpi">88 / 3</div><div class="muted">active / faulty</div></div>
+          <div class="card"><div class="muted">Needs review</div><div class="kpi">5</div><div class="muted">past 6-month cycle</div></div>
+        </div>
+        <div class="row resp" style="gap:14px;margin-top:14px">
+          <div class="card" style="flex:2">
+            <div class="barline m"></div>
+            <div class="anno" style="margin:8px 0"><span class="anno-num">2</span>“Sites needing attention” list — stale records + faulty cameras + retention below minimum flagged inline.</div>
+            <div class="box" style="height:34px;margin:6px 0"></div>
+            <div class="box" style="height:34px;margin:6px 0"></div>
+            <div class="box" style="height:34px;margin:6px 0"></div>
+          </div>
+          <div class="card" style="flex:1">
+            <div class="muted">Retention warnings</div>
+            <div class="ph" style="height:70px;margin:8px 0"></div>
+            <div class="barline l"></div><div class="barline m"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">B2 · Site workspace — tabbed (CCTV tab active)</div>
+    <div class="frame">
+      <div class="sb-top">
+        <div class="logo"></div>
+        <div class="muted">Sites ▸ <b style="color:#333">KL HQ</b></div>
+        <span class="btn" style="margin-left:auto">Archive site</span><span class="btn primary">Edit site</span>
+      </div>
+      <div class="sb-tabs">
+        <div class="sb-tab">Overview</div>
+        <div class="sb-tab">Network</div>
+        <div class="sb-tab active">CCTV</div>
+        <div class="sb-tab">Maintenance</div>
+        <div class="sb-tab">History / Audit</div>
+      </div>
+      <div style="padding:18px">
+        <div class="row resp" style="gap:14px">
+          <div class="card" style="flex:1">
+            <div class="muted">RECORDERS (NVR/DVR)</div>
+            <div class="anno" style="margin:8px 0"><span class="anno-num">3</span>Recorder card → expand to its cameras. Retention below company min (default 30d) shown as a warning chip.</div>
+            <div class="box" style="padding:10px;margin-bottom:8px">
+              <div class="barline m" style="margin:0 0 6px"></div>
+              <div class="row" style="gap:6px"><span class="pill">16 ch</span><span class="pill">retention 21d ⚠</span><span class="pill">4 TB</span></div>
+            </div>
+            <div class="box" style="padding:10px">
+              <div class="barline m" style="margin:0 0 6px"></div>
+              <div class="row" style="gap:6px"><span class="pill">8 ch</span><span class="pill">retention 45d</span><span class="pill">2 TB</span></div>
+            </div>
+            <div class="btn" style="margin-top:10px">+ Add recorder</div>
+          </div>
+          <div class="card" style="flex:1.4">
+            <div class="muted">CAMERAS on “NVR-01”</div>
+            <table class="table" style="margin-top:8px">
+              <thead><tr><th>Label</th><th>Location</th><th>Type</th><th>Res</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>CAM-01</td><td>Lobby</td><td>Dome</td><td>4MP</td><td><span class="pill">active</span></td></tr>
+                <tr><td>CAM-02</td><td>Car park</td><td>Bullet</td><td>4MP</td><td><span class="pill">faulty</span></td></tr>
+                <tr><td>CAM-03</td><td>Server rm</td><td>PTZ</td><td>4K</td><td><span class="pill">active</span></td></tr>
+              </tbody>
+            </table>
+            <div class="btn" style="margin-top:10px">+ Add camera</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">B3 · Add / edit record form (Zod-validated drawer)</div>
+    <div class="frame" style="padding:0">
+      <div class="row">
+        <div style="flex:1;padding:18px;opacity:.5">
+          <div class="barline l"></div><div class="box" style="height:120px;margin-top:10px"></div>
+          <div class="muted" style="margin-top:8px">…underlying list (dimmed)…</div>
+        </div>
+        <div style="width:380px;flex:0 0 auto;border-left:1px solid var(--line);background:#fff;padding:18px">
+          <div class="row" style="justify-content:space-between"><b>Add ISP circuit</b><span class="muted">✕</span></div>
+          <div class="anno" style="margin:10px 0"><span class="anno-num">4</span>Form fields = only PRD required fields (minimal to reduce data-entry burden). Same Zod schema client + server.</div>
+          <div class="muted">Provider</div><div class="input" style="width:100%;margin-bottom:8px"></div>
+          <div class="muted">Circuit / account ID</div><div class="input" style="width:100%;margin-bottom:8px"></div>
+          <div class="row" style="gap:8px">
+            <div style="flex:1"><div class="muted">Bandwidth</div><div class="input" style="width:100%"></div></div>
+            <div style="flex:1"><div class="muted">Type</div><div class="input" style="width:100%"></div></div>
+          </div>
+          <div class="row" style="gap:8px;margin-top:8px">
+            <div style="flex:1"><div class="muted">Contract start</div><div class="input" style="width:100%"></div></div>
+            <div style="flex:1"><div class="muted">Contract end</div><div class="input" style="width:100%"></div></div>
+          </div>
+          <div class="muted" style="margin-top:8px">Credential ref (↗ link, not secret)</div><div class="input" style="width:100%"></div>
+          <div class="row" style="gap:8px;margin-top:16px"><span class="btn primary">Save</span><span class="btn">Cancel</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">B4 · Create Site — full workspace page</div>
+    <div class="frame">
+      <div class="sb-top">
+        <div class="logo"></div>
+        <div class="muted">Sites ▸ <b style="color:#333">New site</b></div>
+        <span class="btn" style="margin-left:auto">Cancel</span><span class="btn primary">Create site</span>
+      </div>
+      <div class="sb-tabs">
+        <div class="sb-tab active">Details</div>
+        <div class="sb-tab">Network <span class="pill" style="margin-left:6px">add later</span></div>
+        <div class="sb-tab">CCTV <span class="pill" style="margin-left:6px">add later</span></div>
+      </div>
+      <div style="padding:18px">
+        <div class="anno" style="margin-bottom:14px"><span class="anno-num">5</span>Country manager creates a site inside <b>their own country</b> (country is pre-filled &amp; locked). Only Details are required at creation; Network / CCTV records are added afterward from the site workspace tabs.</div>
+        <div class="row resp" style="gap:14px">
+          <div class="card" style="flex:2">
+            <div class="muted" style="font-weight:600;margin-bottom:10px">SITE DETAILS</div>
+            <div class="row" style="gap:12px;margin-bottom:10px">
+              <div style="flex:1"><div class="muted">Site name *</div><div class="input" style="width:100%"></div></div>
+              <div style="flex:1"><div class="muted">Site code</div><div class="input" style="width:100%"></div></div>
+            </div>
+            <div class="row" style="gap:12px;margin-bottom:10px">
+              <div style="flex:1"><div class="muted">Country *</div><div class="input" style="width:100%;display:flex;align-items:center;padding:0 8px"><span class="flag"></span><span class="muted" style="margin-left:6px">MY (locked)</span></div></div>
+              <div style="flex:1"><div class="muted">City</div><div class="input" style="width:100%"></div></div>
+              <div style="flex:1"><div class="muted">Timezone</div><div class="input" style="width:100%"></div></div>
+            </div>
+            <div class="muted">Address</div><div class="input" style="width:100%;margin-bottom:10px"></div>
+            <div class="muted">Notes</div><div class="box" style="height:64px"></div>
+          </div>
+          <div class="card" style="flex:1">
+            <div class="muted" style="font-weight:600;margin-bottom:10px">LOCAL CONTACT</div>
+            <div class="muted">Contact name</div><div class="input" style="width:100%;margin-bottom:10px"></div>
+            <div class="muted">Phone / email</div><div class="input" style="width:100%;margin-bottom:10px"></div>
+            <div class="anno" style="margin-top:8px"><span class="anno-num">6</span>Optional at create — but flagged on the dashboard “needs review” list if left blank.</div>
+          </div>
+        </div>
+        <div class="row" style="gap:8px;margin-top:16px"><span class="btn primary">Create site</span><span class="btn">Save &amp; add network →</span><span class="btn">Cancel</span></div>
+      </div>
+    </div>
+
+    <div class="screen-label">B5 · Login — centered card under brand bar (invite-only)</div>
+    <div class="frame">
+      <div class="sb-top" style="justify-content:center;gap:10px">
+        <div class="logo"></div><div class="barline m" style="margin:0;width:150px"></div>
+      </div>
+      <div style="padding:40px 18px;background:#f0f0f0;display:flex;justify-content:center">
+        <div class="card" style="width:360px">
+          <b style="font-size:16px">Sign in to your workspace</b>
+          <div class="muted" style="margin:4px 0 16px">Country managers land on their own country’s dashboard.</div>
+          <div class="muted">Email</div><div class="input" style="width:100%;margin-bottom:10px"></div>
+          <div class="muted">Password</div><div class="input" style="width:100%;margin-bottom:8px"></div>
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
+            <span class="muted">☐ Remember me</span><span class="muted">Forgot password?</span>
+          </div>
+          <div class="btn primary" style="width:100%;text-align:center">Sign in</div>
+          <div class="anno" style="margin-top:14px"><span class="anno-num">7</span>Supabase Auth (email/password; magic link optional). <b>No public sign-up link</b> — HQ admin invites accounts &amp; assigns role + country (drives RLS). Post-login → B1 dashboard.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SET C : COMMAND SPLIT-VIEW ================= -->
+  <section class="set" data-set="C">
+    <div class="set-head">
+      <h2>Set C — Command-Bar Split-View</h2>
+      <p>Search-first layout. A thin icon rail, a middle results/list column, and a detail pane. Optimised for KPI #2 (“locate infra info in under 2 minutes”). List updates as you search; detail opens beside it without losing the list.</p>
+    </div>
+
+    <div class="screen-label">C1 · Global search results (split)</div>
+    <div class="frame row sa-shell">
+      <div class="sc-rail">
+        <div class="logo"></div>
+        <div class="sc-railico active"></div>
+        <div class="sc-railico"></div>
+        <div class="sc-railico"></div>
+        <div class="sc-railico"></div>
+        <div class="avatar" style="margin-top:auto"></div>
+      </div>
+      <div class="sc-list">
+        <div class="sc-listhead">
+          <div class="input" style="width:100%;display:flex;align-items:center;padding:0 10px"><span class="muted">🔍 “hanoi isp”</span></div>
+          <div class="anno" style="margin-top:8px"><span class="anno-num">1</span>Results grouped by type (Sites, Devices, Circuits, Cameras). ≤500ms target. Country-scoped by role automatically.</div>
+        </div>
+        <div class="muted" style="padding:8px 14px 2px">SITES</div>
+        <div class="sc-item active"><b>Hanoi Office</b><div class="barline s"></div></div>
+        <div class="muted" style="padding:8px 14px 2px">CIRCUITS</div>
+        <div class="sc-item"><div class="barline m" style="margin:0"></div><span class="pill">circuit #VN-88213</span></div>
+        <div class="sc-item"><div class="barline m" style="margin:0"></div><span class="pill">provider ▬▬</span></div>
+        <div class="muted" style="padding:8px 14px 2px">DEVICES</div>
+        <div class="sc-item"><b>gw-hn-01</b><span class="pill">10.20.0.1</span></div>
+      </div>
+      <div class="sc-detail">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div><div class="muted">SITE</div><b style="font-size:16px">Hanoi Office</b></div>
+          <div><span class="btn">Verify ✓</span><span class="btn primary">Edit</span></div>
+        </div>
+        <div class="row" style="gap:10px;margin:12px 0"><span class="pill">VN</span><span class="pill">Timezone GMT+7</span><span class="pill">last verified 3mo</span></div>
+        <div class="anno" style="margin-bottom:12px"><span class="anno-num">2</span>Detail pane = tabbed summary of the found record with quick jump to its ISP / device / camera children. No page reload; list stays put.</div>
+        <div class="row" style="gap:12px;flex-wrap:wrap">
+          <div class="box" style="flex:1;min-width:150px;padding:10px"><div class="muted">ISP circuits</div><b>2</b></div>
+          <div class="box" style="flex:1;min-width:150px;padding:10px"><div class="muted">Devices</div><b>7</b></div>
+          <div class="box" style="flex:1;min-width:150px;padding:10px"><div class="muted">Cameras</div><b>14</b></div>
+          <div class="box" style="flex:1;min-width:150px;padding:10px"><div class="muted">Local contact</div><div class="barline m"></div></div>
+        </div>
+        <div class="box" style="height:120px;margin-top:14px"></div>
+      </div>
+    </div>
+
+    <div class="screen-label">C2 · Users &amp; roles (HQ admin only) + audit log</div>
+    <div class="frame row sa-shell" style="min-height:auto">
+      <div class="sc-rail"><div class="logo"></div><div class="sc-railico"></div><div class="sc-railico active"></div><div class="avatar" style="margin-top:auto"></div></div>
+      <div class="sc-list">
+        <div class="sc-listhead"><b>Users</b><span class="btn primary" style="float:right">+ Invite</span></div>
+        <div class="sc-item active"><div class="row" style="gap:8px;align-items:center"><div class="avatar"></div><div><b>User A</b><div class="muted">hq_admin · all</div></div></div></div>
+        <div class="sc-item"><div class="row" style="gap:8px;align-items:center"><div class="avatar"></div><div><b>User B</b><div class="muted">country_manager · MY</div></div></div></div>
+        <div class="sc-item"><div class="row" style="gap:8px;align-items:center"><div class="avatar"></div><div><b>User C</b><div class="muted">country_manager · VN</div></div></div></div>
+        <div class="anno" style="margin:10px 14px"><span class="anno-num">3</span>Invite-only signup (public disabled). Assign role + country here; drives RLS.</div>
+      </div>
+      <div class="sc-detail">
+        <b>Audit log</b>
+        <div class="anno" style="margin:10px 0"><span class="anno-num">4</span>Immutable log of every create/update/delete (actor, action, table, record, diff, timestamp). Visible to HQ admins only.</div>
+        <table class="table">
+          <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Table</th><th>Record</th></tr></thead>
+          <tbody>
+            <tr><td>10:42</td><td>User B</td><td>update</td><td>network_devices</td><td>fw-kl-01</td></tr>
+            <tr><td>10:31</td><td>User A</td><td>invite</td><td>profiles</td><td>User C</td></tr>
+            <tr><td>09:58</td><td>User B</td><td>create</td><td>cctv_cameras</td><td>CAM-14</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="screen-label">C3 · Create record — detail pane (list stays put)</div>
+    <div class="frame row sa-shell" style="min-height:auto">
+      <div class="sc-rail">
+        <div class="logo"></div>
+        <div class="sc-railico active"></div>
+        <div class="sc-railico"></div>
+        <div class="sc-railico"></div>
+        <div class="avatar" style="margin-top:auto"></div>
+      </div>
+      <div class="sc-list">
+        <div class="sc-listhead">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <b>Cameras · Hanoi</b><span class="btn primary">+ New</span>
+          </div>
+          <div class="anno" style="margin-top:8px"><span class="anno-num">1</span>“+ New” opens the create form <b>in the detail pane</b> — the result list on the left never reloads, keeping search context.</div>
+        </div>
+        <div class="sc-item"><b>CAM-01</b><div class="muted">Lobby · Dome</div></div>
+        <div class="sc-item"><b>CAM-02</b><div class="muted">Car park · Bullet</div></div>
+        <div class="sc-item active" style="border-left:3px solid #7a7a7a"><b>New camera…</b><div class="muted">unsaved draft</div></div>
+      </div>
+      <div class="sc-detail">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div><div class="muted">CREATE · CCTV CAMERA</div><b style="font-size:16px">New camera</b></div>
+          <div><span class="btn">Cancel</span><span class="btn primary">Save camera</span></div>
+        </div>
+        <div class="row" style="gap:8px;margin:8px 0 14px"><span class="pill">Hanoi Office (locked)</span><span class="pill">Recorder: NVR-01 ▾</span></div>
+        <div class="anno" style="margin-bottom:14px"><span class="anno-num">2</span>Parent (site + recorder) is pre-selected from where “+ New” was clicked. Minimal PRD fields; inline Zod validation.</div>
+        <div class="row" style="gap:12px;margin-bottom:10px">
+          <div style="flex:1"><div class="muted">Label *</div><div class="input" style="width:100%"></div></div>
+          <div style="flex:1"><div class="muted">Location *</div><div class="input" style="width:100%"></div></div>
+        </div>
+        <div class="row" style="gap:12px;margin-bottom:10px">
+          <div style="flex:1"><div class="muted">Type</div><div class="input" style="width:100%"></div></div>
+          <div style="flex:1"><div class="muted">Resolution</div><div class="input" style="width:100%"></div></div>
+          <div style="flex:1"><div class="muted">Status</div><div class="input" style="width:100%"></div></div>
+        </div>
+        <div class="muted">Notes</div><div class="box" style="height:56px;margin-bottom:12px"></div>
+        <div class="anno"><span class="anno-num">3</span>On save → row appears at top of the list (highlighted), detail pane switches to read mode, audit log entry written. No full-page navigation.</div>
+      </div>
+    </div>
+
+    <div class="screen-label">C4 · Sign-in (invite-only)</div>
+    <div class="frame" style="display:flex;align-items:center;justify-content:center;min-height:320px;background:#f0f0f0">
+      <div class="card" style="width:320px;text-align:center">
+        <div class="logo" style="margin:0 auto 12px"></div>
+        <div class="barline m" style="margin:0 auto 14px"></div>
+        <div class="muted" style="text-align:left">Email</div><div class="input" style="width:100%;margin-bottom:10px"></div>
+        <div class="muted" style="text-align:left">Password</div><div class="input" style="width:100%;margin-bottom:14px"></div>
+        <div class="btn primary" style="width:100%">Sign in</div>
+        <div class="anno" style="margin-top:12px;text-align:left"><span class="anno-num">5</span>Supabase Auth (email/password; magic link optional). <b>No public sign-up link</b> — accounts are invited by HQ admin only.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const btns=document.querySelectorAll('.switch button');
+  const sets=document.querySelectorAll('.set');
+  btns.forEach(b=>b.addEventListener('click',()=>{
+    btns.forEach(x=>x.classList.remove('active'));
+    sets.forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelector('.set[data-set="'+b.dataset.set+'"]').classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+</script>
