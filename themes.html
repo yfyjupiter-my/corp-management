@@ -1,0 +1,622 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Themes &amp; Styling Playground — Corp Management (SEA IT Registry)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =========================================================================
+   THEME TOKENS
+   Three product-fit themes for an internal enterprise IT infrastructure
+   registry. Switch with data-theme on <body>. All component CSS below reads
+   ONLY from these tokens — nothing is hard-coded per theme.
+   ========================================================================= */
+
+/* --- Theme 1 · HQ Slate (default) — B2B navy + blue, Lexend / Source Sans 3 --- */
+body[data-theme="slate"]{
+  --font-head:'Lexend',system-ui,sans-serif;
+  --font-body:'Source Sans 3',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+
+  --bg:#EEF1F6;            /* app backdrop */
+  --surface:#FFFFFF;       /* cards, panels */
+  --surface-2:#F7F9FC;     /* subtle raised / hovered rows */
+  --sidebar:#0F172A;       /* deep navy rail */
+  --sidebar-fg:#C7D2E4;
+  --sidebar-active:#1E293B;
+  --sidebar-active-fg:#FFFFFF;
+
+  --primary:#1E3A5F;       /* navy — headers, brand */
+  --primary-fg:#FFFFFF;
+  --accent:#0369A1;        /* blue — primary CTA */
+  --accent-fg:#FFFFFF;
+  --accent-weak:#E7F0F7;
+
+  --fg:#101828;            /* body text */
+  --fg-muted:#5A6779;
+  --fg-subtle:#8592A6;
+  --border:#DDE3EC;
+  --border-strong:#C4CDDB;
+
+  --ok:#0E7C4A;  --ok-bg:#E4F4EC;
+  --warn:#B4690E; --warn-bg:#FBEFDD;
+  --danger:#C0342B; --danger-bg:#FBE7E6;
+  --info:#0369A1; --info-bg:#E7F0F7;
+
+  --radius:8px; --radius-sm:6px; --radius-pill:999px;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.05);
+  --shadow-md:0 4px 12px rgba(16,24,40,.08);
+  --ring:0 0 0 3px rgba(3,105,161,.25);
+}
+
+/* --- Theme 2 · Signal Teal — operations desk, teal + sky, Inter --- */
+body[data-theme="teal"]{
+  --font-head:'Inter',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+
+  --bg:#F1F5F5;
+  --surface:#FFFFFF;
+  --surface-2:#F3F8F8;
+  --sidebar:#0B3B38;
+  --sidebar-fg:#B8D8D3;
+  --sidebar-active:#0F4C47;
+  --sidebar-active-fg:#FFFFFF;
+
+  --primary:#0F766E;
+  --primary-fg:#FFFFFF;
+  --accent:#0369A1;
+  --accent-fg:#FFFFFF;
+  --accent-weak:#E1F1EF;
+
+  --fg:#132A28;
+  --fg-muted:#4E6664;
+  --fg-subtle:#7C9491;
+  --border:#D6E4E2;
+  --border-strong:#BBD1CE;
+
+  --ok:#0E7C4A;  --ok-bg:#E1F3E9;
+  --warn:#B4690E; --warn-bg:#FBEFDD;
+  --danger:#C0342B; --danger-bg:#FBE7E6;
+  --info:#0369A1; --info-bg:#E5F0F6;
+
+  --radius:10px; --radius-sm:7px; --radius-pill:999px;
+  --shadow-sm:0 1px 2px rgba(15,64,60,.07);
+  --shadow-md:0 6px 16px rgba(15,64,60,.10);
+  --ring:0 0 0 3px rgba(15,118,110,.28);
+}
+
+/* --- Theme 3 · Carbon NOC — dark control room, Space Grotesk / DM Sans --- */
+body[data-theme="carbon"]{
+  --font-head:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+
+  --bg:#0B1220;
+  --surface:#131C2E;
+  --surface-2:#1A2537;
+  --sidebar:#0A0F1A;
+  --sidebar-fg:#8FA1BD;
+  --sidebar-active:#1B2740;
+  --sidebar-active-fg:#F1F5FB;
+
+  --primary:#1E293B;
+  --primary-fg:#F1F5FB;
+  --accent:#38BDF8;        /* cyan signal */
+  --accent-fg:#04121F;
+  --accent-weak:#12314A;
+
+  --fg:#E7EDF6;
+  --fg-muted:#9AA9C2;
+  --fg-subtle:#6B7C99;
+  --border:#26324A;
+  --border-strong:#33425F;
+
+  --ok:#34D399;  --ok-bg:#0E3A2E;
+  --warn:#FBBF24; --warn-bg:#3D2F0C;
+  --danger:#F87171; --danger-bg:#3B1614;
+  --info:#38BDF8; --info-bg:#0E2B3F;
+
+  --radius:8px; --radius-sm:6px; --radius-pill:999px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 8px 24px rgba(0,0,0,.5);
+  --ring:0 0 0 3px rgba(56,189,248,.35);
+}
+
+/* =========================================================================
+   BASE
+   ========================================================================= */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:var(--font-body);color:var(--fg);background:var(--bg);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  transition:background .25s ease,color .25s ease;
+}
+h1,h2,h3,h4{font-family:var(--font-head);margin:0;color:var(--fg);letter-spacing:-.01em}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ---- Global theme switcher bar ---- */
+.switcher{
+  position:sticky;top:0;z-index:100;background:var(--primary);color:var(--primary-fg);
+  display:flex;align-items:center;gap:18px;padding:12px 22px;flex-wrap:wrap;
+  box-shadow:var(--shadow-md);
+}
+.switcher .brand{display:flex;align-items:center;gap:11px}
+.switcher .brand .mark{
+  width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-fg);
+  display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:15px;flex:0 0 auto;
+}
+.switcher h1{font-size:15px;font-weight:600;color:var(--primary-fg)}
+.switcher .tag{font-size:12px;opacity:.75}
+.seg{display:flex;gap:6px;margin-left:auto;background:rgba(255,255,255,.1);padding:5px;border-radius:var(--radius-pill)}
+.seg button{
+  font:inherit;font-family:var(--font-head);font-size:12.5px;font-weight:600;padding:7px 16px;
+  border:0;border-radius:var(--radius-pill);background:transparent;color:var(--primary-fg);
+  cursor:pointer;opacity:.72;transition:all .18s ease;white-space:nowrap;
+}
+.seg button:hover{opacity:1}
+.seg button.active{background:var(--accent);color:var(--accent-fg);opacity:1;box-shadow:var(--shadow-sm)}
+
+/* ---- Layout scaffold ---- */
+.wrap{max-width:1280px;margin:0 auto;padding:26px 20px 90px}
+.theme-head{margin:6px 2px 22px}
+.theme-head .kick{font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.theme-head h2{font-size:23px;margin:5px 0 6px}
+.theme-head p{margin:0;color:var(--fg-muted);max-width:760px;font-size:14px}
+
+.section-label{
+  font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fg-subtle);margin:34px 2px 12px;padding-top:16px;border-top:1px solid var(--border);
+}
+
+/* ---- Swatches ---- */
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.sw{border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);width:104px;background:var(--surface);box-shadow:var(--shadow-sm)}
+.sw .chip{height:52px}
+.sw .lbl{padding:6px 8px;font-size:11px}
+.sw .lbl b{display:block;font-family:var(--font-head);font-size:11.5px}
+.sw .lbl span{color:var(--fg-subtle);font-family:var(--font-mono);font-size:10px}
+
+/* ---- App preview shell ---- */
+.app{
+  display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;box-shadow:var(--shadow-md);min-height:560px;
+}
+.rail{width:224px;flex:0 0 auto;background:var(--sidebar);color:var(--sidebar-fg);padding:16px 12px;display:flex;flex-direction:column}
+.rail .logo{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+.rail .logo .mark{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:15px}
+.rail .logo .name{font-family:var(--font-head);font-weight:600;color:var(--sidebar-active-fg);font-size:14px;line-height:1.15}
+.rail .logo .name small{display:block;font-weight:400;font-size:10.5px;opacity:.6;letter-spacing:.02em}
+.rail .grp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.5;margin:16px 10px 6px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--sidebar-fg);transition:background .15s}
+.nav:hover{background:rgba(255,255,255,.06)}
+.nav.active{background:var(--sidebar-active);color:var(--sidebar-active-fg);font-weight:600}
+.nav .ico{width:17px;height:17px;flex:0 0 auto;opacity:.9}
+.nav .count{margin-left:auto;font-family:var(--font-mono);font-size:11px;background:rgba(255,255,255,.1);color:var(--sidebar-active-fg);padding:1px 8px;border-radius:var(--radius-pill)}
+.rail .foot{margin-top:auto;display:flex;align-items:center;gap:9px;padding:10px 8px 2px;border-top:1px solid rgba(255,255,255,.08)}
+.rail .foot .av{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:600;font-family:var(--font-head);font-size:12px}
+.rail .foot .who{font-size:12px}
+.rail .foot .who b{color:var(--sidebar-active-fg);font-family:var(--font-head)}
+.rail .foot .who span{display:block;opacity:.6;font-size:11px}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+.search{
+  flex:1;max-width:440px;display:flex;align-items:center;gap:9px;height:38px;padding:0 13px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-pill);color:var(--fg-subtle);font-size:13px;
+}
+.search svg{flex:0 0 auto}
+.kbd{margin-left:auto;font-family:var(--font-mono);font-size:11px;border:1px solid var(--border-strong);border-radius:5px;padding:1px 6px;color:var(--fg-subtle)}
+.role{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-weak);padding:6px 12px;border-radius:var(--radius-pill);font-family:var(--font-head)}
+.role .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+.content{padding:22px;overflow:auto}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.page-head h3{font-size:19px}
+.page-head .crumb{font-size:12px;color:var(--fg-subtle);margin-bottom:3px}
+.page-head .crumb b{color:var(--fg-muted)}
+
+/* ---- Buttons ---- */
+.btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-head);font-weight:600;font-size:13px;padding:9px 16px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid transparent;transition:all .16s ease;white-space:nowrap}
+.btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.btn.primary{background:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--border-strong)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.subtle{background:transparent;color:var(--fg-muted);border-color:var(--border)}
+.btn.subtle:hover{color:var(--fg);background:var(--surface-2)}
+.btn.sm{padding:6px 11px;font-size:12px}
+
+/* ---- KPI cards ---- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.kpi.k-warn::before{background:var(--warn)}
+.kpi.k-danger::before{background:var(--danger)}
+.kpi .lab{font-size:12px;color:var(--fg-muted);display:flex;align-items:center;gap:7px}
+.kpi .num{font-family:var(--font-head);font-size:30px;font-weight:700;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .num small{font-size:15px;color:var(--fg-subtle);font-weight:500}
+.kpi .delta{font-size:11.5px;margin-top:6px;color:var(--fg-subtle);display:flex;align-items:center;gap:5px}
+.kpi .delta .up{color:var(--ok)} .kpi .delta .down{color:var(--danger)}
+
+/* ---- Country cards ---- */
+.cards2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:6px}
+.ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm)}
+.ccard .ch{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.ccard .flag{width:26px;height:18px;border-radius:3px;flex:0 0 auto;border:1px solid var(--border-strong);background:linear-gradient(var(--accent),var(--primary))}
+.ccard .ch b{font-family:var(--font-head);font-size:15px}
+.ccard .mini{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.ccard .mini div{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 9px}
+.ccard .mini .m-lab{font-size:10.5px;color:var(--fg-subtle)}
+.ccard .mini .m-val{font-family:var(--font-head);font-weight:700;font-size:17px;margin-top:2px;font-variant-numeric:tabular-nums}
+
+/* ---- Chips ---- */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:var(--radius-pill);font-family:var(--font-head);line-height:1.4}
+.chip .d{width:6px;height:6px;border-radius:50%}
+.chip.ok{color:var(--ok);background:var(--ok-bg)} .chip.ok .d{background:var(--ok)}
+.chip.warn{color:var(--warn);background:var(--warn-bg)} .chip.warn .d{background:var(--warn)}
+.chip.danger{color:var(--danger);background:var(--danger-bg)} .chip.danger .d{background:var(--danger)}
+.chip.info{color:var(--info);background:var(--info-bg)} .chip.info .d{background:var(--info)}
+.chip.neutral{color:var(--fg-muted);background:var(--surface-2);border:1px solid var(--border)}
+
+/* ---- Panel + table ---- */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.panel .ph{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.panel .ph h4{font-size:14px;font-weight:600}
+.panel .ph .sub{font-size:12px;color:var(--fg-subtle)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+.select{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--fg);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:7px 11px;cursor:pointer}
+.select svg{opacity:.6}
+
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-subtle);padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--fg)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td .host{font-family:var(--font-mono);font-size:12.5px;font-weight:500}
+td .sub{color:var(--fg-subtle);font-size:11.5px}
+.rowact{display:inline-flex;gap:6px}
+.iconbtn{width:30px;height:30px;display:grid;place-items:center;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--fg-muted);cursor:pointer}
+.iconbtn:hover{background:var(--surface-2);color:var(--fg)}
+
+/* ---- Form ---- */
+.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 18px;padding:18px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.span2{grid-column:span 2}
+.field label{font-size:12px;font-weight:600;color:var(--fg-muted);font-family:var(--font-head)}
+.field label .req{color:var(--danger)}
+.input,.textarea{font:inherit;font-size:13px;color:var(--fg);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:9px 11px;transition:border .15s,box-shadow .15s}
+.input::placeholder{color:var(--fg-subtle)}
+.input:focus,.textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+.textarea{resize:vertical;min-height:64px;font-family:var(--font-body)}
+.field .help{font-size:11px;color:var(--fg-subtle)}
+.field.err .input{border-color:var(--danger)}
+.field .errmsg{font-size:11px;color:var(--danger);display:flex;align-items:center;gap:5px}
+.formbar{display:flex;align-items:center;gap:10px;padding:14px 18px;border-top:1px solid var(--border);background:var(--surface-2)}
+.formbar .note{font-size:12px;color:var(--fg-subtle);margin-right:auto}
+
+/* ---- Login card ---- */
+.logins{display:grid;grid-template-columns:1fr;gap:0}
+.loginwrap{display:flex;align-items:center;justify-content:center;padding:34px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius)}
+.logincard{width:360px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:26px}
+.logincard .lg{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:18px}
+.logincard .lg .mark{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-family:var(--font-head);font-weight:700}
+.logincard h4{text-align:center;font-size:17px}
+.logincard .sub{text-align:center;color:var(--fg-muted);font-size:12.5px;margin:4px 0 20px}
+.logincard .field{margin-bottom:13px}
+.loginrow{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--fg-muted);margin-bottom:16px}
+.loginrow a{color:var(--accent);text-decoration:none;font-weight:600}
+
+.util{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:960px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .util,.cards2{grid-template-columns:1fr}
+  .rail{display:none}
+  .formgrid{grid-template-columns:1fr}
+  .field.span2{grid-column:auto}
+}
+
+/* fade between themes */
+.fadein{animation:fade .35s ease}
+@keyframes fade{from{opacity:.4}to{opacity:1}}
+</style>
+
+<body data-theme="slate">
+
+<div class="switcher">
+  <div class="brand">
+    <div class="mark">CM</div>
+    <div>
+      <h1>Corp Management — Themes &amp; Styling</h1>
+      <div class="tag">SEA IT Infrastructure Registry · live component playground</div>
+    </div>
+  </div>
+  <div class="seg" role="tablist">
+    <button data-theme="slate" class="active">HQ Slate</button>
+    <button data-theme="teal">Signal Teal</button>
+    <button data-theme="carbon">Carbon NOC</button>
+  </div>
+</div>
+
+<div class="wrap fadein" id="wrap">
+
+  <div class="theme-head">
+    <div class="kick" id="t-kick">Theme 01 · Default</div>
+    <h2 id="t-name">HQ Slate</h2>
+    <p id="t-desc">Deep navy command console with a blue action accent. Conservative, high-trust, and dense — built for HQ admins moving between four countries and many record types all day. Type: Lexend headings + Source Sans 3 body (accessibility-first).</p>
+  </div>
+
+  <!-- Tokens / swatches -->
+  <div class="section-label">Color tokens</div>
+  <div class="swatches" id="swatches"></div>
+
+  <!-- Full app preview -->
+  <div class="section-label">Applied to the registry — dashboard shell</div>
+  <div class="app">
+    <aside class="rail">
+      <div class="logo">
+        <div class="mark">CM</div>
+        <div class="name">Corp Mgmt<small>SEA IT Registry</small></div>
+      </div>
+      <div class="grp">Countries</div>
+      <div class="nav active"><span class="flag" style="width:16px;height:11px;border-radius:2px;background:rgba(255,255,255,.35)"></span> Malaysia <span class="count">12</span></div>
+      <div class="nav"><span class="flag" style="width:16px;height:11px;border-radius:2px;background:rgba(255,255,255,.25)"></span> Vietnam <span class="count">8</span></div>
+      <div class="nav"><span class="flag" style="width:16px;height:11px;border-radius:2px;background:rgba(255,255,255,.25)"></span> Thailand <span class="count">6</span></div>
+      <div class="nav"><span class="flag" style="width:16px;height:11px;border-radius:2px;background:rgba(255,255,255,.25)"></span> Indonesia <span class="count">9</span></div>
+      <div class="grp">Modules</div>
+      <div class="nav"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg> Sites</div>
+      <div class="nav"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="15" width="18" height="6" rx="1"/><path d="M7 9v6M17 9v6"/></svg> Network</div>
+      <div class="nav"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7h13v10H2z"/><path d="M15 10l7-3v10l-7-3"/></svg> CCTV</div>
+      <div class="nav"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Renewals</div>
+      <div class="nav"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg> Audit log</div>
+      <div class="foot">
+        <div class="av">AL</div>
+        <div class="who"><b>Admin Lee</b><span>HQ Admin · all</span></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          Search sites, hostnames, IPs, circuit IDs, cameras…
+          <span class="kbd">⌘K</span>
+        </div>
+        <span class="role"><span class="dot"></span> HQ Admin</span>
+        <button class="btn primary sm">+ New record</button>
+      </div>
+
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><b>Overview</b> · all countries</div>
+            <h3>Infrastructure dashboard</h3>
+          </div>
+          <div class="select">Window: 90 days
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="lab">Sites active</div>
+            <div class="num">35</div>
+            <div class="delta"><span class="up">▲ 2</span> vs last cycle</div>
+          </div>
+          <div class="kpi">
+            <div class="lab">Cameras</div>
+            <div class="num">210 <small>/ 6 faulty</small></div>
+            <div class="delta"><span class="chip ok"><span class="d"></span> 97% healthy</span></div>
+          </div>
+          <div class="kpi k-warn">
+            <div class="lab">Circuits expiring ≤90d</div>
+            <div class="num">4</div>
+            <div class="delta">Next: KL HQ · 38 days</div>
+          </div>
+          <div class="kpi k-danger">
+            <div class="lab">Stale records</div>
+            <div class="num">11</div>
+            <div class="delta">Past 6-month review cycle</div>
+          </div>
+        </div>
+
+        <div class="cards2">
+          <div class="ccard">
+            <div class="ch"><span class="flag"></span><b>Malaysia</b><span class="chip info" style="margin-left:auto"><span class="d"></span> pilot</span></div>
+            <div class="mini">
+              <div><div class="m-lab">Sites</div><div class="m-val">12</div></div>
+              <div><div class="m-lab">Devices</div><div class="m-val">64</div></div>
+              <div><div class="m-lab">Cameras</div><div class="m-val">88</div></div>
+              <div><div class="m-lab">Expiring</div><div class="m-val">2</div></div>
+            </div>
+          </div>
+          <div class="ccard">
+            <div class="ch"><span class="flag"></span><b>Vietnam</b><span class="chip neutral" style="margin-left:auto">active</span></div>
+            <div class="mini">
+              <div><div class="m-lab">Sites</div><div class="m-val">8</div></div>
+              <div><div class="m-lab">Devices</div><div class="m-val">40</div></div>
+              <div><div class="m-lab">Cameras</div><div class="m-val">52</div></div>
+              <div><div class="m-lab">Expiring</div><div class="m-val">1</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data table -->
+  <div class="section-label">Network devices — data table (KL HQ)</div>
+  <div class="panel">
+    <div class="ph">
+      <h4>Network devices</h4>
+      <span class="sub">Malaysia · KL HQ · 3 records</span>
+      <button class="btn primary sm" style="margin-left:auto">+ Add device</button>
+      <button class="btn subtle sm">CSV import</button>
+    </div>
+    <div class="filters">
+      <span class="select">Type: All <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+      <span class="select">Freshness: All <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+    </div>
+    <div style="overflow:auto">
+    <table>
+      <thead><tr><th>Type</th><th>Brand / model</th><th>Hostname</th><th>Mgmt IP</th><th>Warranty end</th><th>Credential</th><th>Verified</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Router</td><td>Cisco ISR 4331</td>
+          <td><span class="host">gw-kl-01</span></td>
+          <td><span class="host">10.10.0.1</span></td>
+          <td>2027-03</td>
+          <td><a href="#" style="color:var(--accent);text-decoration:none;font-weight:600;font-size:12px">↗ password mgr</a></td>
+          <td><span class="chip ok"><span class="d"></span> Fresh</span></td>
+          <td class="rowact"><button class="iconbtn" title="Verify">✓</button><button class="iconbtn" title="More">⋯</button></td>
+        </tr>
+        <tr>
+          <td>Firewall</td><td>Fortinet 60F</td>
+          <td><span class="host">fw-kl-01</span></td>
+          <td><span class="host">10.10.0.2</span></td>
+          <td>2026-11</td>
+          <td><a href="#" style="color:var(--accent);text-decoration:none;font-weight:600;font-size:12px">↗ password mgr</a></td>
+          <td><span class="chip warn"><span class="d"></span> Stale</span></td>
+          <td class="rowact"><button class="iconbtn" title="Verify">✓</button><button class="iconbtn" title="More">⋯</button></td>
+        </tr>
+        <tr>
+          <td>Switch</td><td>Aruba 2930F</td>
+          <td><span class="host">sw-kl-03</span></td>
+          <td><span class="host">10.10.0.5</span></td>
+          <td>—</td>
+          <td><span class="sub">—</span></td>
+          <td><span class="chip ok"><span class="d"></span> Fresh</span></td>
+          <td class="rowact"><button class="iconbtn" title="Verify">✓</button><button class="iconbtn" title="More">⋯</button></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- Two-up: form + login -->
+  <div class="section-label">Create form &amp; sign-in</div>
+  <div class="util">
+    <div class="panel">
+      <div class="ph"><h4>Add network device</h4><span class="chip neutral" style="margin-left:auto">MY · KL HQ (locked)</span></div>
+      <div class="formgrid">
+        <div class="field">
+          <label>Type <span class="req">*</span></label>
+          <input class="input" placeholder="Router / Firewall / Switch">
+        </div>
+        <div class="field">
+          <label>Brand / model</label>
+          <input class="input" placeholder="e.g. Cisco ISR 4331">
+        </div>
+        <div class="field">
+          <label>Hostname <span class="req">*</span></label>
+          <input class="input" value="gw-kl-01">
+        </div>
+        <div class="field err">
+          <label>Mgmt IP <span class="req">*</span></label>
+          <input class="input" value="10.10.0.256">
+          <span class="errmsg">⚠ Not a valid IPv4 address</span>
+        </div>
+        <div class="field">
+          <label>Firmware</label>
+          <input class="input" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label>Warranty end</label>
+          <input class="input" type="text" placeholder="YYYY-MM">
+        </div>
+        <div class="field span2">
+          <label>Credential reference</label>
+          <input class="input" placeholder="↗ Link to password manager entry">
+          <span class="help">Store a reference only — never the secret itself.</span>
+        </div>
+        <div class="field">
+          <label>VLAN</label>
+          <input class="input" placeholder="e.g. 10">
+        </div>
+      </div>
+      <div class="formbar">
+        <span class="note">Sets <b>last_verified_at = now</b> · writes to audit log</span>
+        <button class="btn subtle">Cancel</button>
+        <button class="btn primary">Save device</button>
+      </div>
+    </div>
+
+    <div class="loginwrap">
+      <div class="logincard">
+        <div class="lg"><div class="mark">CM</div></div>
+        <h4>Sign in</h4>
+        <div class="sub">Use your invited work account.</div>
+        <div class="field">
+          <label>Email</label>
+          <input class="input" placeholder="you@company.com">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input class="input" type="password" value="••••••••••">
+        </div>
+        <div class="loginrow">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox"> Remember me</label>
+          <a href="#">Forgot password?</a>
+        </div>
+        <button class="btn primary" style="width:100%;justify-content:center">Sign in</button>
+        <div style="text-align:center;margin-top:14px;font-size:11.5px;color:var(--fg-subtle)">No public sign-up · accounts invited by HQ admin</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Element zoo -->
+  <div class="section-label">Buttons, chips &amp; status</div>
+  <div class="panel" style="padding:20px;display:flex;flex-wrap:wrap;gap:24px;align-items:center">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn primary">Primary</button>
+      <button class="btn ghost">Secondary</button>
+      <button class="btn subtle">Subtle</button>
+      <button class="btn primary sm">Small</button>
+    </div>
+    <div style="width:1px;height:30px;background:var(--border)"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="chip ok"><span class="d"></span> Active</span>
+      <span class="chip warn"><span class="d"></span> Stale</span>
+      <span class="chip danger"><span class="d"></span> Faulty</span>
+      <span class="chip info"><span class="d"></span> Pilot</span>
+      <span class="chip neutral">Archived</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const THEMES={
+  slate:{kick:'Theme 01 · Default',name:'HQ Slate',
+    desc:'Deep navy command console with a blue action accent. Conservative, high-trust, and dense — built for HQ admins moving between four countries and many record types all day. Type: Lexend headings + Source Sans 3 body (accessibility-first).'},
+  teal:{kick:'Theme 02',name:'Signal Teal',
+    desc:'A calmer operations-desk look: trust teal with a sky-blue CTA and airier radii. Reads as a monitoring/ops tool — good for country managers focused on a single country. Type: Inter throughout (Swiss, neutral, data-friendly).'},
+  carbon:{kick:'Theme 03',name:'Carbon NOC',
+    desc:'A dark network-operations control room. Slate-black surfaces, cyan signal accent, and vivid status colors make faulty cameras and expiring circuits pop. Best for wall displays and low-light HQ ops. Type: Space Grotesk headings + DM Sans body.'}
+};
+const TOKENS=['--sidebar','--primary','--accent','--surface','--bg','--ok','--warn','--danger'];
+const TNAMES={'--sidebar':'Sidebar','--primary':'Primary','--accent':'Accent','--surface':'Surface','--bg':'Backdrop','--ok':'Success','--warn':'Warning','--danger':'Danger'};
+
+function renderSwatches(){
+  const cs=getComputedStyle(document.body);
+  document.getElementById('swatches').innerHTML=TOKENS.map(t=>{
+    const v=cs.getPropertyValue(t).trim();
+    return `<div class="sw"><div class="chip" style="background:${v}"></div><div class="lbl"><b>${TNAMES[t]}</b><span>${v}</span></div></div>`;
+  }).join('');
+}
+
+function setTheme(name){
+  document.body.setAttribute('data-theme',name);
+  const t=THEMES[name];
+  document.getElementById('t-kick').textContent=t.kick;
+  document.getElementById('t-name').textContent=t.name;
+  document.getElementById('t-desc').textContent=t.desc;
+  document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('active',b.dataset.theme===name));
+  const w=document.getElementById('wrap');w.classList.remove('fadein');void w.offsetWidth;w.classList.add('fadein');
+  requestAnimationFrame(renderSwatches);
+}
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
+renderSwatches();
+</script>
+</body>

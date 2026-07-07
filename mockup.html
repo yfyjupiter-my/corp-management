@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corp Management — SEA IT Registry · Mockup (HQ Slate)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =======================================================================
+   HQ Slate — reverse-extracted from DESIGN.md
+   ======================================================================= */
+:root{
+  --font-head:'Lexend',system-ui,sans-serif;
+  --font-body:'Source Sans 3',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+
+  --bg:#EEF1F6; --surface:#FFFFFF; --surface-2:#F7F9FC;
+  --sidebar:#0F172A; --sidebar-fg:#C7D2E4; --sidebar-active:#1E293B; --sidebar-active-fg:#FFFFFF;
+
+  --primary:#1E3A5F; --primary-fg:#FFFFFF;
+  --accent:#0369A1; --accent-fg:#FFFFFF; --accent-weak:#E7F0F7;
+
+  --fg:#101828; --fg-muted:#5A6779; --fg-subtle:#8592A6;
+  --border:#DDE3EC; --border-strong:#C4CDDB;
+
+  --ok:#0E7C4A;  --ok-bg:#E4F4EC;
+  --warn:#B4690E; --warn-bg:#FBEFDD;
+  --danger:#C0342B; --danger-bg:#FBE7E6;
+  --info:#0369A1; --info-bg:#E7F0F7;
+
+  --radius:8px; --radius-sm:6px; --radius-pill:999px;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.05);
+  --shadow-md:0 4px 12px rgba(16,24,40,.08);
+  --shadow-lg:0 12px 40px rgba(16,24,40,.18);
+  --ring:0 0 0 3px rgba(3,105,161,.25);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--font-body);color:var(--fg);background:var(--bg);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-head);margin:0;color:var(--fg);letter-spacing:-.01em}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+a{color:inherit}
+
+/* =========================== App shell =========================== */
+.app{display:flex;min-height:100vh}
+.rail{width:236px;flex:0 0 auto;background:var(--sidebar);color:var(--sidebar-fg);
+  padding:16px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.rail .logo{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.mark{border-radius:8px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;
+  font-family:var(--font-head);font-weight:700;flex:0 0 auto}
+.rail .logo .mark{width:32px;height:32px;font-size:15px}
+.rail .logo .name{font-family:var(--font-head);font-weight:600;color:var(--sidebar-active-fg);font-size:14px;line-height:1.15}
+.rail .logo .name small{display:block;font-weight:400;font-size:10.5px;opacity:.6;letter-spacing:.02em}
+.rail .grp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.5;margin:16px 10px 6px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--sidebar-fg);transition:background .15s;border:0;background:transparent;width:100%;text-align:left;font-family:var(--font-body)}
+.nav:hover{background:rgba(255,255,255,.06)}
+.nav.active{background:var(--sidebar-active);color:var(--sidebar-active-fg);font-weight:600}
+.nav .ico{width:17px;height:17px;flex:0 0 auto;opacity:.9}
+.nav .flag{width:16px;height:11px;border-radius:2px;flex:0 0 auto;border:1px solid rgba(255,255,255,.25)}
+.nav .count{margin-left:auto;font-family:var(--font-mono);font-size:11px;background:rgba(255,255,255,.1);
+  color:var(--sidebar-active-fg);padding:1px 8px;border-radius:var(--radius-pill)}
+.rail .foot{margin-top:auto;display:flex;align-items:center;gap:9px;padding:12px 8px 2px;border-top:1px solid rgba(255,255,255,.08)}
+.rail .foot .av{width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-fg);
+  display:grid;place-items:center;font-weight:600;font-family:var(--font-head);font-size:12px}
+.rail .foot .who{font-size:12px}
+.rail .foot .who b{color:var(--sidebar-active-fg);font-family:var(--font-head)}
+.rail .foot .who span{display:block;opacity:.6;font-size:11px}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;gap:14px;padding:13px 24px;border-bottom:1px solid var(--border);
+  background:var(--surface);position:sticky;top:0;z-index:20}
+.search{flex:1;max-width:460px;display:flex;align-items:center;gap:9px;height:38px;padding:0 13px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-pill);color:var(--fg-subtle);font-size:13px;cursor:text}
+.search input{border:0;background:transparent;flex:1;font:inherit;color:var(--fg);outline:none}
+.search input::placeholder{color:var(--fg-subtle)}
+.kbd{font-family:var(--font-mono);font-size:11px;border:1px solid var(--border-strong);border-radius:5px;padding:1px 6px;color:var(--fg-subtle)}
+.role{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--accent);
+  background:var(--accent-weak);padding:6px 12px;border-radius:var(--radius-pill);font-family:var(--font-head)}
+.role .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.content{padding:24px;overflow:auto;flex:1}
+.view{display:none;animation:fade .3s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:.35;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.page-head h3{font-size:20px}
+.crumb{font-size:12px;color:var(--fg-subtle);margin-bottom:4px}
+.crumb b{color:var(--fg-muted)}
+.crumb a{color:var(--accent);text-decoration:none;font-weight:600;cursor:pointer}
+
+/* =========================== Buttons =========================== */
+.btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-head);font-weight:600;font-size:13px;
+  padding:9px 16px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid transparent;transition:all .16s ease;white-space:nowrap}
+.btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.btn.primary{background:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:var(--surface);color:var(--fg);border-color:var(--border-strong)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.subtle{background:transparent;color:var(--fg-muted);border-color:var(--border)}
+.btn.subtle:hover{color:var(--fg);background:var(--surface-2)}
+.btn.sm{padding:6px 11px;font-size:12px}
+
+.select{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--fg);
+  background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:7px 11px;cursor:pointer}
+.select svg{opacity:.6}
+
+/* =========================== KPI cards =========================== */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;
+  box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.kpi.k-warn::before{background:var(--warn)}
+.kpi.k-danger::before{background:var(--danger)}
+.kpi .lab{font-size:12px;color:var(--fg-muted);display:flex;align-items:center;gap:7px}
+.kpi .num{font-family:var(--font-head);font-size:30px;font-weight:700;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .num small{font-size:15px;color:var(--fg-subtle);font-weight:500}
+.kpi .delta{font-size:11.5px;margin-top:6px;color:var(--fg-subtle);display:flex;align-items:center;gap:5px}
+.kpi .delta .up{color:var(--ok)} .kpi .delta .down{color:var(--danger)}
+
+/* =========================== Country cards =========================== */
+.section-label{font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fg-subtle);margin:26px 2px 12px}
+.cards2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;
+  box-shadow:var(--shadow-sm);cursor:pointer;transition:box-shadow .16s,transform .16s}
+.ccard:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.ccard .ch{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.ccard .flag{width:26px;height:18px;border-radius:3px;flex:0 0 auto;border:1px solid var(--border-strong)}
+.flag.my{background:linear-gradient(#cc0001 0 50%,#fff 50% 100%)}
+.flag.vn{background:#da251d}
+.flag.th{background:linear-gradient(#a51931 0 25%,#f4f5f8 25% 33%,#2d2a4a 33% 66%,#f4f5f8 66% 75%,#a51931 75%)}
+.flag.id{background:linear-gradient(#e70011 0 50%,#fff 50%)}
+.ccard .ch b{font-family:var(--font-head);font-size:15px}
+.ccard .mini{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.ccard .mini div{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 9px}
+.ccard .mini .m-lab{font-size:10.5px;color:var(--fg-subtle)}
+.ccard .mini .m-val{font-family:var(--font-head);font-weight:700;font-size:17px;margin-top:2px;font-variant-numeric:tabular-nums}
+
+/* =========================== Chips =========================== */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 10px;
+  border-radius:var(--radius-pill);font-family:var(--font-head);line-height:1.4}
+.chip .d{width:6px;height:6px;border-radius:50%}
+.chip.ok{color:var(--ok);background:var(--ok-bg)} .chip.ok .d{background:var(--ok)}
+.chip.warn{color:var(--warn);background:var(--warn-bg)} .chip.warn .d{background:var(--warn)}
+.chip.danger{color:var(--danger);background:var(--danger-bg)} .chip.danger .d{background:var(--danger)}
+.chip.info{color:var(--info);background:var(--info-bg)} .chip.info .d{background:var(--info)}
+.chip.neutral{color:var(--fg-muted);background:var(--surface-2);border:1px solid var(--border)}
+
+/* =========================== Panel + table =========================== */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.panel .ph{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.panel .ph h4{font-size:14px;font-weight:600}
+.panel .ph .sub{font-size:12px;color:var(--fg-subtle)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--fg-subtle);padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--fg)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td .host{font-family:var(--font-mono);font-size:12.5px;font-weight:500}
+td .sub,.tsub{color:var(--fg-subtle);font-size:11.5px}
+.linka{color:var(--accent);text-decoration:none;font-weight:600;font-size:12px;cursor:pointer}
+.rowact{display:inline-flex;gap:6px}
+.iconbtn{width:30px;height:30px;display:grid;place-items:center;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:var(--surface);color:var(--fg-muted);cursor:pointer;font-size:14px}
+.iconbtn:hover{background:var(--surface-2);color:var(--fg)}
+.days{font-family:var(--font-mono);font-weight:600}
+
+/* =========================== Form =========================== */
+.formcard{max-width:920px}
+.fgroup{padding:4px 18px 18px}
+.fgroup-h{font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--fg-subtle);padding:16px 0 12px;border-top:1px solid var(--border);margin-top:4px}
+.fgroup:first-of-type .fgroup-h{border-top:0}
+.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 18px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.span2{grid-column:span 2}
+.field.span3{grid-column:span 3}
+.field label{font-size:12px;font-weight:600;color:var(--fg-muted);font-family:var(--font-head)}
+.field label .req{color:var(--danger)}
+.input,.textarea{font:inherit;font-size:13px;color:var(--fg);background:var(--surface);border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm);padding:9px 11px;transition:border .15s,box-shadow .15s;width:100%}
+.input::placeholder{color:var(--fg-subtle)}
+.input:focus,.textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+.textarea{resize:vertical;min-height:64px;font-family:var(--font-body)}
+.field .help{font-size:11px;color:var(--fg-subtle)}
+.field.err .input{border-color:var(--danger)}
+.field .errmsg{font-size:11px;color:var(--danger);display:flex;align-items:center;gap:5px}
+.lock{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:9px 11px;font-size:13px;color:var(--fg-muted)}
+.formbar{display:flex;align-items:center;gap:10px;padding:14px 18px;border-top:1px solid var(--border);background:var(--surface-2)}
+.formbar .note{font-size:12px;color:var(--fg-subtle);margin-right:auto}
+.locks{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px 0}
+
+/* =========================== Login =========================== */
+.loginscreen{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(1200px 600px at 70% -10%,#16233b,var(--bg))}
+.loginscreen.show{display:flex}
+.logincard{width:380px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);padding:28px}
+.logincard .lg{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:18px}
+.logincard .lg .mark{width:36px;height:36px;border-radius:9px;font-size:16px}
+.logincard .lg b{font-family:var(--font-head);font-size:16px}
+.logincard h4{text-align:center;font-size:18px}
+.logincard .sub{text-align:center;color:var(--fg-muted);font-size:12.5px;margin:4px 0 20px}
+.logincard .field{margin-bottom:13px}
+.loginrow{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--fg-muted);margin:2px 0 16px}
+.loginrow a{color:var(--accent);text-decoration:none;font-weight:600;cursor:pointer}
+.loginnote{text-align:center;margin-top:14px;font-size:11.5px;color:var(--fg-subtle)}
+
+/* =========================== Misc =========================== */
+.two{display:grid;grid-template-columns:340px 1fr;gap:14px}
+.useritem{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.useritem:hover{background:var(--surface-2)}
+.useritem.active{background:var(--accent-weak)}
+.useritem .av{width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;
+  font-family:var(--font-head);font-weight:600;font-size:12px;flex:0 0 auto}
+.useritem b{font-size:13px;font-family:var(--font-head)}
+.useritem .r{font-size:11.5px;color:var(--fg-subtle)}
+.attention{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  margin-bottom:8px;background:var(--surface)}
+.attention .ic{width:34px;height:34px;border-radius:var(--radius-sm);display:grid;place-items:center;flex:0 0 auto}
+.attention .ic.w{background:var(--warn-bg);color:var(--warn)}
+.attention .ic.d{background:var(--danger-bg);color:var(--danger)}
+.attention .t{flex:1}
+.attention .t b{font-family:var(--font-head);font-size:13px}
+.attention .t span{display:block;font-size:11.5px;color:var(--fg-subtle)}
+
+.toast{position:fixed;bottom:22px;right:22px;z-index:80;background:var(--primary);color:#fff;padding:12px 18px;
+  border-radius:var(--radius);box-shadow:var(--shadow-lg);font-size:13px;font-family:var(--font-head);font-weight:500;
+  display:flex;align-items:center;gap:9px;transform:translateY(80px);opacity:0;transition:all .3s ease;pointer-events:none}
+.toast.show{transform:none;opacity:1}
+.toast .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+
+@media(max-width:980px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .cards2,.two{grid-template-columns:1fr}
+  .rail{display:none}
+  .formgrid{grid-template-columns:1fr}
+  .field.span2,.field.span3{grid-column:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div class="loginscreen" id="login">
+  <div class="logincard">
+    <div class="lg"><div class="mark">CM</div><b>Corp Management</b></div>
+    <h4>Sign in</h4>
+    <div class="sub">Use your invited work account.</div>
+    <div class="field"><label>Email</label><input class="input" value="admin.lee@company.com"></div>
+    <div class="field"><label>Password</label><input class="input" type="password" value="••••••••••••"></div>
+    <div class="loginrow">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" checked> Remember me</label>
+      <a>Forgot password?</a>
+    </div>
+    <button class="btn primary" style="width:100%;justify-content:center" onclick="signIn()">Sign in</button>
+    <div class="loginnote">No public sign-up · accounts invited by HQ admin</div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div class="app" id="app">
+  <aside class="rail">
+    <div class="logo">
+      <div class="mark">CM</div>
+      <div class="name">Corp Mgmt<small>SEA IT Registry</small></div>
+    </div>
+
+    <button class="nav active" data-view="dashboard" onclick="go('dashboard',this)">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> Dashboard</button>
+
+    <div class="grp">Countries</div>
+    <button class="nav" onclick="scopeCountry('Malaysia',this)"><span class="flag my"></span> Malaysia <span class="count">12</span></button>
+    <button class="nav" onclick="scopeCountry('Vietnam',this)"><span class="flag vn"></span> Vietnam <span class="count">8</span></button>
+    <button class="nav" onclick="scopeCountry('Thailand',this)"><span class="flag th"></span> Thailand <span class="count">6</span></button>
+    <button class="nav" onclick="scopeCountry('Indonesia',this)"><span class="flag id"></span> Indonesia <span class="count">9</span></button>
+
+    <div class="grp">Modules</div>
+    <button class="nav" data-view="network" onclick="go('network',this)">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="15" width="18" height="6" rx="1"/><path d="M7 9v6M17 9v6"/></svg> Network</button>
+    <button class="nav" onclick="toast('CCTV module — mockup')">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7h13v10H2z"/><path d="M15 10l7-3v10l-7-3"/></svg> CCTV</button>
+    <button class="nav" data-view="renewals" onclick="go('renewals',this)">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Renewals <span class="count">4</span></button>
+    <button class="nav" data-view="users" onclick="go('users',this)">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 4a3 3 0 0 1 0 6M18 15c2 .4 3 2 3 5"/></svg> Users &amp; roles</button>
+    <button class="nav" data-view="audit" onclick="go('audit',this)">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg> Audit log</button>
+
+    <div class="foot">
+      <div class="av">AL</div>
+      <div class="who"><b>Admin Lee</b><span>HQ Admin · all countries</span></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <label class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input placeholder="Search sites, hostnames, IPs, circuit IDs, cameras…">
+        <span class="kbd">⌘K</span>
+      </label>
+      <span class="role"><span class="dot"></span> HQ Admin</span>
+      <button class="btn primary sm" onclick="go('adddevice')">+ New record</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="view active" id="v-dashboard">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><b>Overview</b> · all countries</div>
+            <h3>Infrastructure dashboard</h3>
+          </div>
+          <div class="select">Window: 90 days
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="lab">Sites active</div>
+            <div class="num">35</div>
+            <div class="delta"><span class="up">▲ 2</span> vs last cycle</div>
+          </div>
+          <div class="kpi">
+            <div class="lab">Cameras</div>
+            <div class="num">210 <small>/ 6 faulty</small></div>
+            <div class="delta"><span class="chip ok"><span class="d"></span> 97% healthy</span></div>
+          </div>
+          <div class="kpi k-warn">
+            <div class="lab">Circuits expiring ≤90d</div>
+            <div class="num">4</div>
+            <div class="delta">Next: KL HQ · 38 days</div>
+          </div>
+          <div class="kpi k-danger">
+            <div class="lab">Stale records</div>
+            <div class="num">11</div>
+            <div class="delta">Past 6-month review cycle</div>
+          </div>
+        </div>
+
+        <div class="section-label">By country · click to scope the console</div>
+        <div class="cards2">
+          <div class="ccard" onclick="scopeCountry('Malaysia')">
+            <div class="ch"><span class="flag my"></span><b>Malaysia</b><span class="chip info" style="margin-left:auto"><span class="d"></span> pilot</span></div>
+            <div class="mini">
+              <div><div class="m-lab">Sites</div><div class="m-val">12</div></div>
+              <div><div class="m-lab">Devices</div><div class="m-val">64</div></div>
+              <div><div class="m-lab">Cameras</div><div class="m-val">88</div></div>
+              <div><div class="m-lab">Expiring</div><div class="m-val">2</div></div>
+            </div>
+          </div>
+          <div class="ccard" onclick="scopeCountry('Vietnam')">
+            <div class="ch"><span class="flag vn"></span><b>Vietnam</b><span class="chip neutral" style="margin-left:auto">active</span></div>
+            <div class="mini">
+              <div><div class="m-lab">Sites</div><div class="m-val">8</div></div>
+              <div><div class="m-lab">Devices</div><div class="m-val">40</div></div>
+              <div><div class="m-lab">Cameras</div><div class="m-val">52</div></div>
+              <div><div class="m-lab">Expiring</div><div class="m-val">1</div></div>
+            </div>
+          </div>
+          <div class="ccard" onclick="scopeCountry('Thailand')">
+            <div class="ch"><span class="flag th"></span><b>Thailand</b><span class="chip neutral" style="margin-left:auto">active</span></div>
+            <div class="mini">
+              <div><div class="m-lab">Sites</div><div class="m-val">6</div></div>
+              <div><div class="m-lab">Devices</div><div class="m-val">31</div></div>
+              <div><div class="m-lab">Cameras</div><div class="m-val">40</div></div>
+              <div><div class="m-lab">Expiring</div><div class="m-val">0</div></div>
+            </div>
+          </div>
+          <div class="ccard" onclick="scopeCountry('Indonesia')">
+            <div class="ch"><span class="flag id"></span><b>Indonesia</b><span class="chip neutral" style="margin-left:auto">active</span></div>
+            <div class="mini">
+              <div><div class="m-lab">Sites</div><div class="m-val">9</div></div>
+              <div><div class="m-lab">Devices</div><div class="m-val">47</div></div>
+              <div><div class="m-lab">Cameras</div><div class="m-val">30</div></div>
+              <div><div class="m-lab">Expiring</div><div class="m-val">1</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Needs attention</div>
+        <div class="attention">
+          <div class="ic d">!</div>
+          <div class="t"><b>11 records past their 6-month review</b><span>Oldest: sw-kl-03 · last verified 214 days ago</span></div>
+          <button class="btn subtle sm" onclick="go('network')">Review</button>
+        </div>
+        <div class="attention">
+          <div class="ic w">⚠</div>
+          <div class="t"><b>KL HQ · NVR-01 retention below company minimum</b><span>21 days retained · policy minimum is 30 days</span></div>
+          <button class="btn subtle sm" onclick="toast('Open CCTV — mockup')">Open</button>
+        </div>
+      </section>
+
+      <!-- ================= NETWORK (site detail list) ================= -->
+      <section class="view" id="v-network">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><a onclick="go('dashboard')">Malaysia</a> · <b>KL HQ</b> · Network</div>
+            <h3>Network devices</h3>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn subtle" onclick="toast('CSV import (v1.1)')">CSV import</button>
+            <button class="btn primary" onclick="go('adddevice')">+ Add device</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="ph">
+            <h4>Devices</h4>
+            <span class="sub">Malaysia · KL HQ · 3 records</span>
+          </div>
+          <div class="filters">
+            <span class="select">Type: All <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+            <span class="select">Freshness: All <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+          <div style="overflow:auto">
+          <table>
+            <thead><tr><th>Type</th><th>Brand / model</th><th>Hostname</th><th>Mgmt IP</th><th>Warranty end</th><th>Credential</th><th>Verified</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Router</td><td>Cisco ISR 4331</td>
+                <td><span class="host">gw-kl-01</span></td>
+                <td><span class="host">10.10.0.1</span></td>
+                <td>2027-03</td>
+                <td><a class="linka">↗ password mgr</a></td>
+                <td><span class="chip ok"><span class="d"></span> Fresh</span></td>
+                <td class="rowact"><button class="iconbtn" title="Verify — still accurate" onclick="verify(this)">✓</button><button class="iconbtn" title="More">⋯</button></td>
+              </tr>
+              <tr>
+                <td>Firewall</td><td>Fortinet 60F</td>
+                <td><span class="host">fw-kl-01</span></td>
+                <td><span class="host">10.10.0.2</span></td>
+                <td>2026-11</td>
+                <td><a class="linka">↗ password mgr</a></td>
+                <td><span class="chip warn"><span class="d"></span> Stale</span></td>
+                <td class="rowact"><button class="iconbtn" title="Verify — still accurate" onclick="verify(this)">✓</button><button class="iconbtn" title="More">⋯</button></td>
+              </tr>
+              <tr>
+                <td>Switch</td><td>Aruba 2930F</td>
+                <td><span class="host">sw-kl-03</span></td>
+                <td><span class="host">10.10.0.5</span></td>
+                <td>—</td>
+                <td><span class="tsub">—</span></td>
+                <td><span class="chip danger"><span class="d"></span> 214d old</span></td>
+                <td class="rowact"><button class="iconbtn" title="Verify — still accurate" onclick="verify(this)">✓</button><button class="iconbtn" title="More">⋯</button></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <p class="tsub" style="margin:12px 2px">Credential column is a <b>reference link</b> to the password manager — never the secret itself.</p>
+      </section>
+
+      <!-- ================= RENEWALS ================= -->
+      <section class="view" id="v-renewals">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><b>Renewals</b> · all countries</div>
+            <h3>Contracts &amp; warranties expiring</h3>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="filters" style="border-top:0">
+            <span class="select">Window: 90 days <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+            <span class="select">Country: All <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+            <span class="select">Type: Contract + Warranty <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+          <div style="overflow:auto">
+          <table>
+            <thead><tr><th>Due date</th><th>Country</th><th>Site</th><th>What</th><th>Provider / item</th><th>Days left</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">2026-08-14</td><td>MY</td><td>KL HQ</td><td>ISP contract end</td><td>TM Unifi Biz</td><td><span class="chip warn"><span class="d"></span> <span class="days">38d</span></span></td></tr>
+              <tr><td class="mono">2026-09-02</td><td>VN</td><td>Hanoi</td><td>Warranty end</td><td><span class="host">fw-hn-01</span></td><td><span class="chip info"><span class="d"></span> <span class="days">57d</span></span></td></tr>
+              <tr><td class="mono">2026-09-28</td><td>MY</td><td>Penang</td><td>ISP contract end</td><td>Maxis Fibre</td><td><span class="chip info"><span class="d"></span> <span class="days">83d</span></span></td></tr>
+              <tr><td class="mono">2026-10-05</td><td>ID</td><td>Jakarta</td><td>Warranty end</td><td><span class="host">gw-jkt-02</span></td><td><span class="chip neutral"><span class="days">90d</span></span></td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <p class="tsub" style="margin:12px 2px">MVP = in-app visibility only. Email nudges arrive in v1.1.</p>
+      </section>
+
+      <!-- ================= USERS & ROLES ================= -->
+      <section class="view" id="v-users">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><b>Administration</b> · HQ admin only</div>
+            <h3>Users &amp; roles</h3>
+          </div>
+          <button class="btn primary" onclick="toast('Invite user — mockup')">+ Invite user</button>
+        </div>
+        <div class="two">
+          <div class="panel" style="align-self:start">
+            <div class="ph"><h4>Users</h4><span class="sub" style="margin-left:auto">3</span></div>
+            <div class="useritem active"><div class="av">AL</div><div><b>Admin Lee</b><div class="r">hq_admin · all countries</div></div><span class="chip ok" style="margin-left:auto"><span class="d"></span> active</span></div>
+            <div class="useritem"><div class="av">NM</div><div><b>Nadia M.</b><div class="r">country_manager · MY</div></div><span class="chip ok" style="margin-left:auto"><span class="d"></span> active</span></div>
+            <div class="useritem"><div class="av">TP</div><div><b>Tran P.</b><div class="r">country_manager · VN</div></div><span class="chip neutral" style="margin-left:auto">invited</span></div>
+          </div>
+          <div class="panel" style="align-self:start">
+            <div class="ph"><h4>Admin Lee</h4><span class="chip info" style="margin-left:auto"><span class="d"></span> hq_admin</span></div>
+            <div class="fgroup">
+              <div class="fgroup-h">Access</div>
+              <div class="formgrid" style="grid-template-columns:1fr 1fr">
+                <div class="field"><label>Role</label><div class="lock">HQ Admin</div></div>
+                <div class="field"><label>Country scope</label><div class="lock">All countries</div></div>
+                <div class="field span2"><label>Email</label><div class="lock">admin.lee@company.com</div></div>
+              </div>
+              <p class="tsub" style="margin-top:14px">Role + country assignment drives row-level security (RLS). Country managers get a 403 on any cross-country API access — not just hidden in the UI.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= AUDIT LOG ================= -->
+      <section class="view" id="v-audit">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><b>Administration</b> · HQ admin only</div>
+            <h3>Audit log</h3>
+          </div>
+          <div class="select">Today <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+        </div>
+        <div class="panel">
+          <div style="overflow:auto">
+          <table>
+            <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Table</th><th>Record</th><th></th></tr></thead>
+            <tbody>
+              <tr><td class="mono">10:42</td><td>Nadia M.</td><td><span class="chip info"><span class="d"></span> update</span></td><td class="mono">network_devices</td><td><span class="host">fw-kl-01</span></td><td><a class="linka">view diff</a></td></tr>
+              <tr><td class="mono">10:31</td><td>Admin Lee</td><td><span class="chip ok"><span class="d"></span> invite</span></td><td class="mono">profiles</td><td>Tran P.</td><td><a class="linka">view diff</a></td></tr>
+              <tr><td class="mono">09:58</td><td>Nadia M.</td><td><span class="chip ok"><span class="d"></span> create</span></td><td class="mono">cctv_cameras</td><td><span class="host">CAM-14</span></td><td><a class="linka">view diff</a></td></tr>
+              <tr><td class="mono">09:12</td><td>Admin Lee</td><td><span class="chip danger"><span class="d"></span> delete</span></td><td class="mono">isp_circuits</td><td><span class="host">VN-77120</span></td><td><a class="linka">view diff</a></td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <p class="tsub" style="margin:12px 2px">Immutable log of every create / update / delete — actor, action, table, record, diff, timestamp. Visible to HQ admins only.</p>
+      </section>
+
+      <!-- ================= ADD DEVICE (full-page create) ================= -->
+      <section class="view" id="v-adddevice">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><a onclick="go('dashboard')">Malaysia</a> · <a onclick="go('network')">KL HQ · Network</a> · <b>New device</b></div>
+            <h3>Add network device</h3>
+          </div>
+        </div>
+
+        <div class="panel formcard">
+          <div class="locks">
+            <span class="chip neutral">Country: MY (locked)</span>
+            <span class="chip neutral">Site: KL HQ (locked)</span>
+          </div>
+          <div class="fgroup">
+            <div class="fgroup-h">Identity</div>
+            <div class="formgrid">
+              <div class="field"><label>Type <span class="req">*</span></label><input class="input" placeholder="Router / Firewall / Switch"></div>
+              <div class="field"><label>Brand / model</label><input class="input" placeholder="e.g. Cisco ISR 4331"></div>
+              <div class="field"><label>Hostname <span class="req">*</span></label><input class="input" value="gw-kl-01"></div>
+            </div>
+          </div>
+          <div class="fgroup">
+            <div class="fgroup-h">Network</div>
+            <div class="formgrid">
+              <div class="field err"><label>Mgmt IP <span class="req">*</span></label><input class="input" value="10.10.0.256"><span class="errmsg">⚠ Not a valid IPv4 address</span></div>
+              <div class="field"><label>Firmware</label><input class="input" placeholder="Optional"></div>
+              <div class="field"><label>VLAN</label><input class="input" placeholder="e.g. 10"></div>
+            </div>
+          </div>
+          <div class="fgroup">
+            <div class="fgroup-h">Lifecycle &amp; references</div>
+            <div class="formgrid">
+              <div class="field"><label>Warranty end</label><input class="input" type="text" placeholder="YYYY-MM"></div>
+              <div class="field span2"><label>Credential reference</label><input class="input" placeholder="↗ Link to password manager entry"><span class="help">Store a reference only — never the secret itself.</span></div>
+              <div class="field span3"><label>Notes</label><textarea class="textarea" placeholder="Optional context for the next admin…"></textarea></div>
+            </div>
+          </div>
+          <div class="formbar">
+            <span class="note">On save · sets <b>last_verified_at = now</b> · writes to audit log</span>
+            <button class="btn subtle" onclick="go('network')">Cancel</button>
+            <button class="btn primary" onclick="saveDevice()">Save device</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span> <span id="toast-msg">Saved</span></div>
+
+<script>
+const views=['dashboard','network','renewals','users','audit','adddevice'];
+function go(v,el){
+  views.forEach(x=>document.getElementById('v-'+x).classList.toggle('active',x===v));
+  // sync sidebar active state where a nav maps to the view
+  document.querySelectorAll('.rail .nav').forEach(n=>{
+    if(n.dataset.view) n.classList.toggle('active', n.dataset.view===v);
+  });
+  if(el){document.querySelectorAll('.rail .nav').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
+  document.querySelector('.content').scrollTo({top:0});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function scopeCountry(name,el){
+  go('network');
+  toast('Scoped console to '+name);
+}
+function verify(btn){
+  const chip=btn.closest('tr').querySelector('.chip');
+  chip.className='chip ok';chip.innerHTML='<span class="d"></span> Fresh';
+  toast('Verified — last_verified_at updated');
+}
+function saveDevice(){ toast('Device saved · audit log written'); go('network'); }
+function signIn(){ document.getElementById('login').classList.remove('show'); }
+let tt;
+function toast(msg){
+  const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2400);
+}
+// keyboard: ⌘K / Ctrl-K focuses search
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('.search input').focus();}
+});
+// Start on login for the full flow; comment out to boot straight into the app.
+document.getElementById('login').classList.add('show');
+</script>
+</body>
+</html>
