@@ -37,7 +37,7 @@ export default async function CountryPage({
         title={`${meta.name} sites`}
         subtitle={`Offices and infrastructure locations in ${meta.name}.`}
         actions={
-          <Link href="/network/new">
+          <Link href="/sites/new">
             <Button sm>+ New site</Button>
           </Link>
         }
@@ -54,7 +54,9 @@ export default async function CountryPage({
               {sites.map((s) => (
                 <Tr key={s.id}>
                   <Td>
-                    <div className="font-medium">{s.name}</div>
+                    <Link href={`/sites/${s.id}`} className="font-medium hover:text-accent">
+                      {s.name}
+                    </Link>
                     <div className="text-fg-subtle text-[11.5px]">{s.address ?? "—"}</div>
                   </Td>
                   <Td>

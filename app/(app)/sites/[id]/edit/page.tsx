@@ -1,0 +1,53 @@
+import { notFound } from "next/navigation";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { PageHead } from "@/components/ui/PageHead";
+import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { SiteForm } from "../../SiteForm";
+import type { SiteInput } from "@/lib/validation/site";
+
+export const dynamic = "force-dynamic";
+
+/** Edit an existing site (PRD Story 1). RLS returns no row for other countries → 404. */
+export default async function EditSitePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  if (!z.string().uuid().safeParse(id).success) notFound();
+
+  const supabase = await createClient();
+  const { data: site } = await supabase
+    .from("sites")
+    .select(
+      "id, country_code, name, address, timezone, currency, contact_name, contact_phone, contact_email, notes",
+    )
+    .eq("id", id)
+    .single();
+  if (!site) notFound();
+
+  // Map DB nulls to the form's optional strings.
+  const initial: SiteInput & { id: string } = {
+    id: site.id,
+    country_code: site.country_code,
+    name: site.name,
+    address: site.address ?? undefined,
+    timezone: site.timezone,
+    currency: site.currency,
+    contact_name: site.contact_name ?? undefined,
+    contact_phone: site.contact_phone ?? undefined,
+    contact_email: site.contact_email ?? undefined,
+    notes: site.notes ?? undefined,
+  };
+
+  return (
+    <>
+      <PageHead eyebrow="Sites" title={`Edit · ${site.name}`} subtitle="Update site details." />
+      <Panel className="max-w-3xl">
+        <PanelHeader title="Site details" />
+        <SiteForm site={initial} />
+      </Panel>
+    </>
+  );
+}

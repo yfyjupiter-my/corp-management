@@ -7,6 +7,7 @@ import { COUNTRY_LIST } from "@/lib/constants/countries";
 import type { CurrentUser } from "@/lib/auth";
 import {
   DashboardIcon,
+  SitesIcon,
   NetworkIcon,
   CctvIcon,
   RenewalsIcon,
@@ -45,6 +46,9 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
 
       <NavItem href="/dashboard" active={pathname === "/dashboard"} icon={<DashboardIcon />}>
         Dashboard
+      </NavItem>
+      <NavItem href="/sites" active={pathname.startsWith("/sites")} icon={<SitesIcon />}>
+        Sites
       </NavItem>
 
       <Group label="Countries" />

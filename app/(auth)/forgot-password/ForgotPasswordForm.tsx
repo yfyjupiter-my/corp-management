@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 
-export function LoginForm() {
-  const router = useRouter();
-  const params = useSearchParams();
+export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -18,19 +15,34 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // Recovery link lands on the shared callback, which exchanges the code for a
+      // session and forwards to /reset-password where the user picks a new password.
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+    });
     setLoading(false);
     if (error) {
       setError(error.message);
       return;
     }
-    router.push((params.get("redirectedFrom") as never) ?? "/dashboard");
-    router.refresh();
+    // Always show success regardless of whether the email exists — avoids leaking
+    // which addresses have accounts.
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="text-[13px] text-fg-muted bg-surface-2 border border-border rounded-sm px-3 py-3">
+        If an account exists for <span className="text-fg font-medium">{email}</span>, a
+        password reset link is on its way. Check your inbox and spam folder.
+      </div>
+    );
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3.5">
-      <Field label="Email">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[12px] font-semibold text-fg-muted font-head">Email</span>
         <input
           type="email"
           required
@@ -40,31 +52,14 @@ export function LoginForm() {
           className="input-base"
           placeholder="you@example.com"
         />
-      </Field>
-      <Field label="Password">
-        <input
-          type="password"
-          required
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="input-base"
-          placeholder="••••••••"
-        />
-        <a
-          href="/forgot-password"
-          className="text-[11px] text-accent hover:underline self-end -mt-0.5"
-        >
-          Forgot password?
-        </a>
-      </Field>
+      </label>
 
       {error && (
         <div className="text-[12px] text-danger bg-danger-bg rounded-sm px-3 py-2">{error}</div>
       )}
 
       <Button type="submit" disabled={loading} className="w-full justify-center mt-1">
-        {loading ? "Signing in…" : "Sign in"}
+        {loading ? "Sending…" : "Send reset link"}
       </Button>
 
       <style>{`
@@ -77,14 +72,5 @@ export function LoginForm() {
         .input-base:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
       `}</style>
     </form>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[12px] font-semibold text-fg-muted font-head">{label}</span>
-      {children}
-    </label>
   );
 }

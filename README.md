@@ -34,6 +34,40 @@ supabase db reset            # runs supabase/migrations/* then supabase/seed.sql
 npm run dev                  # http://localhost:3000
 ```
 
+### Seeding a hosted (cloud) project
+
+`supabase db reset` runs migrations **and** `supabase/seed.sql`, but it's local-only.
+For a hosted project, `supabase db push` applies migrations **but not the seed** — load it
+separately, and **only once** on a fresh DB:
+
+```bash
+supabase link --project-ref <ref>
+supabase db push                     # migrations 0001–0004 only
+```
+
+Then run the seed once, either way:
+
+- **SQL Editor** (simplest): paste the contents of `supabase/seed.sql` into the dashboard
+  SQL Editor and run it. Runs privileged, so RLS is bypassed cleanly.
+- **psql**: `psql "$DATABASE_URL" -f supabase/seed.sql` (connection URI from
+  Settings → Database).
+
+> ⚠️ Run the seed **once**. `country_settings` is guarded with `on conflict do nothing`,
+> but the Malaysia sample block has no conflict guard — re-running duplicates the
+> "Kuala Lumpur HQ" site and its child records. On a brand-new project you can instead use
+> `supabase db reset --linked` to apply migrations + seed in one (destructive) step.
+
+Verify the seed landed — expect 4 / 1 / 4:
+
+```sql
+select
+  (select count(*) from country_settings) as countries,
+  (select count(*) from sites)            as sites,
+  (select count(*) from cctv_cameras)     as cameras;
+```
+
+Sign-up is invite-only, so create your first login via **Authentication → Users → Add user**.
+
 ## Project structure
 
 ```

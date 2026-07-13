@@ -40,11 +40,15 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname === "/login" || pathname.startsWith("/auth");
+  // Password recovery pages are public but must NOT bounce an authenticated
+  // session away — the reset link grants a recovery session before /reset-password.
+  const isRecoveryRoute =
+    pathname === "/forgot-password" || pathname === "/reset-password";
   const isPublicAsset =
     pathname === "/" || pathname.startsWith("/_next") || pathname.startsWith("/favicon");
 
-  // Unauthenticated → send to login (except on auth routes / public assets).
-  if (!user && !isAuthRoute && !isPublicAsset) {
+  // Unauthenticated → send to login (except on auth / recovery routes / public assets).
+  if (!user && !isAuthRoute && !isRecoveryRoute && !isPublicAsset) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectedFrom", pathname);

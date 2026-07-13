@@ -33,6 +33,25 @@ export const networkDeviceSchema = z.object({
 });
 export type NetworkDeviceInput = z.infer<typeof networkDeviceSchema>;
 
+export const ipSchemeSchema = z.object({
+  site_id: z.string().uuid(),
+  subnet: ipString, // required — the scheme's network/CIDR
+  gateway: ipString.optional().or(z.literal("").transform(() => undefined)),
+  dns: z.string().max(200).optional().or(z.literal("").transform(() => undefined)),
+  dhcp_range: z.string().max(120).optional().or(z.literal("").transform(() => undefined)),
+  notes: optionalSafeText(2000),
+});
+export type IpSchemeInput = z.infer<typeof ipSchemeSchema>;
+
+export const vlanSchema = z.object({
+  site_id: z.string().uuid(),
+  vlan_id: z.coerce.number().int().min(1).max(4094), // 802.1Q range
+  name: z.string().max(80).optional().or(z.literal("").transform(() => undefined)),
+  subnet: ipString.optional().or(z.literal("").transform(() => undefined)),
+  purpose: z.string().max(200).optional().or(z.literal("").transform(() => undefined)),
+});
+export type VlanInput = z.infer<typeof vlanSchema>;
+
 export const vpnLinkSchema = z.object({
   site_id: z.string().uuid(),
   peer: z.string().max(120).optional().or(z.literal("").transform(() => undefined)),
