@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { COUNTRY_LIST } from "@/lib/constants/countries";
 import type { CurrentUser } from "@/lib/auth";
+import { UserMenu } from "./UserMenu";
 import {
   DashboardIcon,
   SitesIcon,
@@ -94,20 +95,8 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
         </>
       )}
 
-      {/* Footer: current user */}
-      <div className="mt-auto flex items-center gap-2.5 px-2 pt-2.5 pb-0.5 border-t border-white/10">
-        <div className="w-8 h-8 rounded-md bg-white/10 grid place-items-center font-head font-semibold text-white text-xs">
-          {initials(user.fullName ?? user.email ?? "?")}
-        </div>
-        <div className="leading-tight min-w-0">
-          <div className="text-white text-[13px] font-semibold truncate">
-            {user.fullName ?? user.email}
-          </div>
-          <div className="text-[11px] text-sidebar-fg/70 truncate">
-            {isHq ? "HQ Admin · all countries" : `Manager · ${user.countryCode}`}
-          </div>
-        </div>
-      </div>
+      {/* Footer: current user (clickable — opens dropdown with logout) */}
+      <UserMenu user={user} />
     </aside>
   );
 }
@@ -152,13 +141,4 @@ function Group({ label }: { label: string }) {
       {label}
     </div>
   );
-}
-
-function initials(name: string): string {
-  return name
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("");
 }
