@@ -10,10 +10,18 @@ import { COUNTRY_CODES } from "@/lib/constants/countries";
  * Session presence is also enforced by middleware; this is defense in depth.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-
   const supabase = await createClient();
+
+  // Distinguish "no session" from "session but no profile". Both make
+  // getCurrentUser() null, but sending a still-authenticated user to /login just
+  // loops against the middleware — route them to /no-access instead.
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
+
+  const user = await getCurrentUser();
+  if (!user) redirect("/no-access");
 
   // Per-country site counts for the rail. RLS ensures a country manager only
   // ever gets their own country's rows, so their other counts render as 0.
