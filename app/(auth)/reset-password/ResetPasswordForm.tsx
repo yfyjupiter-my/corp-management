@@ -85,7 +85,7 @@ export function ResetPasswordForm() {
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="input-base"
+          className="field-input"
           placeholder="••••••••"
         />
       </label>
@@ -97,7 +97,7 @@ export function ResetPasswordForm() {
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          className="input-base"
+          className="field-input"
           placeholder="••••••••"
         />
       </label>
@@ -113,16 +113,6 @@ export function ResetPasswordForm() {
       >
         {loading ? "Updating…" : "Update password"}
       </Button>
-
-      <style>{`
-        .input-base {
-          font-size: 13px; color: var(--fg); background: var(--surface);
-          border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
-          padding: 9px 11px; transition: border .15s, box-shadow .15s; width: 100%;
-        }
-        .input-base::placeholder { color: var(--fg-subtle); }
-        .input-base:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
-      `}</style>
     </form>
   );
 }

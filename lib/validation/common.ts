@@ -8,16 +8,29 @@ export const safeText = (max = 2000) =>
     .max(max)
     .refine((v) => !containsPossibleSecret(v), { message: SECRET_GUARD_MESSAGE });
 
+/**
+ * Note on the empty→undefined idiom: `.optional().or(z.literal("").transform())`
+ * only works when the base schema *rejects* `""` (e.g. an email/date/IP regex),
+ * so the union falls through to the empty-literal branch. For an unconstrained
+ * string, `""` is a valid string and the first branch wins — leaving the empty
+ * value un-normalised. These helpers use a trailing `.transform` instead so an
+ * empty string reliably becomes `undefined` (stored as NULL rather than "").
+ */
 export const optionalSafeText = (max = 2000) =>
-  safeText(max).optional().or(z.literal("").transform(() => undefined));
+  safeText(max)
+    .optional()
+    .transform((v) => (v === "" ? undefined : v));
 
 /**
  * An optional plain string (no secret guard); an empty string is normalised to
- * `undefined`. Collapses the repeated
- * `.optional().or(z.literal("").transform(() => undefined))` idiom (CODE-2).
+ * `undefined`. Collapses the repeated optional-string idiom (CODE-2).
  */
 export const optionalString = (max: number) =>
-  z.string().max(max).optional().or(z.literal("").transform(() => undefined));
+  z
+    .string()
+    .max(max)
+    .optional()
+    .transform((v) => (v === "" ? undefined : v));
 
 /** IPv4/IPv6-ish string. Loose on purpose — this is a registry, not a validator. */
 export const ipString = z
@@ -41,4 +54,4 @@ export const credentialRef = z
   .max(500)
   .refine((v) => !containsPossibleSecret(v), { message: SECRET_GUARD_MESSAGE })
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .transform((v) => (v === "" ? undefined : v));

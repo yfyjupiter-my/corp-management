@@ -48,20 +48,20 @@ export function InviteForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3.5">
       <Field label="Full name" error={errors.full_name?.message}>
-        <input className="fld" {...register("full_name")} placeholder="Nadia Rahman" />
+        <input className="field-input" {...register("full_name")} placeholder="Nadia Rahman" />
       </Field>
       <Field label="Email" error={errors.email?.message}>
-        <input className="fld" type="email" {...register("email")} placeholder="user@example.com" />
+        <input className="field-input" type="email" {...register("email")} placeholder="user@example.com" />
       </Field>
       <Field label="Role" error={errors.role?.message}>
-        <select className="fld" {...register("role")}>
+        <select className="field-input" {...register("role")}>
           <option value="country_manager">Country Manager</option>
           <option value="hq_admin">HQ Admin</option>
         </select>
       </Field>
       {role === "country_manager" && (
         <Field label="Country" error={errors.country_code?.message}>
-          <select className="fld" {...register("country_code")}>
+          <select className="field-input" {...register("country_code")}>
             <option value="">Select…</option>
             {COUNTRY_LIST.map((c) => (
               <option key={c.code} value={c.code}>
@@ -84,13 +84,6 @@ export function InviteForm() {
       <Button type="submit" disabled={isSubmitting} className="justify-center">
         {isSubmitting ? "Sending…" : "Send invite"}
       </Button>
-
-      <style>{`
-        .fld { font-size:13px; color:var(--fg); background:var(--surface);
-          border:1px solid var(--border-strong); border-radius:var(--radius-sm);
-          padding:9px 11px; width:100%; transition:border .15s, box-shadow .15s; }
-        .fld:focus { outline:none; border-color:var(--accent); box-shadow:var(--ring); }
-      `}</style>
     </form>
   );
 }

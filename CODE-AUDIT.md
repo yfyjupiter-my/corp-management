@@ -21,7 +21,7 @@ Notes: `.optional().or(z.literal("").transform(() => undefined))` is repeated do
 Item: Inline `<style>` blocks in client components
 Verdict: ⚠️ Review
 Notes: `InviteForm.tsx` and `ResetPasswordForm.tsx` each inject a `<style>` tag defining `.fld` / `.input-base` with duplicated field styling. Fine functionally but bypasses Tailwind and duplicates the same input styling.
-- [ ] CODE-3: Promote the shared input style to a Tailwind component class (`@layer components` in `globals.css`) or a reusable `<Input>` component.
+- [x] CODE-3: Promoted the shared input style to a `.field-input` class in `@layer components` (`globals.css`); removed the duplicated inline `.fld` / `.input-base` `<style>` blocks from InviteForm and ResetPasswordForm.
 
 Item: `as never` cast in reset-password navigation
 Verdict: ⚠️ Needs action
@@ -45,7 +45,7 @@ Notes: `DEFAULT_MIN_RETENTION_DAYS` / `reviewCycleMonths` live both in TS consta
 Item: Test coverage is RLS-integration only
 Verdict: ⚠️ Review
 Notes: `tests/rls.test.ts` is solid but skips without env; there are no unit tests for `secrets.ts`, `format.ts`, or the Zod schemas (pure, easily testable logic).
-- [ ] CODE-7: Add unit tests for `containsPossibleSecret`, `isStale`/`daysUntil`, and schema edge cases (empty-string transforms, role/country superRefine).
+- [x] CODE-7: Added `tests/secrets.test.ts`, `tests/format.test.ts`, and `tests/validation.test.ts` (32 tests) covering the secrets guard, date/money/staleness helpers, and schema edge cases. These caught a latent bug — the `.optional().or(z.literal("")...)` idiom left empty plain-string fields un-normalised; fixed `optionalString`/`optionalSafeText`/`credentialRef` to normalise "" → undefined via a trailing transform.
 
 Item: Consistent "force-dynamic" on authed pages
 Verdict: ✅ Correct

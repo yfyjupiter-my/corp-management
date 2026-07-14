@@ -102,6 +102,28 @@
   .fadein {
     animation: fade 0.35s ease;
   }
+
+  /* ---- Shared form field (CODE-3) ----
+     Single source for text inputs / selects; replaces the duplicated inline
+     `.fld` / `.input-base` <style> blocks in InviteForm and ResetPasswordForm. */
+  .field-input {
+    font-size: 13px;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    width: 100%;
+    transition: border 0.15s, box-shadow 0.15s;
+  }
+  .field-input::placeholder {
+    color: var(--fg-subtle);
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: var(--ring);
+  }
 }
 
 @keyframes fade {
