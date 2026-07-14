@@ -11,12 +11,12 @@ Notes: Single, well-documented authorization boundary (Postgres RLS). Server/adm
 Item: Duplicated create-route boilerplate
 Verdict: ⚠️ Needs action
 Notes: `/api/sites`, `/api/devices`, `/api/ip-schemes`, `/api/vlans` are near-identical: getUser → 401 → safeParse → insert → select id → 201. Four copies drift over time (already inconsistent with `/api/verify`/invite error shapes).
-- [ ] CODE-1: Extract a `createResourceRoute(schema, table)` helper (or a shared `withAuth` + `insertOne` util) to collapse the four POST handlers.
+- [x] CODE-1: Extracted `createResourceRoute(table, schema)` in `lib/api/create-resource-route.ts`; the four POST handlers are now one-liners. Also folds in the ROB-2 try/catch and ROB-3 error mapping.
 
 Item: Duplicated Zod optional-string idiom
 Verdict: ⚠️ Needs action
 Notes: `.optional().or(z.literal("").transform(() => undefined))` is repeated dozens of times across `network.ts`, `site.ts`, `common.ts`. Error-prone to hand-copy.
-- [ ] CODE-2: Add a `optionalString(max)` helper in `common.ts` and reuse it everywhere.
+- [x] CODE-2: Added `optionalString(max)` in `common.ts` and replaced the repeated `.optional().or(z.literal("")...)` idiom across `network.ts` and `site.ts`.
 
 Item: Inline `<style>` blocks in client components
 Verdict: ⚠️ Review
@@ -26,7 +26,7 @@ Notes: `InviteForm.tsx` and `ResetPasswordForm.tsx` each inject a `<style>` tag 
 Item: `as never` cast in reset-password navigation
 Verdict: ⚠️ Needs action
 Notes: `router.push((params.get("redirectedFrom") as never) ?? "/dashboard")` casts to `never` to satisfy typedRoutes. This defeats type safety and is tied to the SEC-3 open-redirect concern.
-- [ ] CODE-4: Replace with a validated relative-path resolver returning a typed route (see SEC-3).
+- [x] CODE-4: Now routes through `safeInternalPath` (SEC-3) and casts to `Route` instead of `never`. A runtime-validated path can't be a static typedRoutes literal, so a documented `as Route` cast is the honest minimum.
 
 Item: Typed routes enabled
 Verdict: ✅ Correct

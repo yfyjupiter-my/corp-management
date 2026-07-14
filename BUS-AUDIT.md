@@ -11,7 +11,7 @@ Notes: Enforced at the DB via RLS on `sites` and cascaded to child tables throug
 Item: Invite creates auth user + profile atomically-ish
 Verdict: ⚠️ Needs action
 Notes: `app/api/invite/route.ts` creates the auth user, then inserts the profile; on profile failure it deletes the auth user (rollback). But if `deleteUser` itself fails, the auth user is stranded with no profile → they can authenticate but `getCurrentUser` returns null, landing them on `/no-access` permanently with no cleanup path.
-- [ ] BUS-1: Handle `deleteUser` failure explicitly (log + surface), or move to a DB-side transactional path / trigger that creates the profile from `auth.users` metadata.
+- [x] BUS-1: Rollback `deleteUser` failure is now handled explicitly (try/catch + returned-error check) and logs the orphaned auth-user id for manual cleanup (see ROB-1). A DB-side transactional trigger remains a possible future hardening but is no longer required to avoid an unhandled 500.
 
 Item: Invite role/country coherence
 Verdict: ✅ Correct

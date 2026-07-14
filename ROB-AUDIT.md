@@ -15,17 +15,17 @@ Notes: Routes call `getUser()` and 401 before doing work; invite checks `hq_admi
 Item: Invite rollback swallows deleteUser failure
 Verdict: ⚠️ Needs action
 Notes: `app/api/invite/route.ts` line 50 calls `admin.auth.admin.deleteUser(...)` without awaiting the result-check — if it rejects, the error propagates as an unhandled 500 and the original `profileError` message is lost; if it silently fails, the auth user is orphaned.
-- [ ] ROB-1: Wrap the rollback `deleteUser` in try/catch; on failure, log and still return the original profile error with a note that manual cleanup may be needed.
+- [x] ROB-1: Rollback `deleteUser` now wrapped in try/catch and its returned error is checked; both failure paths log the orphaned auth-user id for manual cleanup, and the original (mapped) profile error is still returned.
 
 Item: Route handlers have no top-level try/catch
 Verdict: ⚠️ Needs action
 Notes: `/api/sites`, `/api/devices`, `/api/ip-schemes`, `/api/vlans`, `/api/verify`, `/api/invite` rely on Supabase calls not throwing. Network/transport errors from Supabase (thrown, not returned in `error`) would surface as unstyled 500s with a stack.
-- [ ] ROB-2: Add a shared handler wrapper (or per-route try/catch) that catches thrown exceptions and returns a generic 500 JSON without leaking internals.
+- [x] ROB-2: `createResourceRoute` wraps the four create routes in try/catch; `/api/verify` and `/api/invite` got per-route try/catch. Thrown transport errors now return a generic 500 JSON.
 
 Item: Error messages leak raw DB errors to client
 Verdict: ⚠️ Needs action
 Notes: Routes return `error.message` from Postgres/PostgREST directly (`return NextResponse.json({ error: error.message }, ...)`). These can expose constraint names, column names, and RLS hints to the client.
-- [ ] ROB-3: Map DB errors to safe, user-facing messages; log the raw error server-side only.
+- [x] ROB-3: Added `dbErrorResponse` (`lib/api/db-error.ts`) — maps SQLSTATE to safe messages, logs the raw error server-side only, and is used by the create routes, `/api/verify`, and `/api/invite`. Raw `error.message` no longer reaches the client.
 
 Item: `search_registry` RPC failure not surfaced
 Verdict: ⚠️ Review

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { dbErrorResponse } from "@/lib/api/db-error";
 
 /**
  * "Verify — still accurate" action (PRD Story 2 / finalize.md — Common columns).
@@ -25,23 +26,28 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    const { table, id } = parsed.data;
+
+    const { error } = await supabase
+      .from(table)
+      .update({ last_verified_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) return dbErrorResponse(error, `POST /verify (${table})`);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[route-error] POST /verify:", err);
+    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
   }
-  const { table, id } = parsed.data;
-
-  const { error } = await supabase
-    .from(table)
-    .update({ last_verified_at: new Date().toISOString() })
-    .eq("id", id);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ ok: true });
 }

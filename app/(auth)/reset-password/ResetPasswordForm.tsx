@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 import { createClient } from "@/lib/supabase/client";
 import { safeInternalPath } from "@/lib/utils/safe-redirect";
 import { Button } from "@/components/ui/Button";
@@ -46,7 +47,9 @@ export function ResetPasswordForm() {
     }
     setDone(true);
     setTimeout(() => {
-      router.push(safeInternalPath(params.get("redirectedFrom")) as never);
+      // Runtime-validated relative path (SEC-3); it can't be a statically-known
+      // typedRoutes literal, so cast to Route rather than the misleading `never`.
+      router.push(safeInternalPath(params.get("redirectedFrom")) as Route);
       router.refresh();
     }, 1200);
   }

@@ -11,6 +11,14 @@ export const safeText = (max = 2000) =>
 export const optionalSafeText = (max = 2000) =>
   safeText(max).optional().or(z.literal("").transform(() => undefined));
 
+/**
+ * An optional plain string (no secret guard); an empty string is normalised to
+ * `undefined`. Collapses the repeated
+ * `.optional().or(z.literal("").transform(() => undefined))` idiom (CODE-2).
+ */
+export const optionalString = (max: number) =>
+  z.string().max(max).optional().or(z.literal("").transform(() => undefined));
+
 /** IPv4/IPv6-ish string. Loose on purpose — this is a registry, not a validator. */
 export const ipString = z
   .string()
