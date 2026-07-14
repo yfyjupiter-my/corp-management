@@ -30,12 +30,12 @@ Notes: Routes return `error.message` from Postgres/PostgREST directly (`return N
 Item: `search_registry` RPC failure not surfaced
 Verdict: ⚠️ Review
 Notes: `search/page.tsx` destructures `{ data }` from the RPC and ignores `error` (`results = data ?? []`). A failing search silently renders "No matches" instead of an error state.
-- [ ] ROB-4: Capture the RPC `error` and render a distinct "search failed" state vs "no results".
+- [x] ROB-4: Search page now captures the RPC `error`, logs it, and renders a distinct "Search is temporarily unavailable" state separate from "No matches".
 
 Item: Dashboard queries ignore per-query errors
 Verdict: ⚠️ Review
 Notes: `dashboard/page.tsx` uses `Promise.all` and `?? []` fallbacks; if one query errors (not rejects), the KPI silently shows 0/empty with no signal that data is missing — misleading for an infra-health dashboard.
-- [ ] ROB-5: Detect `.error` on each result and show a "data unavailable" indicator per card rather than a misleading zero.
+- [x] ROB-5: Dashboard now detects `.error` per query, logs each failure server-side, and renders "—" on affected KPIs plus "data unavailable" on the retention/renewals panels instead of a misleading 0.
 
 Item: Auth callback failure path
 Verdict: ✅ Correct

@@ -35,7 +35,7 @@ Notes: `/api/verify` sets `last_verified_at = now()` for any RLS-visible row. Co
 Item: Dashboard "min retention" uses a global default, not per-country setting
 Verdict: ⚠️ Needs action
 Notes: `dashboard/page.tsx` compares recorder `retention_days` against `DEFAULT_MIN_RETENTION_DAYS` (constant) rather than each country's `country_settings.min_retention_days`. The schema supports per-country minimums but the dashboard ignores them — a country with a stricter minimum shows wrong compliance counts.
-- [ ] BUS-5: Join recorders against `country_settings.min_retention_days` (via site) and compare per-country instead of the constant.
+- [x] BUS-5: Dashboard now builds a `country_code → min_retention_days` map from `country_settings` and compares each recorder against its own country's minimum (via site→country), falling back to the TS constant only when a country has no row.
 
 Item: Dashboard "expiring ≤90d" vs KPI label consistency
 Verdict: ✅ Correct

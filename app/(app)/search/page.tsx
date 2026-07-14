@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
@@ -14,6 +15,23 @@ const typeLabel: Record<string, string> = {
 };
 
 /**
+ * CODE-5: route each result to the most specific page for its type. A site
+ * result's `id` is the site id, so it deep-links to the real detail page;
+ * devices/circuits land on the network inventory and cameras on the CCTV page
+ * (the search RPC returns no site_id, so a per-record deep link isn't possible).
+ */
+function hrefFor(r: { type: string; id: string }): Route {
+  switch (r.type) {
+    case "site":
+      return `/sites/${r.id}` as Route;
+    case "camera":
+      return "/cctv";
+    default:
+      return "/network"; // device, circuit
+  }
+}
+
+/**
  * Global search (PRD Story 5). Delegates to the RLS-scoped `search_registry`
  * SQL function so results respect country isolation.
  */
@@ -26,10 +44,17 @@ export default async function SearchPage({
   const query = (q ?? "").trim();
 
   let results: { type: string; id: string; label: string; country_code: string }[] = [];
+  let searchFailed = false;
   if (query.length >= 2) {
     const supabase = await createClient();
-    const { data } = await supabase.rpc("search_registry", { q: query });
-    results = data ?? [];
+    const { data, error } = await supabase.rpc("search_registry", { q: query });
+    if (error) {
+      // ROB-4: surface a distinct failure state instead of a misleading "no matches".
+      console.error("[search] search_registry failed:", error);
+      searchFailed = true;
+    } else {
+      results = data ?? [];
+    }
   }
 
   const grouped = results.reduce<Record<string, typeof results>>((acc, r) => {
@@ -52,6 +77,10 @@ export default async function SearchPage({
 
       {query.length < 2 ? (
         <p className="text-[13px] text-fg-subtle">Type at least 2 characters to search.</p>
+      ) : searchFailed ? (
+        <Panel>
+          <PanelEmpty>Search is temporarily unavailable. Please try again.</PanelEmpty>
+        </Panel>
       ) : results.length === 0 ? (
         <Panel>
           <PanelEmpty>No matches for “{query}”.</PanelEmpty>
@@ -65,7 +94,7 @@ export default async function SearchPage({
                 {items.map((r) => (
                   <li key={`${r.type}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
                     <Link
-                      href={r.type === "site" ? `/countries/${r.country_code}` : "/network"}
+                      href={hrefFor(r)}
                       className="text-[13px] font-medium hover:text-accent"
                     >
                       {r.label}

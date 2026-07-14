@@ -18,22 +18,47 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const [sites, cameras, recorders, circuits] = await Promise.all([
+  const [sites, cameras, recorders, circuits, settings] = await Promise.all([
     supabase.from("sites").select("id, country_code").is("archived_at", null),
     supabase.from("cctv_cameras").select("id, status"),
-    supabase.from("cctv_recorders").select("id, retention_days"),
+    supabase.from("cctv_recorders").select("id, retention_days, site_id"),
     supabase.from("isp_circuits").select("id, contract_end, provider, site_id"),
+    supabase.from("country_settings").select("country_code, min_retention_days"),
   ]);
+
+  // ROB-5: a query can resolve with `.error` instead of rejecting; surface a
+  // "data unavailable" state per card rather than silently showing 0.
+  const failed = {
+    sites: !!sites.error,
+    cameras: !!cameras.error,
+    recorders: !!recorders.error || !!sites.error, // retention check needs both
+    circuits: !!circuits.error,
+  };
+  for (const [name, res] of Object.entries({ sites, cameras, recorders, circuits, settings })) {
+    if (res.error) console.error(`[dashboard] ${name} query failed:`, res.error);
+  }
 
   const siteRows = sites.data ?? [];
   const cameraRows = cameras.data ?? [];
   const recorderRows = recorders.data ?? [];
   const circuitRows = circuits.data ?? [];
 
+  // BUS-5 / CODE-6: compare each recorder against its country's configured
+  // minimum (country_settings is authoritative); the TS constant is only a
+  // fallback when a country has no row yet.
+  const countryBySite = new Map(siteRows.map((s) => [s.id, s.country_code]));
+  const minByCountry = new Map(
+    (settings.data ?? []).map((s) => [s.country_code, s.min_retention_days]),
+  );
+  const minRetentionFor = (siteId: string) => {
+    const country = countryBySite.get(siteId);
+    return (country && minByCountry.get(country)) ?? DEFAULT_MIN_RETENTION_DAYS;
+  };
+
   const activeCameras = cameraRows.filter((c) => c.status === "active").length;
   const faultyCameras = cameraRows.filter((c) => c.status !== "active").length;
   const belowMinRetention = recorderRows.filter(
-    (r) => (r.retention_days ?? 0) < DEFAULT_MIN_RETENTION_DAYS,
+    (r) => (r.retention_days ?? 0) < minRetentionFor(r.site_id),
   ).length;
   const expiringSoon = circuitRows
     .map((c) => ({ ...c, days: daysUntil(c.contract_end) }))
@@ -59,17 +84,21 @@ export default async function DashboardPage() {
 
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
-        <Kpi label="Active sites" value={siteRows.length} />
-        <Kpi label="Cameras online" value={activeCameras} unit={`/ ${cameraRows.length}`} />
+        <Kpi label="Active sites" value={failed.sites ? "—" : siteRows.length} />
+        <Kpi
+          label="Cameras online"
+          value={failed.cameras ? "—" : activeCameras}
+          unit={failed.cameras ? undefined : `/ ${cameraRows.length}`}
+        />
         <Kpi
           label="Cameras faulty/offline"
-          value={faultyCameras}
-          accent={faultyCameras > 0 ? "danger" : "accent"}
+          value={failed.cameras ? "—" : faultyCameras}
+          accent={!failed.cameras && faultyCameras > 0 ? "danger" : "accent"}
         />
         <Kpi
           label="Circuits expiring ≤90d"
-          value={expiringSoon.length}
-          accent={expiringSoon.length > 0 ? "warn" : "accent"}
+          value={failed.circuits ? "—" : expiringSoon.length}
+          accent={!failed.circuits && expiringSoon.length > 0 ? "warn" : "accent"}
         />
       </div>
 
@@ -105,13 +134,15 @@ export default async function DashboardPage() {
         <Panel>
           <PanelHeader title="Recorders below retention minimum" />
           <div className="px-4 py-3.5 text-[13px]">
-            {belowMinRetention === 0 ? (
+            {failed.recorders ? (
+              <span className="text-fg-subtle">Retention data unavailable.</span>
+            ) : belowMinRetention === 0 ? (
               <span className="text-fg-muted">
-                All recorders meet the {DEFAULT_MIN_RETENTION_DAYS}-day minimum.
+                All recorders meet their country&rsquo;s retention minimum.
               </span>
             ) : (
               <Chip tone="danger">
-                {belowMinRetention} recorder(s) below {DEFAULT_MIN_RETENTION_DAYS} days
+                {belowMinRetention} recorder(s) below their country&rsquo;s minimum
               </Chip>
             )}
           </div>
@@ -119,7 +150,9 @@ export default async function DashboardPage() {
 
         <Panel>
           <PanelHeader title="Circuits expiring within 90 days" />
-          {expiringSoon.length === 0 ? (
+          {failed.circuits ? (
+            <div className="px-4 py-6 text-[13px] text-fg-subtle">Renewal data unavailable.</div>
+          ) : expiringSoon.length === 0 ? (
             <div className="px-4 py-6 text-[13px] text-fg-subtle">Nothing expiring soon.</div>
           ) : (
             <Table>

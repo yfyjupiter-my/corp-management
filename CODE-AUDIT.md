@@ -31,7 +31,7 @@ Notes: `router.push((params.get("redirectedFrom") as never) ?? "/dashboard")` ca
 Item: Typed routes enabled
 Verdict: ✅ Correct
 Notes: `next.config.ts` sets `typedRoutes: true` and `reactStrictMode: true`. Good defaults. `<Link href={... : "/network"}>` in search is a static fallback (loses the specific record) — minor UX debt, not a type flaw.
-- [ ] CODE-5: Search results link every non-site type to `/network` regardless of type (device/circuit/camera). Route each type to its real detail page.
+- [x] CODE-5: Added `hrefFor()` in the search page — sites deep-link to `/sites/[id]`, cameras to `/cctv`, devices/circuits to `/network`. (Per-record deep links for non-sites aren't possible: the search RPC returns no site_id.)
 
 Item: Polymorphic maintenance_logs handled with a plpgsql dispatch
 Verdict: ✅ Correct (with note)
@@ -40,7 +40,7 @@ Notes: `can_access_maintenance_target` cleanly resolves visibility across three 
 Item: Constants vs DB source-of-truth for retention/review cycle
 Verdict: ⚠️ Review
 Notes: `DEFAULT_MIN_RETENTION_DAYS` / `reviewCycleMonths` live both in TS constants and `country_settings`. Two sources of truth risk divergence (see BUS-5).
-- [ ] CODE-6: Treat `country_settings` as authoritative; use TS constants only as seed defaults.
+- [x] CODE-6: Dashboard retention check now treats `country_settings.min_retention_days` as authoritative and uses `DEFAULT_MIN_RETENTION_DAYS` only as a fallback (paired with BUS-5). Constants remain seed defaults elsewhere.
 
 Item: Test coverage is RLS-integration only
 Verdict: ⚠️ Review
