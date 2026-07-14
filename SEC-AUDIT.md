@@ -38,12 +38,12 @@ Notes: `ResetPasswordForm.tsx` does `router.push(params.get("redirectedFrom") ??
 Item: Secrets guard is a broad heuristic (defense-in-depth only)
 Verdict: ✅ Correct (by design), ⚠️ minor
 Notes: `containsPossibleSecret` blocks password-like text before write. The `[A-Za-z0-9+/_-]{24,}` rule will false-positive on legitimate long tokens/URLs/serials. Acceptable as documented defense-in-depth, but worth tuning.
-- [ ] SEC-4: Tune the high-entropy pattern (require mixed char classes / entropy check) to reduce false positives blocking valid `credential_ref` URLs.
+- [x] SEC-4: Replaced the blunt `{24,}` rule with `looksLikeHighEntropyToken` — a 20+ run is flagged only if it mixes lowercase + uppercase + digit (as base64/JWT secrets do). Lowercase URLs, slugs, and UUID segments no longer false-positive. Covered by `tests/secrets.test.ts`.
 
 Item: No rate limiting on auth + write endpoints
 Verdict: ⚠️ Needs action
 Notes: `/api/invite`, `/api/verify`, `/api/devices`, `/api/sites`, login, and forgot-password have no rate limiting. Supabase Auth has some built-in throttling, but app routes do not, allowing brute force / enumeration / abuse.
-- [ ] SEC-5: Add rate limiting (middleware or per-route, e.g. Upstash/Vercel KV) to auth and mutating API routes.
+- [ ] SEC-5: **Deferred** (owner decision, 2026-07-14). Relies on Supabase Auth's built-in throttling for now; app-level rate limiting (Upstash/Vercel KV) to be added before a public/production launch. No infra dependency introduced yet.
 
 Item: Verify route table allow-list
 Verdict: ✅ Correct

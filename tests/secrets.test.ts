@@ -29,8 +29,17 @@ describe("containsPossibleSecret", () => {
     expect(containsPossibleSecret("AKIAIOSFODNN7EXAMPLE")).toBe(true);
   });
 
-  it("flags long high-entropy tokens (documented false-positive surface)", () => {
-    // 24+ base64-ish chars — this also trips on long URLs/serials by design (SEC-4).
-    expect(containsPossibleSecret("abcdefghijklmnopqrstuvwx")).toBe(true);
+  it("flags long tokens that mix case + digits (base64/JWT secrets)", () => {
+    expect(containsPossibleSecret("aB3dEfGhIj9kLmNoPqR2sTuV")).toBe(true);
+    // A realistic base64url access token.
+    expect(containsPossibleSecret("ghp_Xy9AbCdEf12GhIjKlMnOpQr34StUvWx")).toBe(true);
+  });
+
+  it("SEC-4: does NOT flag lowercase URLs / slugs / UUIDs (former false positives)", () => {
+    expect(
+      containsPossibleSecret("https://vault.example.com/network/site-42-router-ref"),
+    ).toBe(false);
+    expect(containsPossibleSecret("this-is-a-long-lowercase-slug-value")).toBe(false);
+    expect(containsPossibleSecret("550e8400-e29b-41d4-a716-446655440000")).toBe(false);
   });
 });

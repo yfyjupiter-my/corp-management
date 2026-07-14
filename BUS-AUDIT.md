@@ -20,7 +20,7 @@ Notes: `inviteUserSchema.superRefine` requires country for `country_manager` and
 Item: HQ admin can invite another HQ admin (privilege escalation surface)
 Verdict: ⚠️ Review
 Notes: Any `hq_admin` can create more `hq_admin` accounts with no second approval. Within trust model this may be acceptable, but there's no guard against a single compromised HQ account minting unlimited global-access admins.
-- [ ] BUS-2: Decide policy — either accept (document it) or add an approval/notification step and an audit entry when an `hq_admin` is created.
+- [x] BUS-2: **Accepted with audit** (owner decision, 2026-07-14). HQ admins may create other HQ admins (trusted-org model). The invite route now writes an explicit `audit_log` entry recording the acting admin (`actor`), the new user, and the granted role — closing the accountability gap (`profiles` has no audit trigger and service-role writes record `actor=NULL`).
 
 Item: `created_by` defaults to `auth.uid()` but service-role invite has no uid
 Verdict: ⚠️ Review
@@ -30,7 +30,7 @@ Notes: Inventory tables default `created_by` to `auth.uid()`. For invite-created
 Item: Verify action stamps `last_verified_at` without freshness/authorship record
 Verdict: ⚠️ Review
 Notes: `/api/verify` sets `last_verified_at = now()` for any RLS-visible row. Correct for scoping, but it does not record *who* verified. The audit trigger captures the update diff, so actor is recoverable — acceptable, but staleness logic (`isStale`) trusts the timestamp blindly.
-- [ ] BUS-4: Confirm audit_log diff is considered the source of truth for "who verified"; no separate action needed unless a dedicated verified_by is required.
+- [x] BUS-4: **Confirmed** (owner decision, 2026-07-14). The `audit_log` update diff (actor + `last_verified_at` change) is accepted as the source of truth for "who verified". No dedicated `verified_by` column added.
 
 Item: Dashboard "min retention" uses a global default, not per-country setting
 Verdict: ⚠️ Needs action
@@ -48,4 +48,4 @@ Notes: `archived_at` soft-delete; lists filter `is('archived_at', null)`. Child 
 Item: Verify/Archive lack optimistic-concurrency control
 Verdict: ⚠️ Review
 Notes: Concurrent edits (two managers editing the same site) last-write-wins with no version check. Low likelihood at this scale but can silently clobber changes.
-- [ ] BUS-6: Consider `updated_at`-based optimistic concurrency on PATCH if concurrent editing becomes real.
+- [ ] BUS-6: **Deferred** (owner decision, 2026-07-14). Last-write-wins accepted at current scale (small, country-scoped teams). Revisit `updated_at`-based optimistic concurrency on PATCH if concurrent editing becomes a real problem.

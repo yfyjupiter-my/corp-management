@@ -70,6 +70,22 @@ export async function POST(request: Request) {
       return dbErrorResponse(profileError, "POST /invite (profile insert)");
     }
 
+    // BUS-2: `profiles` has no audit trigger, and service-role writes record
+    // actor=NULL, so log the acting HQ admin explicitly. This is the
+    // accountability record for an hq_admin minting another hq_admin (an
+    // accepted capability in the trust model, but one that must be traceable).
+    const { error: auditError } = await admin.from("audit_log").insert({
+      actor: actor.id,
+      action: "insert",
+      table_name: "profiles",
+      record_id: data.user.id,
+      diff: { role, country_code: role === "hq_admin" ? null : country_code, full_name },
+    });
+    if (auditError) {
+      // Non-fatal: the user was created successfully; just flag the gap.
+      console.error("[invite] failed to write audit entry for new profile:", auditError);
+    }
+
     return NextResponse.json({ ok: true, userId: data.user.id });
   } catch (err) {
     console.error("[route-error] POST /invite:", err);
