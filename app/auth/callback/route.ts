@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/utils/safe-redirect";
 
 /**
  * Auth callback — exchanges the code from an invite / magic link for a session,
@@ -9,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeInternalPath(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

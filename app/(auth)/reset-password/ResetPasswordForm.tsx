@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { safeInternalPath } from "@/lib/utils/safe-redirect";
 import { Button } from "@/components/ui/Button";
 
 const MIN_LENGTH = 8;
@@ -45,7 +46,7 @@ export function ResetPasswordForm() {
     }
     setDone(true);
     setTimeout(() => {
-      router.push((params.get("redirectedFrom") as never) ?? "/dashboard");
+      router.push(safeInternalPath(params.get("redirectedFrom")) as never);
       router.refresh();
     }, 1200);
   }
