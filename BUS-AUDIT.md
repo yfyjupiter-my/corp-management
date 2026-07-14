@@ -25,7 +25,7 @@ Notes: Any `hq_admin` can create more `hq_admin` accounts with no second approva
 Item: `created_by` defaults to `auth.uid()` but service-role invite has no uid
 Verdict: ⚠️ Review
 Notes: Inventory tables default `created_by` to `auth.uid()`. For invite-created profiles this is fine (no such column). But any row created via the admin client would record `created_by = null`. Currently only profiles are created that way, so low impact — confirm no future admin-client writes to inventory.
-- [ ] BUS-3: Document that admin-client writes bypass `created_by` attribution; keep inventory writes on the user-scoped client only.
+- [x] BUS-3: Documented in `lib/supabase/admin.ts` — service-role writes record `created_by = NULL`, so the admin client is restricted to profile creation and all inventory writes must use the user-scoped server client.
 
 Item: Verify action stamps `last_verified_at` without freshness/authorship record
 Verdict: ⚠️ Review
