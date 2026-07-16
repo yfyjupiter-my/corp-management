@@ -34,6 +34,19 @@ supabase db reset            # runs supabase/migrations/* then supabase/seed.sql
 npm run dev                  # http://localhost:3000
 ```
 
+### Environment variables (`.env.local`)
+
+Copy `.env.example` → `.env.local` and set each value. **`.env.local` is
+git-ignored — never commit real keys.** Find the URL and keys in the Supabase
+dashboard under **Project Settings → API**.
+
+| Variable | Scope | Description |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | public | Supabase project URL (e.g. `https://xxxx.supabase.co`). Inlined into the browser bundle. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | Supabase anonymous key. Safe for the browser — RLS constrains what it can read. |
+| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | Service-role key. **Bypasses RLS** — used solely by `lib/supabase/admin.ts` in the invite route. **Never** prefix with `NEXT_PUBLIC_`. |
+| `NEXT_PUBLIC_SITE_URL` | public | Base URL for auth redirect links (invites, password reset). `http://localhost:3000` in dev. |
+
 ### Seeding a hosted (cloud) project
 
 `supabase db reset` runs migrations **and** `supabase/seed.sql`, but it's local-only.

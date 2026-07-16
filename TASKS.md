@@ -22,8 +22,8 @@
 - [~] **0.4** App shell: `Sidebar`, `Topbar`, icons, `(app)/layout.tsx`.
 - [~] **0.5** Env contract: `.env.example` with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (service key server-only).
 - [~] **0.6** `Dockerfile` multi-stage (`node:22-alpine`, standalone, non-root, `PORT=3000`), `.dockerignore`.
-- [ ] **0.7** Verify local dev boots against a real Supabase project (`npm run dev`) and `.env.local` documented in `README.md`.
-- [ ] **0.8** Lint/typecheck clean: `npm run lint` + `tsc --noEmit` pass on the whole tree.
+- [~] **0.7** `.env.local` documented in `README.md` (per-variable scope/description table + Supabase Auth setup). — done. Live boot against a real Supabase project (`npm run dev`) still a manual step (needs env).
+- [x] **0.8** Lint/typecheck clean: `npm run lint` (0 warnings/errors) + `tsc --noEmit` both pass. Fixed `no-page-custom-font` by moving Google Fonts to `next/font/google` (`app/layout.tsx`); font-family tokens now owned by next/font, removed from `app/globals.css`.
 
 ## Phase 1 — Data layer (migrations & seed)
 

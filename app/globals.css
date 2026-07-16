@@ -7,10 +7,9 @@
    Components read ONLY from these tokens. Nothing is hard-coded per component.
    ========================================================================= */
 :root {
-  /* ---- Typography ---- */
-  --font-head: "Lexend", system-ui, sans-serif;
-  --font-body: "Source Sans 3", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* ---- Typography ----
+     --font-head / --font-body / --font-mono are defined by next/font/google
+     on <html> (see app/layout.tsx). Do not redeclare them here. */
 
   /* ---- Surfaces ---- */
   --bg: #eef1f6;
