@@ -9,6 +9,8 @@
 
 > Update the checkboxes as work completes. Ignore `wireframe.html`, `themes.html`, `mockup.html`.
 > Definition of done for any data-facing task: shared Zod validation runs, RLS scopes the query, and the change is visible in the relevant list/dashboard.
+>
+> **2026-07-16 reconciliation:** QA audits (SEC/CODE/BUS/ROB) reconciled against the actual code — every remediation `[x]` in the `*-AUDIT.md` files is backed by real implementation; only SEC-5 (rate limiting) and BUS-6 (optimistic concurrency) remain owner-deferred. Unit suite verified green: **33 passed** (`secrets`/`format`/`validation`), 4 RLS integration tests skipped (need live Supabase env).
 
 ---
 
@@ -82,9 +84,9 @@
 ## Phase 7 — Global search (Story 5)
 
 - [~] **7.1** `pg_trgm` GIN indexes on searchable columns (`0004_search.sql`).
-- [ ] **7.2** `search_registry(q text)` SQL function running **as caller** (RLS-scoped), returning `(type, id, label, country_code)` — verify present in migration.
-- [ ] **7.3** Search page: query box → grouped-by-type results, <500ms budget on <10k dataset.
-- [ ] **7.4** Empty/short-query and no-results states.
+- [x] **7.2** `search_registry(q text)` SQL function running **as caller** (RLS-scoped), returning `(type, id, label, country_code)` — confirmed `security invoker` + `set search_path` (SEC audit), called via `supabase.rpc` in `search/page.tsx`.
+- [~] **7.3** Search page: query box → grouped-by-type results (`search/page.tsx`, `hrefFor` deep-links per type). <500ms budget on <10k dataset not yet measured.
+- [x] **7.4** Empty/short-query, no-results, and RPC-failure states all handled (`search/page.tsx` — <2 chars, "No matches", "temporarily unavailable" per ROB-4).
 
 ## Phase 8 — Renewals view (Story 6)
 
@@ -96,7 +98,7 @@
 
 - [~] **9.1** Users page + `InviteForm` scaffold.
 - [~] **9.2** `POST /api/invite` using `createAdminClient` (service role, server-only) — assign `role` + `country_code`.
-- [ ] **9.3** Enforce invite route is HQ-admin-only + `userInviteSchema` validation.
+- [x] **9.3** Invite route enforces HQ-admin-only (`actor?.role !== "hq_admin"` → 403) + `inviteUserSchema.safeParse` validation; writes an explicit `audit_log` entry for the acting admin (BUS-2). — `api/invite/route.ts`
 - [~] **9.4** Audit log page scaffold (`audit/page.tsx`).
 - [ ] **9.5** Audit view: HQ-admin-only, immutable list of actor/action/table/record/diff/time, paginated.
 - [ ] **9.6** UI hides actions a user can't perform (never relied on for security — RLS is source of truth).
@@ -116,9 +118,9 @@
 - [~] **11.1** RLS integration tests with two seeded users (1 `hq_admin`, 1 `country_manager` MY) asserting cross-country returns empty/denied (`tests/rls.test.ts`).
 - [ ] **11.2** Extend RLS tests to child tables (circuits, devices, ip/vlan, vpn, recorders, cameras, maintenance) + `audit_log` (HQ-only read).
 - [ ] **11.3** Audit-log immutability test: caller cannot update/delete `audit_log`.
-- [ ] **11.4** Zod/secrets-guard unit tests (secret patterns blocked on save).
+- [x] **11.4** Zod/secrets-guard unit tests — `tests/secrets.test.ts` (7), `tests/validation.test.ts` (13), `tests/format.test.ts` (13); 33 passed on 2026-07-16.
 - [ ] **11.5** Search RLS test: `country_manager` search never returns other-country rows.
-- [ ] **11.6** Run CLAUDE.md QA audits (Security, Code Quality, Runtime, Business Logic, Compliance/a11y, Robustness) and file into the respective `*-AUDIT.md`.
+- [x] **11.6** QA audits filed + reconciled — `SEC-AUDIT.md`, `CODE-AUDIT.md`, `BUS-AUDIT.md`, `ROB-AUDIT.md` (Security, Code Quality, Business Logic, Robustness). Remediations verified against code 2026-07-16. Runtime and Compliance/a11y audits not yet run.
 
 ## Phase 12 — Deployment readiness
 
