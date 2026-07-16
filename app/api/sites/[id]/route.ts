@@ -2,50 +2,92 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { siteSchema } from "@/lib/validation/site";
+import { dbErrorResponse } from "@/lib/api/db-error";
+import { classifyGuardedUpdate, CONFLICT_MESSAGE } from "@/lib/api/optimistic";
 import type { Database } from "@/lib/types/database";
 
 /**
  * Edit or archive/restore a single site (PRD Story 1). RLS scopes which rows the
  * caller may touch. Archiving is a soft delete (`archived_at`) — there are no
  * hard deletes of referenced records; child rows inherit visibility via the site.
+ *
+ * BUS-6: a field edit may carry `expected_updated_at` (the value the client last
+ * read). When present the update is guarded with optimistic concurrency so a
+ * concurrent change is reported as `409` instead of being silently clobbered.
+ * Archive/restore omits it on purpose — an idempotent toggle can't lose data.
  */
-const patchSchema = siteSchema
-  .partial()
-  .extend({ archived: z.boolean().optional() });
+const patchSchema = siteSchema.partial().extend({
+  archived: z.boolean().optional(),
+  expected_updated_at: z.string().min(1).optional(),
+});
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-  if (!z.string().uuid().safeParse(id).success) {
-    return NextResponse.json({ error: "Invalid site id" }, { status: 400 });
-  }
+  try {
+    const { id } = await params;
+    if (!z.string().uuid().safeParse(id).success) {
+      return NextResponse.json({ error: "Invalid site id" }, { status: 400 });
+    }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const parsed = patchSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid payload" },
-      { status: 400 },
-    );
-  }
+    const parsed = patchSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid payload" },
+        { status: 400 },
+      );
+    }
 
-  const { archived, ...fields } = parsed.data;
-  const patch: Database["public"]["Tables"]["sites"]["Update"] = { ...fields };
-  if (archived !== undefined) {
-    patch.archived_at = archived ? new Date().toISOString() : null;
-  }
-  if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
-  }
+    const { archived, expected_updated_at, ...fields } = parsed.data;
+    const patch: Database["public"]["Tables"]["sites"]["Update"] = { ...fields };
+    if (archived !== undefined) {
+      patch.archived_at = archived ? new Date().toISOString() : null;
+    }
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+    }
 
-  const { error } = await supabase.from("sites").update(patch).eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ ok: true });
+    // BUS-6: guard on the last-read updated_at when the client supplied it.
+    let update = supabase.from("sites").update(patch).eq("id", id);
+    if (expected_updated_at) update = update.eq("updated_at", expected_updated_at);
+    const { data: updated, error } = await update.select("id");
+    if (error) return dbErrorResponse(error, `PATCH /sites/${id}`);
+
+    // A guarded update touching 0 rows is ambiguous: concurrent change vs. the
+    // row being gone / invisible under RLS. Re-read visibility to tell them apart.
+    const updatedCount = updated?.length ?? 0;
+    let rowVisible = true;
+    if (expected_updated_at && updatedCount === 0) {
+      const { data: current } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("id", id)
+        .maybeSingle();
+      rowVisible = Boolean(current);
+    }
+
+    const outcome = classifyGuardedUpdate({
+      guarded: Boolean(expected_updated_at),
+      updatedCount,
+      rowVisible,
+    });
+    if (outcome === "conflict") {
+      return NextResponse.json({ error: CONFLICT_MESSAGE }, { status: 409 });
+    }
+    if (outcome === "not_found") {
+      return NextResponse.json({ error: "Site not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[route-error] PATCH /sites/[id]:", err);
+    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+  }
 }

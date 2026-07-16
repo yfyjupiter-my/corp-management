@@ -21,15 +21,17 @@ export default async function EditSitePage({
   const { data: site } = await supabase
     .from("sites")
     .select(
-      "id, country_code, name, address, timezone, currency, contact_name, contact_phone, contact_email, notes",
+      "id, updated_at, country_code, name, address, timezone, currency, contact_name, contact_phone, contact_email, notes",
     )
     .eq("id", id)
     .single();
   if (!site) notFound();
 
-  // Map DB nulls to the form's optional strings.
-  const initial: SiteInput & { id: string } = {
+  // Map DB nulls to the form's optional strings. `updated_at` rides along for
+  // BUS-6 optimistic concurrency — the form echoes it back on save.
+  const initial: SiteInput & { id: string; updated_at: string } = {
     id: site.id,
+    updated_at: site.updated_at,
     country_code: site.country_code,
     name: site.name,
     address: site.address ?? undefined,

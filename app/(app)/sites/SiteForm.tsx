@@ -14,7 +14,11 @@ import { Button } from "@/components/ui/Button";
  * is easy to RLS-test. Selecting a country pre-fills its IANA timezone + currency
  * (finalize.md Part B), which the user can still override.
  */
-export function SiteForm({ site }: { site?: SiteInput & { id: string } }) {
+export function SiteForm({
+  site,
+}: {
+  site?: SiteInput & { id: string; updated_at?: string };
+}) {
   const router = useRouter();
   const isEdit = Boolean(site);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -48,7 +52,11 @@ export function SiteForm({ site }: { site?: SiteInput & { id: string } }) {
     const res = await fetch(isEdit ? `/api/sites/${site!.id}` : "/api/sites", {
       method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      // BUS-6: echo the updated_at we loaded so the server can reject a save that
+      // would clobber a concurrent change (409 → shown in serverError below).
+      body: JSON.stringify(
+        isEdit ? { ...values, expected_updated_at: site!.updated_at } : values,
+      ),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));

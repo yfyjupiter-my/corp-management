@@ -10,7 +10,7 @@
 > Update the checkboxes as work completes. Ignore `wireframe.html`, `themes.html`, `mockup.html`.
 > Definition of done for any data-facing task: shared Zod validation runs, RLS scopes the query, and the change is visible in the relevant list/dashboard.
 >
-> **2026-07-16 reconciliation:** QA audits (SEC/CODE/BUS/ROB) reconciled against the actual code — every remediation `[x]` in the `*-AUDIT.md` files is backed by real implementation. **SEC-5 (rate limiting) now implemented** (`lib/api/rate-limit.ts`, in-memory sliding window on all mutation routes); only BUS-6 (optimistic concurrency) remains owner-deferred. Unit suite verified green: **39 passed** (`secrets`/`format`/`validation`/`rate-limit`), 4 RLS integration tests skipped (need live Supabase env).
+> **2026-07-16 reconciliation:** QA audits (SEC/CODE/BUS/ROB) reconciled against the actual code — every remediation `[x]` in the `*-AUDIT.md` files is backed by real implementation. **All audit items now resolved:** SEC-5 (rate limiting, `lib/api/rate-limit.ts`) and BUS-6 (optimistic concurrency on the site edit PATCH, `lib/api/optimistic.ts`) are implemented; no audit items remain deferred. Unit suite verified green: **43 passed** (`secrets`/`format`/`validation`/`rate-limit`/`optimistic`), 4 RLS integration tests skipped (need live Supabase env).
 
 ---
 
