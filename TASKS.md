@@ -77,12 +77,12 @@
 - [x] **5.4** Maintenance logs: `maintenanceLogSchema`, polymorphic log-event form + `POST /api/maintenance-logs` (date, action, performed_by, next_due) on `target_table`/`target_id`. One combined RLS-scoped picker spans devices + recorders + cameras (encoded `table:id`, split on submit). — `cctv/maintenance/new/*`, `api/maintenance-logs/route.ts`
 - [x] **5.5** Retention-below-minimum flag: `isBelowRetention` compares recorder `retention_days` to the effective minimum — per-country `country_settings.min_retention_days` (joined via recorder→site), falling back to the company default (30). Surfaced as a danger chip in the recorders table + a KPI. Null retention not flagged. — `lib/utils/cctv.ts`, `cctv/page.tsx`, `tests/cctv.test.ts`
 
-## Phase 6 — Dashboard & country cards (Story 3 & 5)
+## Phase 6 — Dashboard & country cards (Story 3 & 5) — ✅ done
 
-- [~] **6.1** Landing dashboard scaffold (`dashboard/page.tsx`).
-- [ ] **6.2** Per-country cards: site count, device count, camera health (active/faulty), circuits expiring ≤90d, stale records (past review cycle).
-- [ ] **6.3** CCTV totals + retention-below-minimum flag surfaced on dashboard/country view.
-- [ ] **6.4** Stale computation uses `country_settings.review_cycle_months` (default 6) not a hardcoded value.
+- [x] **6.1** Landing dashboard: global KPI row + per-country cards + attention panels (retention, renewals), RLS-scoped (country managers see only their country). — `dashboard/page.tsx`
+- [x] **6.2** Per-country cards: site count, device count, camera health (active/total + faulty), circuits expiring ≤90d, stale records (past review cycle). Camera→country resolved via camera→recorder→site; card title deep-links to `countries/[code]`. — `dashboard/page.tsx`
+- [x] **6.3** CCTV totals (recorders/cameras per country) + retention-below-minimum surfaced as a per-country danger chip and a global attention panel. — `dashboard/page.tsx`
+- [x] **6.4** Stale computation uses per-country `country_settings.review_cycle_months` (fallback `DEFAULT_REVIEW_CYCLE_MONTHS`=6), not a hardcoded value. — `reviewMonthsFor()` in `dashboard/page.tsx`
 
 ## Phase 7 — Global search (Story 5)
 
@@ -91,11 +91,11 @@
 - [~] **7.3** Search page: query box → grouped-by-type results (`search/page.tsx`, `hrefFor` deep-links per type). <500ms budget on <10k dataset not yet measured.
 - [x] **7.4** Empty/short-query, no-results, and RPC-failure states all handled (`search/page.tsx` — <2 chars, "No matches", "temporarily unavailable" per ROB-4).
 
-## Phase 8 — Renewals view (Story 6)
+## Phase 8 — Renewals view (Story 6) — ✅ done
 
-- [~] **8.1** Renewals page scaffold (`renewals/page.tsx`).
-- [ ] **8.2** Query `isp_circuits.contract_end` + `network_devices.warranty_end` within 30/60/90 window, sorted asc, filterable by country.
-- [ ] **8.3** Window selector + country filter UI wired.
+- [x] **8.1** Renewals page scaffold (`renewals/page.tsx`).
+- [x] **8.2** Query `isp_circuits.contract_end` + `network_devices.warranty_end` within 30/60/90 window, sorted asc, filterable by country. Country resolved through parent site (circuit/device → `site_id` → `country_code`); RLS-scoped queries + ROB-5 `.error` guard degrades to a "temporarily unavailable" state. — `renewals/page.tsx`
+- [x] **8.3** Window selector + country filter UI wired. Window pills (30/60/90) and country pills (HQ sees All + 4 codes; a country manager sees only their own) both preserve the other filter via `withCountry()`; a Country column added to the table. — `renewals/page.tsx`
 
 ## Phase 9 — Roles, audit view & user management (Story 4)
 
