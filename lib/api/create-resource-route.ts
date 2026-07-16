@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/types/database";
 import { dbErrorResponse } from "./db-error";
+import { writeLimiter, rateLimitResponse } from "./rate-limit";
 
 type TableName = keyof Database["public"]["Tables"];
 
@@ -28,6 +29,12 @@ export function createResourceRoute<T extends TableName>(
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+      // SEC-5: cap writes per user. Keyed by user id (auth-gated above), so no
+      // spoofable-header trust. Namespaced by table so one resource's bursts
+      // don't exhaust another's budget.
+      const rl = writeLimiter.check(`create:${String(table)}:${user.id}`);
+      if (!rl.ok) return rateLimitResponse(rl);
 
       const parsed = schema.safeParse(await request.json().catch(() => null));
       if (!parsed.success) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { dbErrorResponse } from "@/lib/api/db-error";
+import { writeLimiter, rateLimitResponse } from "@/lib/api/rate-limit";
 
 /**
  * "Verify — still accurate" action (PRD Story 2 / finalize.md — Common columns).
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // SEC-5: rate-limit verify stamps per user (shares the write budget).
+    const rl = writeLimiter.check(`verify:${user.id}`);
+    if (!rl.ok) return rateLimitResponse(rl);
 
     const parsed = bodySchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {

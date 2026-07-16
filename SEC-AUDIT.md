@@ -43,7 +43,7 @@ Notes: `containsPossibleSecret` blocks password-like text before write. The `[A-
 Item: No rate limiting on auth + write endpoints
 Verdict: ⚠️ Needs action
 Notes: `/api/invite`, `/api/verify`, `/api/devices`, `/api/sites`, login, and forgot-password have no rate limiting. Supabase Auth has some built-in throttling, but app routes do not, allowing brute force / enumeration / abuse.
-- [ ] SEC-5: **Deferred** (owner decision, 2026-07-14). Relies on Supabase Auth's built-in throttling for now; app-level rate limiting (Upstash/Vercel KV) to be added before a public/production launch. No infra dependency introduced yet.
+- [x] SEC-5: Added an in-memory sliding-window rate limiter (`lib/api/rate-limit.ts`) applied to every authenticated mutation route — create (`createResourceRoute`), `/api/verify` (write budget: 60/min per user), and `/api/invite` (tighter 10/min per admin, since each call emails). Returns `429` + `Retry-After`; keyed by authenticated user id (no spoofable-header trust). Covered by `tests/rate-limit.test.ts` (6 tests). **Scope note:** limiter is per-process (matches the single-container Docker target); swap the shared instances for a distributed store if scaling to multiple instances / serverless. Login + forgot-password are client-side calls to Supabase Auth and remain covered by its built-in per-IP throttling, not this limiter.
 
 Item: Verify route table allow-list
 Verdict: ✅ Correct

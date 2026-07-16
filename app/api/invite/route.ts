@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inviteUserSchema } from "@/lib/validation/user";
 import { dbErrorResponse } from "@/lib/api/db-error";
+import { inviteLimiter, rateLimitResponse } from "@/lib/api/rate-limit";
 
 /**
  * Invite a user (PRD Story 4). HQ admin only.
@@ -17,6 +18,11 @@ export async function POST(request: Request) {
     if (actor?.role !== "hq_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    // SEC-5: tighter limit — each invite sends an email, so unthrottled calls
+    // enable email bombing / user enumeration. Keyed by the acting admin.
+    const rl = inviteLimiter.check(`invite:${actor.id}`);
+    if (!rl.ok) return rateLimitResponse(rl);
 
     const parsed = inviteUserSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
