@@ -52,7 +52,7 @@
 - [x] **3.1** Sites list page grouped by country with per-country site count; archived hidden by default (`?archived=1` toggle). — `app/(app)/sites/page.tsx`
 - [x] **3.2** `siteSchema` (Zod) — country, name, address, timezone (IANA default per country), contact fields, notes, currency default by country. — `lib/validation/site.ts`
 - [x] **3.3** Site create form (RHF + Zod resolver, country → TZ/currency prefill) + `POST /api/sites` route (RLS-scoped insert). — `sites/SiteForm.tsx`, `sites/new/page.tsx`, `api/sites/route.ts`
-- [x] **3.4** Site edit + archive/restore (`archived_at` soft delete, no hard delete). — `sites/[id]/edit/page.tsx`, `sites/ArchiveButton.tsx`, `api/sites/[id]/route.ts`
+- [x] **3.4** Site edit + archive/restore (`archived_at` soft delete, no hard delete). Edit PATCH now uses `updated_at`-based optimistic concurrency (BUS-6 → `409` on concurrent change) and routes DB errors through `dbErrorResponse` + try/catch. — `sites/[id]/edit/page.tsx`, `sites/SiteForm.tsx`, `sites/ArchiveButton.tsx`, `api/sites/[id]/route.ts`, `lib/api/optimistic.ts`
 - [x] **3.5** Site detail page: child inventory (circuits, devices, IP scheme, VPN, recorders) + verify/edit/archive actions + `last_verified_at`. — `sites/[id]/page.tsx`
 - [x] **3.6** Country view `countries/[code]` — fixed "New site" link (→ `/sites/new`), site names link to detail; added "Sites" sidebar nav.
 
