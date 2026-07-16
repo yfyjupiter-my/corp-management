@@ -97,14 +97,14 @@
 - [x] **8.2** Query `isp_circuits.contract_end` + `network_devices.warranty_end` within 30/60/90 window, sorted asc, filterable by country. Country resolved through parent site (circuit/device → `site_id` → `country_code`); RLS-scoped queries + ROB-5 `.error` guard degrades to a "temporarily unavailable" state. — `renewals/page.tsx`
 - [x] **8.3** Window selector + country filter UI wired. Window pills (30/60/90) and country pills (HQ sees All + 4 codes; a country manager sees only their own) both preserve the other filter via `withCountry()`; a Country column added to the table. — `renewals/page.tsx`
 
-## Phase 9 — Roles, audit view & user management (Story 4)
+## Phase 9 — Roles, audit view & user management (Story 4) — ✅ done
 
-- [~] **9.1** Users page + `InviteForm` scaffold.
-- [~] **9.2** `POST /api/invite` using `createAdminClient` (service role, server-only) — assign `role` + `country_code`.
+- [x] **9.1** Users page + `InviteForm` — HQ-admin-only (redirect-gated), profiles list (name/role/country/added) + invite panel. — `users/page.tsx`, `users/InviteForm.tsx`
+- [x] **9.2** `POST /api/invite` using `createAdminClient` (service role, server-only) — assigns `role` + `country_code`, invite email + profile insert with auth-user rollback on failure. — `api/invite/route.ts`
 - [x] **9.3** Invite route enforces HQ-admin-only (`actor?.role !== "hq_admin"` → 403) + `inviteUserSchema.safeParse` validation; writes an explicit `audit_log` entry for the acting admin (BUS-2). — `api/invite/route.ts`
-- [~] **9.4** Audit log page scaffold (`audit/page.tsx`).
-- [ ] **9.5** Audit view: HQ-admin-only, immutable list of actor/action/table/record/diff/time, paginated.
-- [ ] **9.6** UI hides actions a user can't perform (never relied on for security — RLS is source of truth).
+- [x] **9.4** Audit log page (`audit/page.tsx`) — HQ-admin-only, redirect-gated.
+- [x] **9.5** Audit view: HQ-admin-only, immutable list of actor/action/table/record/**diff**/time, **paginated** (50/page, `?page=N`, exact count + Newer/Older links). Diff rendered via expandable `DiffCell` (changed-field names inline, raw JSON on expand); actor UUIDs resolved to profile names on the visible page; `.error` guard degrades to "temporarily unavailable". — `audit/page.tsx`, `audit/DiffCell.tsx`
+- [x] **9.6** UI hides actions a user can't perform (never relied on for security — RLS is source of truth): sidebar hides the Administration group (Users/Audit) for non-HQ (`Sidebar.tsx` `isHq`); both admin pages redirect non-HQ to `/dashboard`; Countries nav scoped to the manager's own country. Country managers' create/edit/verify/archive stay visible (RLS permits within their country).
 
 ## Phase 10 — Cross-cutting concerns
 

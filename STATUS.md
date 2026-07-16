@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-16 (Phase 8) |
+| **Last updated** | 2026-07-16 (Phase 9) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · unit tests **49 passed**, 4 RLS integration skipped (need live Supabase env) |
 
@@ -21,14 +21,22 @@
 | 6 | Dashboard & country cards | ✅ **Done** | Global KPIs + per-country cards (sites/devices/camera health/circuits ≤90d/stale), retention chips, renewals panel; staleness driven by per-country `review_cycle_months`. |
 | 7 | Global search (Story 5) | 🚧 Partial | RLS-scoped `search_registry` RPC + page done; perf budget unmeasured. |
 | 8 | Renewals view (Story 6) | ✅ **Done** | 30/60/90 window + country filter wired; country resolved via site; RLS-scoped with ROB-5 error guard. |
-| 9 | Roles, audit view & users | 🚧 Partial | Invite route hardened (HQ-only, audited); audit-log view + user mgmt pending. |
+| 9 | Roles, audit view & users | ✅ **Done** | Users page + invite (HQ-only, audited); paginated audit view with expandable diff + actor names; nav/page gating (9.6). |
 | 10 | Cross-cutting concerns | 🚧 Ongoing | Secrets guard, verify, formatters in place; money/currency display, 50-row caps, 403/not-found sweep pending. |
 | 11 | Testing & QA | 🚧 Partial | Unit + secrets/format/validation green; RLS integration + audit-immutability tests pending live env. |
 | 12 | Deployment readiness | ◻ Todo | Docker image build, staging/prod projects, CI, pen-test pending. |
 
 Legend: ✅ done · 🚧 partial/in-progress · ◻ scaffold/todo
 
-## What shipped in the last pass (2026-07-16) — Phase 8 (Renewals)
+## What shipped in the last pass (2026-07-16) — Phase 9 (Roles, audit & users)
+
+- **Audit view (9.5)** — `audit/page.tsx` is now paginated (50/page via `?page=N`, exact count, Newer/Older links) and shows the **diff** column. `audit/DiffCell.tsx` (client) renders changed-field names inline and expands to the raw JSON. Actor UUIDs are resolved to profile names for the rows on the visible page (best-effort). A `.error` guard degrades to "temporarily unavailable".
+- **Users & invite (9.1–9.3)** — confirmed complete: HQ-only redirect-gated users list + `InviteForm`; hardened `POST /api/invite` (service-role, 403 for non-HQ, Zod validation, auth-user rollback, explicit BUS-2 audit entry).
+- **UI action gating (9.6)** — sidebar hides the Administration group for non-HQ; both admin pages redirect non-HQ to `/dashboard`; Countries nav scoped to the manager's own country. RLS remains the security boundary; UI gating is convenience only.
+
+**Verification:** static only — `tsc` ✅, `next lint` ✅ (0). Not yet driven live in-app (recommended smoke: log in as HQ, page through the audit log + expand a diff; log in as a country manager, confirm Users/Audit nav and pages are inaccessible).
+
+## Earlier pass (2026-07-16) — Phase 8 (Renewals)
 
 - **Renewals view (8.2/8.3)** — `renewals/page.tsx` lists ISP `contract_end` + device `warranty_end` within a 30/60/90-day window, soonest-first. Country is resolved through the parent site (circuit/device → `site_id` → `country_code`) and shown as a new table column.
 - **Filters** — window pills (30/60/90) + country pills; HQ sees "All countries" + the four codes, a country manager sees only their own (RLS already scopes the data). Each pill preserves the other filter via `withCountry()`.
@@ -55,11 +63,11 @@ Legend: ✅ done · 🚧 partial/in-progress · ◻ scaffold/todo
 
 **Verification:** static only — `tsc` + `lint` + unit tests (49 passed) + code review. Not yet driven live in the running app (recommended smoke test: create/edit/verify a recorder + camera, log a maintenance event, confirm a low-retention recorder is flagged against the hosted project).
 
-## Next up — Phase 9 (Roles, audit view & user management, Story 4)
+## Next up — Phase 10 (cross-cutting) + Phase 7 tail
 
-1. Audit-log view (9.4/9.5): HQ-admin-only immutable list of actor/action/table/record/diff/time, paginated.
-2. Users page + `InviteForm` (9.1) finish; invite route already hardened (9.3).
-3. (Phase 7 search perf budget also remains unmeasured.)
+1. Phase 10: apply secrets guard across all mutation schemas (10.2), per-site currency display (10.5), 50-row caps sweep (10.6), 403/not-found sweep (10.7).
+2. Phase 7: measure search perf budget (<500ms on <10k) — 7.1/7.3 remain `~`.
+3. Phase 11/12: RLS integration tests on live env, Docker image build, CI.
 
 ## Known deferrals / caveats
 
