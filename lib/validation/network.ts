@@ -61,7 +61,13 @@ export type VlanInput = z.infer<typeof vlanSchema>;
 export const vpnLinkSchema = z.object({
   site_id: z.string().uuid(),
   peer: optionalString(120),
-  peer_site_id: z.string().uuid().optional(),
+  // Empty select → undefined (stored NULL); uuid rejects "" so the union falls
+  // through to the empty-literal branch (see common.ts note on this idiom).
+  peer_site_id: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
   tunnel_type: optionalString(60),
   status: z.enum(VPN_STATUSES),
   notes: optionalSafeText(1000),

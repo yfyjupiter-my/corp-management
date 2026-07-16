@@ -79,7 +79,20 @@ select
   (select count(*) from cctv_cameras)     as cameras;
 ```
 
-Sign-up is invite-only, so create your first login via **Authentication → Users → Add user**.
+### Invite-only auth (disable public sign-up)
+
+This app has **no public sign-up flow** — users are provisioned by an HQ admin via the
+invite route. Lock the project down to match:
+
+1. **Authentication → Providers → Email** — turn **off** *"Allow new users to sign up"*.
+   With it on, anyone could self-register and land without a `profiles` row (and thus
+   no RLS scope). RLS still denies them every row, but disabling sign-up removes the
+   dead-end accounts entirely.
+2. **Authentication → URL Configuration** — set the **Site URL** and add the
+   `/auth/callback` redirect URL (matches `NEXT_PUBLIC_SITE_URL`) so invite and
+   password-reset links resolve.
+
+Create your first login via **Authentication → Users → Add user**.
 
 ## Project structure
 

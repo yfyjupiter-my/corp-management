@@ -9,6 +9,7 @@ import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { VerifyButton } from "@/components/ui/VerifyButton";
+import { CredentialRef } from "@/components/ui/CredentialRef";
 import { ArchiveButton } from "../ArchiveButton";
 import { isStale, formatDate, formatMoney } from "@/lib/utils/format";
 
@@ -33,7 +34,7 @@ export default async function SiteDetailPage({
 
   const [circuits, devices, ipSchemes, vpnLinks, recorders] = await Promise.all([
     supabase.from("isp_circuits").select("id, provider, circuit_id, type, contract_end, monthly_cost").eq("site_id", id).order("provider"),
-    supabase.from("network_devices").select("id, device_type, brand, model, hostname, mgmt_ip").eq("site_id", id).order("hostname"),
+    supabase.from("network_devices").select("id, device_type, brand, model, hostname, mgmt_ip, credential_ref").eq("site_id", id).order("hostname"),
     supabase.from("ip_schemes").select("id, subnet, gateway, dns").eq("site_id", id).order("subnet"),
     supabase.from("vpn_links").select("id, peer, tunnel_type, status").eq("site_id", id).order("peer"),
     supabase.from("cctv_recorders").select("id, brand, model, channels, retention_days, location").eq("site_id", id).order("location"),
@@ -112,7 +113,7 @@ export default async function SiteDetailPage({
         <ChildPanel title="Network devices" count={devices.data?.length} href="/network">
           {devices.data?.length ? (
             <Table>
-              <Thead columns={["Hostname", "Type", "Model", "Mgmt IP"]} />
+              <Thead columns={["Hostname", "Type", "Model", "Mgmt IP", "Credential"]} />
               <tbody>
                 {devices.data.map((d) => (
                   <Tr key={d.id}>
@@ -120,6 +121,7 @@ export default async function SiteDetailPage({
                     <Td><span className="capitalize">{d.device_type}</span></Td>
                     <Td>{d.brand} {d.model}</Td>
                     <Td mono>{d.mgmt_ip ?? "—"}</Td>
+                    <Td><CredentialRef value={d.credential_ref} /></Td>
                   </Tr>
                 ))}
               </tbody>

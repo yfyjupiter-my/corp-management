@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { networkDeviceSchema, type NetworkDeviceInput } from "@/lib/validation/network";
-import { DEVICE_TYPES, type DeviceType } from "@/lib/constants/enums";
+import { recorderSchema, type RecorderInput } from "@/lib/validation/cctv";
 import { Button } from "@/components/ui/Button";
 
 interface Site {
@@ -18,73 +17,69 @@ interface Site {
  * Existing row for edit mode — the RLS-scoped Supabase select shape (nullable
  * columns) plus the id and last-read `updated_at` used for the BUS-6 guard.
  */
-export interface DeviceEditValues {
+export interface RecorderEditValues {
   id: string;
   updated_at: string;
   site_id: string;
-  device_type: DeviceType;
   brand: string | null;
   model: string | null;
-  hostname: string | null;
-  mgmt_ip: string | null;
+  channels: number | null;
+  storage_tb: number | null;
+  retention_days: number | null;
   firmware: string | null;
-  serial: string | null;
-  install_date: string | null;
-  warranty_end: string | null;
-  credential_ref: string | null;
+  mgmt_ip: string | null;
+  location: string | null;
   notes: string | null;
 }
 
 /**
- * Client form (React Hook Form + Zod) for creating OR editing a network device.
- * Create → `POST /api/devices`; edit → `PATCH /api/devices/[id]` carrying the
+ * Client form (React Hook Form + Zod) for creating OR editing a CCTV recorder.
+ * Create → `POST /api/recorders`; edit → `PATCH /api/recorders/[id]` carrying the
  * last-read `updated_at` for BUS-6 optimistic concurrency (409 on a concurrent
  * change). The Zod schema shared with the server also runs the secrets guard.
  */
-export function DeviceForm({ sites, device }: { sites: Site[]; device?: DeviceEditValues }) {
+export function RecorderForm({ sites, recorder }: { sites: Site[]; recorder?: RecorderEditValues }) {
   const router = useRouter();
-  const isEdit = Boolean(device);
+  const isEdit = Boolean(recorder);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<NetworkDeviceInput>({
-    resolver: zodResolver(networkDeviceSchema),
-    defaultValues: device
+  } = useForm<RecorderInput>({
+    resolver: zodResolver(recorderSchema),
+    defaultValues: recorder
       ? {
-          site_id: device.site_id,
-          device_type: device.device_type ?? "router",
-          brand: device.brand ?? undefined,
-          model: device.model ?? undefined,
-          hostname: device.hostname ?? undefined,
-          mgmt_ip: device.mgmt_ip ?? undefined,
-          firmware: device.firmware ?? undefined,
-          serial: device.serial ?? undefined,
-          install_date: device.install_date ?? undefined,
-          warranty_end: device.warranty_end ?? undefined,
-          credential_ref: device.credential_ref ?? undefined,
-          notes: device.notes ?? undefined,
+          site_id: recorder.site_id,
+          brand: recorder.brand ?? undefined,
+          model: recorder.model ?? undefined,
+          channels: recorder.channels ?? undefined,
+          storage_tb: recorder.storage_tb ?? undefined,
+          retention_days: recorder.retention_days ?? undefined,
+          firmware: recorder.firmware ?? undefined,
+          mgmt_ip: recorder.mgmt_ip ?? undefined,
+          location: recorder.location ?? undefined,
+          notes: recorder.notes ?? undefined,
         }
-      : { device_type: "router" },
+      : undefined,
   });
 
-  async function onSubmit(values: NetworkDeviceInput) {
+  async function onSubmit(values: RecorderInput) {
     setServerError(null);
-    const res = await fetch(isEdit ? `/api/devices/${device!.id}` : "/api/devices", {
+    const res = await fetch(isEdit ? `/api/recorders/${recorder!.id}` : "/api/recorders", {
       method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
-        isEdit ? { ...values, expected_updated_at: device!.updated_at } : values,
+        isEdit ? { ...values, expected_updated_at: recorder!.updated_at } : values,
       ),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save device.");
+      setServerError(body.error ?? "Could not save recorder.");
       return;
     }
-    router.push("/network");
+    router.push("/cctv");
     router.refresh();
   }
 
@@ -101,50 +96,37 @@ export function DeviceForm({ sites, device }: { sites: Site[]; device?: DeviceEd
             ))}
           </select>
         </Field>
-        <Field label="Type" required error={errors.device_type?.message}>
-          <select className="fld" {...register("device_type")}>
-            {DEVICE_TYPES.map((t) => (
-              <option key={t} value={t} className="capitalize">
-                {t}
-              </option>
-            ))}
-          </select>
+        <Field label="Location" error={errors.location?.message}>
+          <input className="fld" {...register("location")} placeholder="Server room" />
         </Field>
 
         <Field label="Brand" error={errors.brand?.message}>
-          <input className="fld" {...register("brand")} placeholder="Fortinet" />
+          <input className="fld" {...register("brand")} placeholder="Hikvision" />
         </Field>
         <Field label="Model" error={errors.model?.message}>
-          <input className="fld" {...register("model")} placeholder="FortiGate 60F" />
+          <input className="fld" {...register("model")} placeholder="DS-7616NI" />
         </Field>
-        <Field label="Hostname" error={errors.hostname?.message}>
-          <input className="fld font-mono" {...register("hostname")} placeholder="kl-fw-01" />
+        <Field label="Firmware" error={errors.firmware?.message}>
+          <input className="fld" {...register("firmware")} placeholder="4.31.005" />
+        </Field>
+
+        <Field label="Channels" error={errors.channels?.message}>
+          <input className="fld" type="number" min="1" step="1" {...register("channels")} placeholder="16" />
+        </Field>
+        <Field label="Storage (TB)" error={errors.storage_tb?.message}>
+          <input className="fld" type="number" min="0" step="0.1" {...register("storage_tb")} placeholder="8" />
+        </Field>
+        <Field
+          label="Retention (days)"
+          error={errors.retention_days?.message}
+          help="Flagged if below the country minimum."
+        >
+          <input className="fld" type="number" min="0" step="1" {...register("retention_days")} placeholder="30" />
         </Field>
 
         <Field label="Management IP" error={errors.mgmt_ip?.message}>
-          <input className="fld font-mono" {...register("mgmt_ip")} placeholder="10.10.0.1" />
+          <input className="fld font-mono" {...register("mgmt_ip")} placeholder="10.10.0.20" />
         </Field>
-        <Field label="Firmware" error={errors.firmware?.message}>
-          <input className="fld" {...register("firmware")} placeholder="7.4.3" />
-        </Field>
-        <Field label="Serial" error={errors.serial?.message}>
-          <input className="fld font-mono" {...register("serial")} placeholder="FG60F-…" />
-        </Field>
-
-        <Field label="Install date" error={errors.install_date?.message}>
-          <input className="fld" type="date" {...register("install_date")} />
-        </Field>
-        <Field label="Warranty end" error={errors.warranty_end?.message}>
-          <input className="fld" type="date" {...register("warranty_end")} />
-        </Field>
-        <Field
-          label="Credential reference"
-          error={errors.credential_ref?.message}
-          help="Link to your password manager entry — never paste the actual secret."
-        >
-          <input className="fld" {...register("credential_ref")} placeholder="vault://it/kl-fw-01" />
-        </Field>
-
         <Field label="Notes" error={errors.notes?.message} span2>
           <textarea className="fld min-h-[64px]" {...register("notes")} />
         </Field>
@@ -159,7 +141,7 @@ export function DeviceForm({ sites, device }: { sites: Site[]; device?: DeviceEd
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save device"}
+          {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save recorder"}
         </Button>
       </div>
 

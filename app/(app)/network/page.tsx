@@ -5,6 +5,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
+import { VerifyButton } from "@/components/ui/VerifyButton";
 import { isStale, formatDate } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
@@ -36,9 +37,21 @@ export default async function NetworkPage() {
         title="Network"
         subtitle="ISP circuits, routers, firewalls, switches, and access points."
         actions={
-          <Link href="/network/new">
-            <Button sm>+ New device</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/network/circuits/new">
+              <Button sm variant="ghost">
+                + Circuit
+              </Button>
+            </Link>
+            <Link href="/network/vpn/new">
+              <Button sm variant="ghost">
+                + VPN link
+              </Button>
+            </Link>
+            <Link href="/network/new">
+              <Button sm>+ New device</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -49,7 +62,9 @@ export default async function NetworkPage() {
             <PanelEmpty>No network devices recorded yet.</PanelEmpty>
           ) : (
             <Table>
-              <Thead columns={["Hostname", "Type", "Model", "Mgmt IP", "Warranty", "Status"]} />
+              <Thead
+                columns={["Hostname", "Type", "Model", "Mgmt IP", "Warranty", "Status", ""]}
+              />
               <tbody>
                 {deviceRows.map((d) => (
                   <Tr key={d.id}>
@@ -68,6 +83,16 @@ export default async function NetworkPage() {
                       ) : (
                         <Chip tone="ok">Fresh</Chip>
                       )}
+                    </Td>
+                    <Td>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/network/${d.id}/edit`}>
+                          <Button sm variant="ghost">
+                            Edit
+                          </Button>
+                        </Link>
+                        <VerifyButton table="network_devices" id={d.id} />
+                      </div>
                     </Td>
                   </Tr>
                 ))}
