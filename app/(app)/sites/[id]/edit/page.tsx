@@ -46,7 +46,7 @@ export default async function EditSitePage({
   return (
     <>
       <PageHead eyebrow="Sites" title={`Edit · ${site.name}`} subtitle="Update site details." />
-      <Panel className="max-w-3xl">
+      <Panel>
         <PanelHeader title="Site details" />
         <SiteForm site={initial} />
       </Panel>

@@ -45,7 +45,6 @@ export default async function SitesPage({
   return (
     <>
       <PageHead
-        eyebrow="Registry"
         title="Sites"
         subtitle="Offices and infrastructure locations, grouped by country."
         actions={

@@ -60,7 +60,6 @@ export default async function CctvPage() {
   return (
     <>
       <PageHead
-        eyebrow="Module"
         title="CCTV"
         subtitle="Recorders, cameras, retention, and maintenance."
         actions={

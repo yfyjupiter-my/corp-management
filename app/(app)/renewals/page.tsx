@@ -100,7 +100,6 @@ export default async function RenewalsPage({
   return (
     <>
       <PageHead
-        eyebrow="Attention"
         title="Renewals"
         subtitle="ISP contracts and device warranties approaching their end date."
       />

@@ -70,7 +70,7 @@ export function SiteForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-[18px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-[18px]">
         <Field label="Country" required error={errors.country_code?.message}>
           <select
             className="fld"
@@ -108,8 +108,8 @@ export function SiteForm({
           <input className="fld" {...register("contact_email")} placeholder="it.kl@example.com" />
         </Field>
 
-        <Field label="Notes" error={errors.notes?.message} span2>
-          <textarea className="fld min-h-[64px]" {...register("notes")} />
+        <Field label="Notes" error={errors.notes?.message} spanAll>
+          <textarea className="fld min-h-[96px]" {...register("notes")} />
         </Field>
       </div>
 
@@ -142,6 +142,7 @@ function Field({
   error,
   help,
   span2,
+  spanAll,
   children,
 }: {
   label: string;
@@ -149,10 +150,17 @@ function Field({
   error?: string;
   help?: string;
   span2?: boolean;
+  /** Fill the whole row at every breakpoint (2-col md → 3-col xl). */
+  spanAll?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <label className={"flex flex-col gap-1.5" + (span2 ? " md:col-span-2" : "")}>
+    <label
+      className={
+        "flex flex-col gap-1.5" +
+        (spanAll ? " md:col-span-2 xl:col-span-3" : span2 ? " md:col-span-2" : "")
+      }
+    >
       <span className="text-[12px] font-semibold text-fg-muted font-head">
         {label} {required && <span className="text-danger">*</span>}
       </span>

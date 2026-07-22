@@ -16,7 +16,7 @@ export default function NewSitePage() {
         title="New site"
         subtitle="Register an office or infrastructure location. All records hang off a site."
       />
-      <Panel className="max-w-3xl">
+      <Panel>
         <PanelHeader title="Site details" />
         <SiteForm />
       </Panel>

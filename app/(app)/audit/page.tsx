@@ -63,7 +63,6 @@ export default async function AuditPage({
   return (
     <>
       <PageHead
-        eyebrow="Administration"
         title="Audit log"
         subtitle="Every create, update, and delete — immutable, most recent first."
       />

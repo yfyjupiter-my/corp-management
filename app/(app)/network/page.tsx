@@ -33,7 +33,6 @@ export default async function NetworkPage() {
   return (
     <>
       <PageHead
-        eyebrow="Module"
         title="Network"
         subtitle="ISP circuits, routers, firewalls, switches, and access points."
         actions={

@@ -23,7 +23,6 @@ export default async function UsersPage() {
   return (
     <>
       <PageHead
-        eyebrow="Administration"
         title="Users & roles"
         subtitle="Invite users and assign a role and country. Public sign-up is disabled."
       />
