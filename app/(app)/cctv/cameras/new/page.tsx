@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHead } from "@/components/ui/PageHead";
-import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
+import { Panel, PanelEmpty } from "@/components/ui/Panel";
 import { recorderLabel } from "@/lib/utils/cctv";
 import { CameraForm } from "./CameraForm";
 
@@ -21,23 +21,27 @@ export default async function NewCameraPage() {
 
   const options = (recorders ?? []).map((r) => ({ id: r.id, label: recorderLabel(r) }));
 
-  return (
-    <>
-      <PageHead
-        eyebrow="CCTV"
-        title="New camera"
-        subtitle="Register a camera against a recorder."
-      />
-      <Panel className="max-w-3xl">
-        <PanelHeader title="Camera details" />
-        {options.length === 0 ? (
+  // With no recorder to attach to there is nothing to submit, so the heading is
+  // rendered here instead (the form owns it in the normal case, to put
+  // Cancel/Save on the title line).
+  if (options.length === 0) {
+    return (
+      <>
+        <PageHead title="New camera" subtitle="Register a camera against a recorder." />
+        <Panel>
           <PanelEmpty>
             No recorders yet — <Link href="/cctv/recorders/new" className="text-accent">add a recorder</Link> first.
           </PanelEmpty>
-        ) : (
-          <CameraForm recorders={options} />
-        )}
-      </Panel>
-    </>
+        </Panel>
+      </>
+    );
+  }
+
+  return (
+    <CameraForm
+      recorders={options}
+      title="New camera"
+      subtitle="Register a camera against a recorder."
+    />
   );
 }

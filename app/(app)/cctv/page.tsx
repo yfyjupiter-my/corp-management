@@ -6,6 +6,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { VerifyButton } from "@/components/ui/VerifyButton";
 import { DEFAULT_MIN_RETENTION_DAYS } from "@/lib/constants/countries";
 import { isBelowRetention } from "@/lib/utils/cctv";
@@ -61,20 +62,17 @@ export default async function CctvPage() {
     <>
       <PageHead
         title="CCTV"
-        subtitle="Recorders, cameras, retention, and maintenance."
+        subtitle="Recorders, cameras, and retention."
         actions={
-          <div className="flex items-center gap-2">
-            <Link href="/cctv/maintenance/new">
-              <Button sm variant="ghost">
-                + Maintenance
-              </Button>
-            </Link>
-            <Link href="/cctv/cameras/new">
-              <Button sm variant="ghost">
-                + Camera
-              </Button>
-            </Link>
-          </div>
+          <DropdownMenu
+            label="New"
+            sm
+            variant="ghost"
+            items={[
+              { label: "New recorder", href: "/cctv/recorders/new" },
+              { label: "New camera", href: "/cctv/cameras/new" },
+            ]}
+          />
         }
       />
 

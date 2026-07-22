@@ -8,7 +8,59 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — device form actions sit on the title line
+## Latest change (2026-07-22) — maintenance log form removed from CCTV
+
+- Deleted `app/(app)/cctv/maintenance/**` (`page.tsx` + `MaintenanceLogForm.tsx`) and dropped the **+ Maintenance** action from the CCTV dashboard `PageHead`; subtitle is now "Recorders, cameras, and retention." No other UI linked to the route.
+- The CCTV header action is now a `DropdownMenu` (`label="New"`, `sm`, `variant="ghost"`) with **New recorder** → `/cctv/recorders/new` and **New camera** → `/cctv/cameras/new` — same reusable component as the country dashboard, so it also restores the only UI entry point to the recorder create page. `CameraForm`'s create submit label is now **Save** (was "Save camera"; edit still reads "Save changes").
+- Also deleted `app/api/maintenance-logs/route.ts` and `maintenanceLogSchema`/`MaintenanceLogInput` from `lib/validation/cctv.ts` (plus the now-unused `optionalDate` import).
+- Left in place: the `maintenance_logs` table + RLS/audit migrations and `MAINTENANCE_TARGETS` in `lib/constants/enums.ts` (still used by `Database` types). No app code writes maintenance logs now.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **49 passed**, 4 RLS skipped.
+
+## Earlier change (2026-07-22) — camera form adopts the device-form pattern
+
+- `CameraForm` now matches the other forms: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; own `PageHead` inside `<form>` with **Cancel / Save camera** (edit: **Save changes**) in the header actions; fields wrapped in `Panel`. Bottom action bar + audit-log hint gone; server error renders in the actions row. Grid → `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`; `Field` uses the absolute `pb-[17px]` message strip (error wins over help).
+- `cctv/cameras/new/page.tsx`: the **no-recorders empty state** (with its "add a recorder" link) keeps its own `PageHead` + `Panel`/`PanelEmpty`; otherwise the page just renders `<CameraForm …/>`. `cctv/cameras/[id]/edit/page.tsx` is thin and keeps `eyebrow="CCTV"`. Both dropped the "Camera details" `PanelHeader` and `max-w-3xl`; create also dropped its eyebrow.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — maintenance form adopts the device-form pattern
+
+- `MaintenanceLogForm` now matches the other forms: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; own `PageHead` inside `<form>` with **Cancel / Log maintenance** in the header actions; fields wrapped in `Panel`. Bottom action bar + audit-log hint gone; server error renders in the actions row. Grid → `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`; local `Field` gains the absolute `pb-[17px]` message strip (and a `help` slot, unused so far).
+- `cctv/maintenance/new/page.tsx`: the **no-assets empty state** keeps its own `PageHead` + `Panel`/`PanelEmpty` (nothing to submit, so no form/actions); otherwise the page just renders `<MaintenanceLogForm …/>`. Dropped `PanelHeader` ("Maintenance event"), `max-w-3xl`, and `eyebrow="CCTV"`. The `preset` prop is unchanged (still no caller).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — VPN form adopts the device-form pattern
+
+- `VpnForm` now matches `DeviceForm`/`SiteForm`/`CircuitForm`: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; own `PageHead` inside `<form>` with **Cancel / Save VPN link** in the header actions; fields wrapped in `Panel`. Bottom action bar + audit-log hint gone; server error renders in the actions row.
+- Grid → `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`; `Field` uses the absolute `pb-[17px]` help/error strip (error wins). The long **Peer (free-text)** help was split: it now reads "HQ or an external endpoint.", and the pointer to the registry moved onto **Peer site** as its own help ("Use this when the peer is a registered site.") — the strip truncates, so one sentence per field.
+- `network/vpn/new/page.tsx` is thin (fetch → `<VpnForm …/>`); dropped `PageHead`/`Panel`/`PanelHeader`, the "Link details" header, `max-w-3xl`, and `eyebrow="Network"` — full width, title only, like the other create pages.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — circuit form adopts the device-form pattern
+
+- `CircuitForm` now matches `DeviceForm`/`SiteForm`: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; it renders its own `PageHead` inside `<form>` with **Cancel / Save circuit** in the header actions, and wraps the fields in `Panel`. Bottom action bar + the audit-log hint removed; the inline server error moved into the actions row.
+- Grid switched to `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`, and the local `Field` uses the absolutely-positioned `pb-[17px]` help/error strip (error wins over help) so all rows are equal height. The Static IPs help text was shortened to "Comma or space separated." since the strip truncates; the example lives in the placeholder.
+- `network/circuits/new/page.tsx` is thin (fetch → `<CircuitForm …/>`), dropped `PageHead`/`Panel`/`PanelHeader` and the "Circuit details" header. It also **lost `max-w-3xl` and the `eyebrow="Network"`**, matching the other create pages (full width, title only).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — site form adopts the device-form pattern
+
+- `SiteForm` now mirrors `DeviceForm`: new props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; it renders its own `PageHead` **inside** `<form>` with **Cancel / Save site** in the header actions (title line), and wraps the fields in `Panel` itself. The bottom action bar and its "Saving writes an entry to the audit log." note are gone (audit logging itself unchanged).
+- Field layout matched too: single `md:grid-cols-3` grid (was `md:grid-cols-2 xl:grid-cols-3`), `gap-x-4 gap-y-0`, `px/pt-[18px] pb-[1px]`, and the local `Field` renders help/error absolutely inside a fixed `pb-[17px]` strip (error wins over help) so every grid row is equal height. `spanAll` dropped — Notes now uses `span2`, textarea `min-h-[64px]`.
+- `sites/new/page.tsx` and `sites/[id]/edit/page.tsx` are thin: they render `<SiteForm …/>` only, no `PageHead`/`Panel`/`PanelHeader` imports. Edit keeps `eyebrow="Sites"`; create has none. Both stay full width. The "Site details" panel header is gone from both.
+- The inline server error renders in the actions row. Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — new-site page drops its eyebrow
+
+- `app/(app)/sites/new/page.tsx`: removed `eyebrow="Sites"` from `PageHead`; the page now shows just the "New site" title + subtitle. The site **edit** page (`sites/[id]/edit`) keeps its eyebrow. Same trim previously applied to the new-device page.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — Sites back in the sidebar (MODULES)
+
+- `components/layout/Sidebar.tsx`: added a **Sites** entry as the first item of the **MODULES** group (`/sites`, `SitesIcon`, active on `pathname.startsWith("/sites")`). It carries a count badge — the sum of `siteCounts` over the countries the user can see, so HQ gets the group total and a country manager gets only their own country's count.
+- No new data fetching: reuses the `siteCounts` prop the layout already passes for the Countries group. Reverses the earlier nav trim for Sites only; **Dashboard stays out** of the rail.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings). Not driven live in-app.
+
+## Earlier change (2026-07-22) — device form actions sit on the title line
 
 - **Cancel / Save device now render in `PageHead` actions**, i.e. the same line as the "New device" title (top-right of the section). To keep them inside `<form>` (so `type="submit"` submits with no `form=` reference and no lifted state), `DeviceForm` now renders the heading itself: new props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`, and it wraps its fields in the `Panel`.
 - `network/new/page.tsx` and `network/[id]/edit/page.tsx` are now thin — they fetch, then render `<DeviceForm …/>` and no longer import `PageHead`/`Panel`/`PanelHeader`. Edit keeps its `eyebrow="Network"` + `panelClassName="max-w-3xl"`; create stays full width with no eyebrow.
@@ -105,8 +157,8 @@ Legend: ✅ done · 🚧 partial/in-progress · ◻ scaffold/todo
 
 - **Recorders (create+edit)** — `RecorderForm`, `POST /api/recorders` + `PATCH /api/recorders/[id]` (BUS-6 optimistic concurrency, 409 on conflict, not-found handling); pages `cctv/recorders/new` + `cctv/recorders/[id]/edit`.
 - **Cameras (create+edit)** — `CameraForm` scoped to a recorder (recorder picker), `POST /api/cameras` + `PATCH /api/cameras/[id]` (BUS-6); pages `cctv/cameras/new` + `cctv/cameras/[id]/edit`.
-- **Maintenance logs** — `MaintenanceLogForm` + `POST /api/maintenance-logs`; one RLS-scoped picker spans devices + recorders + cameras (encoded `table:id`, split on submit); `cctv/maintenance/new`.
-- **CCTV list** — per-row **Edit** + **Verify** on both tables, "+ Recorder / + Camera / + Maintenance" actions, KPI row.
+- ~~**Maintenance logs** — `MaintenanceLogForm` + `POST /api/maintenance-logs`~~ **removed 2026-07-22** (form, route, and schema deleted; table/RLS retained).
+- **CCTV list** — per-row **Edit** + **Verify** on both tables, KPI row, **New** dropdown (recorder / camera).
 - **Retention flag (5.5)** — `lib/utils/cctv.ts:isBelowRetention` compares `retention_days` to per-country `country_settings.min_retention_days` (joined recorder→site), default 30; danger chip + KPI. Unit-tested (`tests/cctv.test.ts`).
 
 **Verification:** static only — `tsc` + `lint` + unit tests (49 passed) + code review. Not yet driven live in the running app (recommended smoke test: create/edit/verify a recorder + camera, log a maintenance event, confirm a low-retention recorder is flagged against the hosted project).

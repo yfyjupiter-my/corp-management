@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PageHead } from "@/components/ui/PageHead";
-import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { recorderLabel } from "@/lib/utils/cctv";
 import { CameraForm } from "../../new/CameraForm";
 
@@ -35,12 +33,12 @@ export default async function EditCameraPage({
   const options = (recorders ?? []).map((r) => ({ id: r.id, label: recorderLabel(r) }));
 
   return (
-    <>
-      <PageHead eyebrow="CCTV" title="Edit camera" subtitle={camera.label} />
-      <Panel className="max-w-3xl">
-        <PanelHeader title="Camera details" />
-        <CameraForm recorders={options} camera={camera} />
-      </Panel>
-    </>
+    <CameraForm
+      recorders={options}
+      camera={camera}
+      eyebrow="CCTV"
+      title="Edit camera"
+      subtitle={camera.label}
+    />
   );
 }

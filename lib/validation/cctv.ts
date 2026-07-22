@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CAMERA_STATUSES, CAMERA_TYPES } from "@/lib/constants/enums";
-import { ipString, optionalDate, optionalSafeText } from "./common";
+import { ipString, optionalSafeText } from "./common";
 
 export const recorderSchema = z.object({
   site_id: z.string().uuid(),
@@ -27,13 +27,3 @@ export const cameraSchema = z.object({
   notes: optionalSafeText(1000),
 });
 export type CameraInput = z.infer<typeof cameraSchema>;
-
-export const maintenanceLogSchema = z.object({
-  target_table: z.enum(["network_devices", "cctv_recorders", "cctv_cameras"]),
-  target_id: z.string().uuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
-  action: z.string().trim().min(1, "Describe the action").max(300),
-  performed_by: z.string().max(120).optional().or(z.literal("").transform(() => undefined)),
-  next_due: optionalDate,
-});
-export type MaintenanceLogInput = z.infer<typeof maintenanceLogSchema>;

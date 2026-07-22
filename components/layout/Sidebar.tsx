@@ -7,6 +7,7 @@ import { COUNTRY_LIST } from "@/lib/constants/countries";
 import type { CurrentUser } from "@/lib/auth";
 import { UserMenu } from "./UserMenu";
 import {
+  SitesIcon,
   NetworkIcon,
   CctvIcon,
   RenewalsIcon,
@@ -29,6 +30,9 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
   const countries = isHq
     ? COUNTRY_LIST
     : COUNTRY_LIST.filter((c) => c.code === user.countryCode);
+
+  // Sites badge mirrors the countries the user can actually see.
+  const siteCount = countries.reduce((n, c) => n + (siteCounts[c.code] ?? 0), 0);
 
   return (
     <aside className="w-56 flex-none bg-sidebar text-sidebar-fg p-3 flex flex-col">
@@ -59,6 +63,14 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
       ))}
 
       <Group label="Modules" />
+      <NavItem
+        href="/sites"
+        active={pathname.startsWith("/sites")}
+        icon={<SitesIcon />}
+        count={siteCount}
+      >
+        Sites
+      </NavItem>
       <NavItem href="/network" active={pathname.startsWith("/network")} icon={<NetworkIcon />}>
         Network
       </NavItem>

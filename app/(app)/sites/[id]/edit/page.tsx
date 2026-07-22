@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { PageHead } from "@/components/ui/PageHead";
-import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { SiteForm } from "../../SiteForm";
 import type { SiteInput } from "@/lib/validation/site";
 
@@ -44,12 +42,11 @@ export default async function EditSitePage({
   };
 
   return (
-    <>
-      <PageHead eyebrow="Sites" title={`Edit · ${site.name}`} subtitle="Update site details." />
-      <Panel>
-        <PanelHeader title="Site details" />
-        <SiteForm site={initial} />
-      </Panel>
-    </>
+    <SiteForm
+      site={initial}
+      eyebrow="Sites"
+      title={`Edit · ${site.name}`}
+      subtitle="Update site details."
+    />
   );
 }
