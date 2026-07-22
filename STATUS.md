@@ -13,7 +13,7 @@
 - Network `PageHead` actions are now one ghost **New** `DropdownMenu` (same component as CCTV) with **New circuit** → `/network/circuits/new` and **New Firewall** → `/network/firewalls/new`; the two separate `+ Circuit` / `+ VPN link` buttons are gone.
 - New route `app/(app)/network/firewalls/new/page.tsx` renders the shared `DeviceForm` with a new `fixedType="firewall"` prop — a firewall is a `network_devices` row with `device_type='firewall'`, so it reuses the same columns, RLS-scoped site list and `POST /api/devices`. No schema change. With `fixedType` the Type select renders disabled for context and the value submits from a hidden registered input.
 - Submit labels normalised to **Save** on `CircuitForm`, `VpnForm` and `DeviceForm` (create); edit mode still reads "Save changes".
-- `/network/vpn/new` (`VpnForm`) is unchanged and still works, but is **no longer linked from the Network page** — reachable by URL only.
+- VPN link **creation is retired**: `app/(app)/network/vpn/` (page + `VpnForm`) and `app/api/vpn-links/route.ts` are deleted. Existing rows still **read** fine — the site detail VPN links panel, the country dashboard "VPN links" stat, the `vpn_links` table, its RLS/audit policies, the `verify` allowlist and `vpnLinkSchema` all remain; nothing in the app can insert one now.
 - Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **49 passed**, 4 RLS skipped.
 
 ## Earlier change (2026-07-22) — Location column dropped from both camera tables
