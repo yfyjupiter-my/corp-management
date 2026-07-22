@@ -95,7 +95,7 @@ export function SiteForm({
               Cancel
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save site"}
+              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save"}
             </Button>
           </>
         }

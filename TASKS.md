@@ -52,7 +52,7 @@
 
 ## Phase 3 — Sites registry (Story 1) — ✅ done
 
-- [x] **3.1** Sites list page grouped by country with per-country site count; archived hidden by default (`?archived=1` toggle). — `app/(app)/sites/page.tsx`
+- [x] **3.1** Sites list page grouped by country with per-country site count; archived sites are never listed (the `?archived=1` toggle was removed 2026-07-22). — `app/(app)/sites/page.tsx`
 - [x] **3.2** `siteSchema` (Zod) — country, name, address, timezone (IANA default per country), contact fields, notes, currency default by country. — `lib/validation/site.ts`
 - [x] **3.3** Site create form (RHF + Zod resolver, country → TZ/currency prefill) + `POST /api/sites` route (RLS-scoped insert). — `sites/SiteForm.tsx`, `sites/new/page.tsx`, `api/sites/route.ts`
 - [x] **3.4** Site edit + archive/restore (`archived_at` soft delete, no hard delete). Edit PATCH now uses `updated_at`-based optimistic concurrency (BUS-6 → `409` on concurrent change) and routes DB errors through `dbErrorResponse` + try/catch. — `sites/[id]/edit/page.tsx`, `sites/SiteForm.tsx`, `sites/ArchiveButton.tsx`, `api/sites/[id]/route.ts`, `lib/api/optimistic.ts`

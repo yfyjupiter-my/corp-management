@@ -8,7 +8,15 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — Network New dropdown + a dedicated Firewall form
+## Latest change (2026-07-22) — Sites list drops the archived toggle
+
+- Removed the **Show archived / Hide archived** button from the Sites module header (`app/(app)/sites/page.tsx`); the header action is now a single **+ New** button (relabelled from "+ New site", matching the country dashboards). The page no longer reads `searchParams`, so `?archived=1` does nothing — archived sites are always filtered out (`.is("archived_at", null)` is now unconditional).
+- `archived_at` dropped from the select and the now-unreachable **Archived** chip removed from the Status cell; the chip is Stale/Fresh only.
+- `SiteForm`'s create submit label is now **Save** (was "Save site"); edit mode still reads "Save changes". All six forms now submit with the same **Save** label.
+- **Caveat:** archived sites are no longer reachable from the list, so restoring one needs its detail URL directly. Archive/restore itself is untouched.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — Network New dropdown + a dedicated Firewall form
 
 - Network `PageHead` actions are now one ghost **New** `DropdownMenu` (same component as CCTV) with **New circuit** → `/network/circuits/new` and **New Firewall** → `/network/firewalls/new`; the two separate `+ Circuit` / `+ VPN link` buttons are gone.
 - New route `app/(app)/network/firewalls/new/page.tsx` renders the shared `DeviceForm` with a new `fixedType="firewall"` prop — a firewall is a `network_devices` row with `device_type='firewall'`, so it reuses the same columns, RLS-scoped site list and `POST /api/devices`. No schema change. With `fixedType` the Type select renders disabled for context and the value submits from a hidden registered input.

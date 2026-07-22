@@ -12,28 +12,19 @@ export const dynamic = "force-dynamic";
 
 /**
  * Site registry grouped by country with per-country counts (PRD Story 1).
- * Archived sites are hidden by default and revealed via `?archived=1`. RLS scopes
- * the list, so a country manager only sees their own country's sites.
+ * Archived sites are never listed. RLS scopes the list, so a country manager
+ * only sees their own country's sites.
  */
-export default async function SitesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ archived?: string }>;
-}) {
-  const { archived } = await searchParams;
-  const showArchived = archived === "1";
-
+export default async function SitesPage() {
   const supabase = await createClient();
-  let query = supabase
+  const { data: sites } = await supabase
     .from("sites")
     .select(
-      "id, country_code, name, address, contact_name, contact_phone, last_verified_at, archived_at",
+      "id, country_code, name, address, contact_name, contact_phone, last_verified_at",
     )
+    .is("archived_at", null)
     .order("name")
     .limit(50);
-  if (!showArchived) query = query.is("archived_at", null);
-
-  const { data: sites } = await query;
   const rows = sites ?? [];
 
   // Group visible sites by country; only render countries the user can see rows for.
@@ -48,16 +39,9 @@ export default async function SitesPage({
         title="Sites"
         subtitle="Offices and infrastructure locations, grouped by country."
         actions={
-          <div className="flex items-center gap-2">
-            <Link href={showArchived ? "/sites" : "/sites?archived=1"}>
-              <Button sm variant="subtle">
-                {showArchived ? "Hide archived" : "Show archived"}
-              </Button>
-            </Link>
-            <Link href="/sites/new">
-              <Button sm>+ New site</Button>
-            </Link>
-          </div>
+          <Link href="/sites/new">
+            <Button sm>+ New</Button>
+          </Link>
         }
       />
 
@@ -95,9 +79,7 @@ export default async function SitesPage({
                       </Td>
                       <Td mono>{formatDate(s.last_verified_at)}</Td>
                       <Td>
-                        {s.archived_at ? (
-                          <Chip tone="neutral">Archived</Chip>
-                        ) : isStale(s.last_verified_at) ? (
+                        {isStale(s.last_verified_at) ? (
                           <Chip tone="warn">Stale</Chip>
                         ) : (
                           <Chip tone="ok">Fresh</Chip>
