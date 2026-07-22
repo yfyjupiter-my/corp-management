@@ -8,6 +8,11 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
+## Latest change (2026-07-22) — nav trim
+
+- Removed the **Dashboard** and **Sites** entries from the sidebar (`components/layout/Sidebar.tsx`); the rail now starts at the Countries group. Routes `/dashboard` and `/sites/**` are untouched and still reachable (post-login redirect, country cards, search deep links). Icon components remain exported in `icons.tsx`.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
 ## Phase rollup
 
 | Phase | Area | Status | Notes |

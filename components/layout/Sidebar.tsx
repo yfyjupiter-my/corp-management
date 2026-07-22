@@ -7,8 +7,6 @@ import { COUNTRY_LIST } from "@/lib/constants/countries";
 import type { CurrentUser } from "@/lib/auth";
 import { UserMenu } from "./UserMenu";
 import {
-  DashboardIcon,
-  SitesIcon,
   NetworkIcon,
   CctvIcon,
   RenewalsIcon,
@@ -44,13 +42,6 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
           <div className="text-[11px] text-sidebar-fg/70">SEA IT Registry</div>
         </div>
       </div>
-
-      <NavItem href="/dashboard" active={pathname === "/dashboard"} icon={<DashboardIcon />}>
-        Dashboard
-      </NavItem>
-      <NavItem href="/sites" active={pathname.startsWith("/sites")} icon={<SitesIcon />}>
-        Sites
-      </NavItem>
 
       <Group label="Countries" />
       {countries.map((c) => (
