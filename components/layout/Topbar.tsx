@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { SearchIcon, PlusIcon } from "./icons";
+import { SearchIcon } from "./icons";
 import type { CurrentUser } from "@/lib/auth";
 
-/** Topbar — search + role pill + new-record CTA. DESIGN.md §5.7. */
+/** Topbar — search + role pill. DESIGN.md §5.7. */
 export function Topbar({ user }: { user: CurrentUser }) {
   const isHq = user.role === "hq_admin";
   return (
@@ -23,12 +22,6 @@ export function Topbar({ user }: { user: CurrentUser }) {
         <span className="w-[7px] h-[7px] rounded-full bg-accent" />
         {isHq ? "HQ Admin" : `${user.countryCode} Manager`}
       </span>
-
-      <Link href="/network/new">
-        <Button sm>
-          <PlusIcon size={14} /> New record
-        </Button>
-      </Link>
     </header>
   );
 }

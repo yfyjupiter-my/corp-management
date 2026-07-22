@@ -8,7 +8,14 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — nav trim + per-country dashboards
+## Latest change (2026-07-22) — module header trims
+
+- Removed the **+ New device** button from the Network module page header (`app/(app)/network/page.tsx`); `+ Circuit` and `+ VPN link` remain. Route `/network/new` is untouched and still reachable from the Topbar "New record" action.
+- Removed the **+ New recorder** button from the CCTV module page header (`app/(app)/cctv/page.tsx`); `+ Maintenance` and `+ Camera` remain. Route `/cctv/recorders/new` is untouched (per-row Edit and deep links unaffected).
+- Removed the **New record** CTA from the Topbar (`components/layout/Topbar.tsx`); it now holds search + the role pill only. `Button`/`PlusIcon` imports dropped. **No UI entry point to `/network/new` or `/cctv/recorders/new` remains** — both routes still work by direct URL.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — nav trim + per-country dashboards
 
 - **Nav trim** — removed the **Dashboard** and **Sites** entries from the sidebar (`components/layout/Sidebar.tsx`); the rail now starts at the Countries group. Routes `/dashboard` and `/sites/**` are untouched and still reachable (post-login redirect, country cards, search deep links). Icon components remain exported in `icons.tsx`.
 - **Country pages are now dashboards** — `countries/[code]/page.tsx` replaced the plain site list with a country-scoped dashboard organised by the sidebar **MODULES** sections: KPI row (sites / devices / cameras online / stale) → **Network** (devices, circuits, VPN, circuits ≤90d + preview tables) → **CCTV** (recorders, cameras, faulty, below-retention + preview tables) → **Renewals** (circuit `contract_end` + device `warranty_end` ≤90d) → **Sites** registry table.

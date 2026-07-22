@@ -48,9 +48,6 @@ export default async function NetworkPage() {
                 + VPN link
               </Button>
             </Link>
-            <Link href="/network/new">
-              <Button sm>+ New device</Button>
-            </Link>
           </div>
         }
       />

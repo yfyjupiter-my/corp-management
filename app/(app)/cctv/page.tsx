@@ -75,9 +75,6 @@ export default async function CctvPage() {
                 + Camera
               </Button>
             </Link>
-            <Link href="/cctv/recorders/new">
-              <Button sm>+ New recorder</Button>
-            </Link>
           </div>
         }
       />
