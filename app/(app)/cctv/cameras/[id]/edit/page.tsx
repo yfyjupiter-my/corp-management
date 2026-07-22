@@ -17,7 +17,7 @@ export default async function EditCameraPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: camera }, { data: recorders }] = await Promise.all([
+  const [{ data: camera }, { data: recorders }, { data: sites }] = await Promise.all([
     supabase
       .from("cctv_cameras")
       .select(
@@ -25,15 +25,21 @@ export default async function EditCameraPage({
       )
       .eq("id", id)
       .maybeSingle(),
-    supabase.from("cctv_recorders").select("id, brand, model, location").order("location"),
+    supabase.from("cctv_recorders").select("id, site_id, brand, model, location").order("location"),
+    supabase.from("sites").select("id, name, country_code").order("name"),
   ]);
 
   if (!camera) notFound();
 
-  const options = (recorders ?? []).map((r) => ({ id: r.id, label: recorderLabel(r) }));
+  const options = (recorders ?? []).map((r) => ({
+    id: r.id,
+    site_id: r.site_id,
+    label: recorderLabel(r),
+  }));
 
   return (
     <CameraForm
+      sites={sites ?? []}
       recorders={options}
       camera={camera}
       eyebrow="CCTV"

@@ -14,6 +14,13 @@ import { cn } from "@/lib/utils/cn";
 interface Recorder {
   id: string;
   label: string;
+  site_id: string;
+}
+
+interface Site {
+  id: string;
+  name: string;
+  country_code: string;
 }
 
 /**
@@ -41,6 +48,7 @@ export interface CameraEditValues {
  * secrets guard.
  */
 export function CameraForm({
+  sites,
   recorders,
   camera,
   eyebrow,
@@ -48,6 +56,7 @@ export function CameraForm({
   subtitle,
   panelClassName,
 }: {
+  sites: Site[];
   recorders: Recorder[];
   camera?: CameraEditValues;
   /** Page heading is rendered here so Cancel/Save can sit on the title line. */
@@ -60,9 +69,20 @@ export function CameraForm({
   const isEdit = Boolean(camera);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  /**
+   * A camera has no site of its own — it inherits one through its recorder — so
+   * the Site select is local state, not a form value. It scopes the recorder
+   * list to one site; changing it clears a recorder that no longer belongs.
+   */
+  const [siteId, setSiteId] = useState(
+    () => recorders.find((r) => r.id === camera?.recorder_id)?.site_id ?? "",
+  );
+  const siteRecorders = recorders.filter((r) => r.site_id === siteId);
+
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CameraInput>({
     resolver: zodResolver(cameraSchema),
@@ -70,6 +90,8 @@ export function CameraForm({
       ? {
           recorder_id: camera.recorder_id,
           label: camera.label,
+          // No longer edited here (Site replaced the Location field), but kept in
+          // the values so an edit round-trip doesn't drop an existing value.
           location_desc: camera.location_desc ?? undefined,
           camera_type: camera.camera_type ?? "dome",
           resolution: camera.resolution ?? undefined,
@@ -122,12 +144,19 @@ export function CameraForm({
       <Panel className={panelClassName}>
         {/* pb-[1px] + each field's own pb-[17px] = the same 18px as the other sides. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0 px-[18px] pt-[18px] pb-[1px]">
-          <Field label="Recorder" required error={errors.recorder_id?.message} span2>
-            <select className="fld" {...register("recorder_id")}>
-              <option value="">Select a recorder…</option>
-              {recorders.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.label}
+          <Field label="Site" required span2>
+            <select
+              className="fld"
+              value={siteId}
+              onChange={(e) => {
+                setSiteId(e.target.value);
+                setValue("recorder_id", "", { shouldValidate: false });
+              }}
+            >
+              <option value="">Select a site…</option>
+              {sites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.country_code} · {s.name}
                 </option>
               ))}
             </select>
@@ -145,8 +174,21 @@ export function CameraForm({
           <Field label="Label" required error={errors.label?.message}>
             <input className="fld font-mono" {...register("label")} placeholder="CAM-01" />
           </Field>
-          <Field label="Location" error={errors.location_desc?.message} span2>
-            <input className="fld" {...register("location_desc")} placeholder="Main entrance" />
+          <Field
+            label="Recorder"
+            required
+            error={errors.recorder_id?.message}
+            help={siteId && siteRecorders.length === 0 ? "No recorders on this site yet." : undefined}
+            span2
+          >
+            <select className="fld" {...register("recorder_id")} disabled={!siteId}>
+              <option value="">{siteId ? "Select a recorder…" : "Select a site first…"}</option>
+              {siteRecorders.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Resolution" error={errors.resolution?.message}>

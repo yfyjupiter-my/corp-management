@@ -13,7 +13,6 @@ import { Kpi } from "@/components/ui/Kpi";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
-import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { isBelowRetention } from "@/lib/utils/cctv";
 import { isStale, formatDate, daysUntil } from "@/lib/utils/format";
 import type { CameraStatus } from "@/lib/constants/enums";
@@ -112,7 +111,7 @@ export default async function CountryPage({
   const camerasRes = recorderIds.length
     ? await supabase
         .from("cctv_cameras")
-        .select("id, recorder_id, label, location_desc, camera_type, resolution, outdoor, status, last_verified_at")
+        .select("id, recorder_id, label, camera_type, resolution, outdoor, status, last_verified_at")
         .in("recorder_id", recorderIds)
         .order("label")
         .limit(FETCH_CAP)
@@ -182,17 +181,6 @@ export default async function CountryPage({
       <PageHead
         title={`${meta.name} dashboard`}
         subtitle={`Sites, network, CCTV, and renewals for ${meta.name} only.`}
-        actions={
-          <DropdownMenu
-            label="+ New"
-            sm
-            items={[
-              { label: "New site", href: "/sites/new" },
-              { label: "New network device", href: "/network/new" },
-              { label: "New CCTV recorder", href: "/cctv/recorders/new" },
-            ]}
-          />
-        }
       />
 
       {/* Country KPI row */}
@@ -362,12 +350,11 @@ export default async function CountryPage({
           ) : (
             <>
               <Table>
-                <Thead columns={["Label", "Location", "Type", "Resolution", "Placement", "Status"]} />
+                <Thead columns={["Label", "Type", "Resolution", "Placement", "Status"]} />
                 <tbody>
                   {cameraRows.slice(0, PREVIEW_ROWS).map((c) => (
                     <Tr key={c.id}>
                       <Td mono>{c.label}</Td>
-                      <Td>{c.location_desc ?? "—"}</Td>
                       <Td>
                         <span className="capitalize">{c.camera_type}</span>
                       </Td>

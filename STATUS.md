@@ -8,7 +8,26 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — recorder form adopts the device-form pattern
+## Latest change (2026-07-22) — Location column dropped from both camera tables
+
+- Removed the **Location** column (header + `location_desc` cell) from the camera tables on `app/(app)/cctv/page.tsx` and `app/(app)/countries/[code]/page.tsx`, and dropped `location_desc` from both camera selects. No `colSpan` to adjust.
+- `location_desc` now has no reader and no writer in the app; the column, its Zod field, and the `CameraForm` `defaultValues` passthrough remain so stored values survive edits.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — camera form: Site select replaces the Location field
+
+- `CameraForm` now opens with the recorder form's **Site** select (`{country_code} · {name}`, `Select a site…`, required) in the old Recorder slot; **Recorder** moved into the slot the free-text **Location** field used to occupy, and that field is gone.
+- Cameras have no `site_id` of their own (they inherit one via recorder), so Site is local `useState`, not a form value: it scopes the recorder options to that site and clears `recorder_id` on change. Recorder is disabled until a site is picked ("Select a site first…"), and shows "No recorders on this site yet." when the site has none. Edit mode seeds Site from the camera's current recorder.
+- `location_desc` stays in the Zod schema, DB, edit values and the CCTV/country camera tables — it's just no longer editable; it's kept in `defaultValues` so an edit round-trip doesn't drop an existing value. **Nothing in the UI can set it now.**
+- Both pages fetch sites and select `site_id` on recorders: `cctv/cameras/new/page.tsx` (now a `Promise.all`) and `cctv/cameras/[id]/edit/page.tsx`.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **49 passed**, 4 RLS skipped.
+
+## Earlier change (2026-07-22) — country dashboards drop the New dropdown
+
+- Removed the `+ New` `DropdownMenu` (New site / New network device / New CCTV recorder) from the `PageHead` actions in `app/(app)/countries/[code]/page.tsx` — one file, so all four country dashboards lose it. Unused `DropdownMenu` import dropped; the CCTV dashboard's own **New** dropdown is untouched.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — recorder form adopts the device-form pattern
 
 - `RecorderForm` now matches the other forms: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; own `PageHead` inside `<form>` with **Cancel / Save** (edit: **Save changes**) in the header actions; fields wrapped in `Panel`. Bottom action bar + audit-log hint gone; server error renders in the actions row. Grid → `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`; `Field` uses the absolute `pb-[17px]` message strip (error wins over help).
 - Both pages are now thin fetch-and-delegate wrappers: `cctv/recorders/new/page.tsx` and `cctv/recorders/[id]/edit/page.tsx` dropped `PageHead`/`Panel`/`PanelHeader` ("Recorder details") and `max-w-3xl`. Create dropped `eyebrow="CCTV"`; edit keeps it — same split as the camera pages.

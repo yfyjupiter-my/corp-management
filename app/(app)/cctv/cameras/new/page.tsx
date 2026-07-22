@@ -14,12 +14,16 @@ export const dynamic = "force-dynamic";
  */
 export default async function NewCameraPage() {
   const supabase = await createClient();
-  const { data: recorders } = await supabase
-    .from("cctv_recorders")
-    .select("id, brand, model, location")
-    .order("location");
+  const [{ data: recorders }, { data: sites }] = await Promise.all([
+    supabase.from("cctv_recorders").select("id, site_id, brand, model, location").order("location"),
+    supabase.from("sites").select("id, name, country_code").order("name"),
+  ]);
 
-  const options = (recorders ?? []).map((r) => ({ id: r.id, label: recorderLabel(r) }));
+  const options = (recorders ?? []).map((r) => ({
+    id: r.id,
+    site_id: r.site_id,
+    label: recorderLabel(r),
+  }));
 
   // With no recorder to attach to there is nothing to submit, so the heading is
   // rendered here instead (the form owns it in the normal case, to put
@@ -39,6 +43,7 @@ export default async function NewCameraPage() {
 
   return (
     <CameraForm
+      sites={sites ?? []}
       recorders={options}
       title="New camera"
       subtitle="Register a camera against a recorder."

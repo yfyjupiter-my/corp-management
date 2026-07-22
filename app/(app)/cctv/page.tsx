@@ -32,7 +32,7 @@ export default async function CctvPage() {
       .limit(50),
     supabase
       .from("cctv_cameras")
-      .select("id, label, location_desc, camera_type, resolution, outdoor, status, last_verified_at")
+      .select("id, label, camera_type, resolution, outdoor, status, last_verified_at")
       .order("label")
       .limit(50),
     // 5.5: per-country retention minimums; fall back to the company default (30).
@@ -134,12 +134,11 @@ export default async function CctvPage() {
             <PanelEmpty>No cameras recorded yet.</PanelEmpty>
           ) : (
             <Table>
-              <Thead columns={["Label", "Location", "Type", "Resolution", "Placement", "Status", ""]} />
+              <Thead columns={["Label", "Type", "Resolution", "Placement", "Status", ""]} />
               <tbody>
                 {cameraRows.map((c) => (
                   <Tr key={c.id}>
                     <Td mono>{c.label}</Td>
-                    <Td>{c.location_desc ?? "—"}</Td>
                     <Td>
                       <span className="capitalize">{c.camera_type}</span>
                     </Td>
