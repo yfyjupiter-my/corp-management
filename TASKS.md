@@ -58,6 +58,7 @@
 - [x] **3.4** Site edit + archive/restore (`archived_at` soft delete, no hard delete). Edit PATCH now uses `updated_at`-based optimistic concurrency (BUS-6 → `409` on concurrent change) and routes DB errors through `dbErrorResponse` + try/catch. — `sites/[id]/edit/page.tsx`, `sites/SiteForm.tsx`, `sites/ArchiveButton.tsx`, `api/sites/[id]/route.ts`, `lib/api/optimistic.ts`
 - [x] **3.5** Site detail page: child inventory (circuits, devices, IP scheme, VPN, recorders) + verify/edit/archive actions + `last_verified_at`. — `sites/[id]/page.tsx`
 - [x] **3.6** Country view `countries/[code]` — fixed "New site" link (→ `/sites/new`), site names link to detail; added "Sites" sidebar nav.
+- [x] **3.7** (2026-07-22) Country view rebuilt as a **per-country dashboard** grouped by the MODULES sections — KPI row + Network / CCTV / Renewals / Sites, each scoped to that country's sites (children via `.in("site_id", siteIds)`, cameras via recorder ids). Per-country `country_settings` drives retention + staleness; 50-row fetch cap, 8-row previews with "view all" links, `.error` degradation. Sidebar no longer lists Dashboard/Sites (routes still live). — `countries/[code]/page.tsx`, `components/layout/Sidebar.tsx`
 
 ## Phase 4 — Network module (Story 2)
 

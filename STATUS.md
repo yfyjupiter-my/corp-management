@@ -8,10 +8,12 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — nav trim
+## Latest change (2026-07-22) — nav trim + per-country dashboards
 
-- Removed the **Dashboard** and **Sites** entries from the sidebar (`components/layout/Sidebar.tsx`); the rail now starts at the Countries group. Routes `/dashboard` and `/sites/**` are untouched and still reachable (post-login redirect, country cards, search deep links). Icon components remain exported in `icons.tsx`.
-- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+- **Nav trim** — removed the **Dashboard** and **Sites** entries from the sidebar (`components/layout/Sidebar.tsx`); the rail now starts at the Countries group. Routes `/dashboard` and `/sites/**` are untouched and still reachable (post-login redirect, country cards, search deep links). Icon components remain exported in `icons.tsx`.
+- **Country pages are now dashboards** — `countries/[code]/page.tsx` replaced the plain site list with a country-scoped dashboard organised by the sidebar **MODULES** sections: KPI row (sites / devices / cameras online / stale) → **Network** (devices, circuits, VPN, circuits ≤90d + preview tables) → **CCTV** (recorders, cameras, faulty, below-retention + preview tables) → **Renewals** (circuit `contract_end` + device `warranty_end` ≤90d) → **Sites** registry table.
+- Scoping: sites are filtered by `country_code`, every child query is `.in("site_id", siteIds)` (cameras via recorder ids), so each country shows only its own records; RLS remains the boundary. Retention minimum + review cycle read from that country's `country_settings` row (constants as fallback). Tables preview 8 rows with a "view all" link to the module; fetches capped at 50 (10.6). Per-query `.error` flags degrade stats to `—` (ROB-5).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · unit tests **49 passed**, 4 RLS integration skipped. Not driven live in-app.
 
 ## Phase rollup
 
