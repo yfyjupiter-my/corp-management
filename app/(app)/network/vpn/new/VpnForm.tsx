@@ -79,7 +79,7 @@ export function VpnForm({
               Cancel
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : "Save VPN link"}
+              {isSubmitting ? "Saving…" : "Save"}
             </Button>
           </>
         }

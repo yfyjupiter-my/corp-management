@@ -91,7 +91,7 @@ export function CircuitForm({
               Cancel
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : "Save circuit"}
+              {isSubmitting ? "Saving…" : "Save"}
             </Button>
           </>
         }

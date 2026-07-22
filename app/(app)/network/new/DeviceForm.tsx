@@ -47,6 +47,7 @@ export interface DeviceEditValues {
 export function DeviceForm({
   sites,
   device,
+  fixedType,
   eyebrow,
   title,
   subtitle,
@@ -54,6 +55,11 @@ export function DeviceForm({
 }: {
   sites: Site[];
   device?: DeviceEditValues;
+  /**
+   * Pins `device_type` for a type-specific entry point (e.g. New Firewall). The
+   * select renders read-only and the value is submitted from a hidden input.
+   */
+  fixedType?: DeviceType;
   /** Page heading is rendered here so Cancel/Save can sit on the title line. */
   eyebrow?: string;
   title: string;
@@ -73,7 +79,7 @@ export function DeviceForm({
     defaultValues: device
       ? {
           site_id: device.site_id,
-          device_type: device.device_type ?? "router",
+          device_type: fixedType ?? device.device_type ?? "router",
           brand: device.brand ?? undefined,
           model: device.model ?? undefined,
           hostname: device.hostname ?? undefined,
@@ -85,7 +91,7 @@ export function DeviceForm({
           credential_ref: device.credential_ref ?? undefined,
           notes: device.notes ?? undefined,
         }
-      : { device_type: "router" },
+      : { device_type: fixedType ?? "router" },
   });
 
   async function onSubmit(values: NetworkDeviceInput) {
@@ -121,7 +127,7 @@ export function DeviceForm({
               Cancel
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save device"}
+              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save"}
             </Button>
           </>
         }
@@ -141,13 +147,24 @@ export function DeviceForm({
             </select>
           </Field>
           <Field label="Type" required error={errors.device_type?.message}>
-            <select className="fld" {...register("device_type")}>
-              {DEVICE_TYPES.map((t) => (
-                <option key={t} value={t} className="capitalize">
-                  {t}
-                </option>
-              ))}
-            </select>
+            {fixedType ? (
+              // Pinned by the entry point: shown for context, submitted hidden so
+              // the disabled control can't drop the value from the payload.
+              <>
+                <select className="fld capitalize opacity-70" value={fixedType} disabled onChange={() => {}}>
+                  <option value={fixedType}>{fixedType}</option>
+                </select>
+                <input type="hidden" {...register("device_type")} />
+              </>
+            ) : (
+              <select className="fld" {...register("device_type")}>
+                {DEVICE_TYPES.map((t) => (
+                  <option key={t} value={t} className="capitalize">
+                    {t}
+                  </option>
+                ))}
+              </select>
+            )}
           </Field>
 
           <Field label="Brand" error={errors.brand?.message}>

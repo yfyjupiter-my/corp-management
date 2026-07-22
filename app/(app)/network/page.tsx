@@ -43,7 +43,7 @@ export default async function NetworkPage() {
             variant="ghost"
             items={[
               { label: "New circuit", href: "/network/circuits/new" },
-              { label: "New VPN link", href: "/network/vpn/new" },
+              { label: "New Firewall", href: "/network/firewalls/new" },
             ]}
           />
         }

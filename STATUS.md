@@ -8,7 +8,15 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — Location column dropped from both camera tables
+## Latest change (2026-07-22) — Network New dropdown + a dedicated Firewall form
+
+- Network `PageHead` actions are now one ghost **New** `DropdownMenu` (same component as CCTV) with **New circuit** → `/network/circuits/new` and **New Firewall** → `/network/firewalls/new`; the two separate `+ Circuit` / `+ VPN link` buttons are gone.
+- New route `app/(app)/network/firewalls/new/page.tsx` renders the shared `DeviceForm` with a new `fixedType="firewall"` prop — a firewall is a `network_devices` row with `device_type='firewall'`, so it reuses the same columns, RLS-scoped site list and `POST /api/devices`. No schema change. With `fixedType` the Type select renders disabled for context and the value submits from a hidden registered input.
+- Submit labels normalised to **Save** on `CircuitForm`, `VpnForm` and `DeviceForm` (create); edit mode still reads "Save changes".
+- `/network/vpn/new` (`VpnForm`) is unchanged and still works, but is **no longer linked from the Network page** — reachable by URL only.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **49 passed**, 4 RLS skipped.
+
+## Earlier change (2026-07-22) — Location column dropped from both camera tables
 
 - Removed the **Location** column (header + `location_desc` cell) from the camera tables on `app/(app)/cctv/page.tsx` and `app/(app)/countries/[code]/page.tsx`, and dropped `location_desc` from both camera selects. No `colSpan` to adjust.
 - `location_desc` now has no reader and no writer in the app; the column, its Zod field, and the `CameraForm` `defaultValues` passthrough remain so stored values survive edits.
@@ -56,14 +64,14 @@
 
 ## Earlier change (2026-07-22) — VPN form adopts the device-form pattern
 
-- `VpnForm` now matches `DeviceForm`/`SiteForm`/`CircuitForm`: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; own `PageHead` inside `<form>` with **Cancel / Save VPN link** in the header actions; fields wrapped in `Panel`. Bottom action bar + audit-log hint gone; server error renders in the actions row.
+- `VpnForm` now matches `DeviceForm`/`SiteForm`/`CircuitForm`: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; own `PageHead` inside `<form>` with **Cancel / Save** in the header actions; fields wrapped in `Panel`. Bottom action bar + audit-log hint gone; server error renders in the actions row.
 - Grid → `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`; `Field` uses the absolute `pb-[17px]` help/error strip (error wins). The long **Peer (free-text)** help was split: it now reads "HQ or an external endpoint.", and the pointer to the registry moved onto **Peer site** as its own help ("Use this when the peer is a registered site.") — the strip truncates, so one sentence per field.
 - `network/vpn/new/page.tsx` is thin (fetch → `<VpnForm …/>`); dropped `PageHead`/`Panel`/`PanelHeader`, the "Link details" header, `max-w-3xl`, and `eyebrow="Network"` — full width, title only, like the other create pages.
 - Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
 
 ## Earlier change (2026-07-22) — circuit form adopts the device-form pattern
 
-- `CircuitForm` now matches `DeviceForm`/`SiteForm`: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; it renders its own `PageHead` inside `<form>` with **Cancel / Save circuit** in the header actions, and wraps the fields in `Panel`. Bottom action bar + the audit-log hint removed; the inline server error moved into the actions row.
+- `CircuitForm` now matches `DeviceForm`/`SiteForm`: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; it renders its own `PageHead` inside `<form>` with **Cancel / Save** in the header actions, and wraps the fields in `Panel`. Bottom action bar + the audit-log hint removed; the inline server error moved into the actions row.
 - Grid switched to `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`, and the local `Field` uses the absolutely-positioned `pb-[17px]` help/error strip (error wins over help) so all rows are equal height. The Static IPs help text was shortened to "Comma or space separated." since the strip truncates; the example lives in the placeholder.
 - `network/circuits/new/page.tsx` is thin (fetch → `<CircuitForm …/>`), dropped `PageHead`/`Panel`/`PanelHeader` and the "Circuit details" header. It also **lost `max-w-3xl` and the `eyebrow="Network"`**, matching the other create pages (full width, title only).
 - Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
