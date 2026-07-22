@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PageHead } from "@/components/ui/PageHead";
-import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { DeviceForm } from "../../new/DeviceForm";
 
 export const dynamic = "force-dynamic";
@@ -32,16 +30,13 @@ export default async function EditDevicePage({
   if (!device) notFound();
 
   return (
-    <>
-      <PageHead
-        eyebrow="Network"
-        title="Edit device"
-        subtitle={device.hostname ?? "Update device details."}
-      />
-      <Panel className="max-w-3xl">
-        <PanelHeader title="Device details" />
-        <DeviceForm sites={sites ?? []} device={device} />
-      </Panel>
-    </>
+    <DeviceForm
+      sites={sites ?? []}
+      device={device}
+      eyebrow="Network"
+      title="Edit device"
+      subtitle={device.hostname ?? "Update device details."}
+      panelClassName="max-w-3xl"
+    />
   );
 }

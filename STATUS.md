@@ -8,7 +8,41 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — module header trims
+## Latest change (2026-07-22) — device form actions sit on the title line
+
+- **Cancel / Save device now render in `PageHead` actions**, i.e. the same line as the "New device" title (top-right of the section). To keep them inside `<form>` (so `type="submit"` submits with no `form=` reference and no lifted state), `DeviceForm` now renders the heading itself: new props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`, and it wraps its fields in the `Panel`.
+- `network/new/page.tsx` and `network/[id]/edit/page.tsx` are now thin — they fetch, then render `<DeviceForm …/>` and no longer import `PageHead`/`Panel`/`PanelHeader`. Edit keeps its `eyebrow="Network"` + `panelClassName="max-w-3xl"`; create stays full width with no eyebrow.
+- The inline server-error message moved into the actions row. The old bottom action bar and its "Saving writes an entry to the audit log." note are both gone — the panel now ends at the field grid (18px bottom padding via `pb-[1px]` + each field's `pb-[17px]`). Audit logging itself is unchanged; only the UI hint was removed.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — new-device page header trims
+
+- `app/(app)/network/new/page.tsx`: removed the `<PanelHeader title="Device details" />` bar (and its now-unused import); the form starts straight at the top of the panel. Also dropped the `eyebrow="Network"` from `PageHead` — the page now shows just the "New device" title + subtitle. The **edit** page (`network/[id]/edit`) still has both the eyebrow and the panel header.
+
+## Earlier change (2026-07-22) — device form vertical rhythm
+
+- `network/new/DeviceForm.tsx`: the **Notes** row sat ~19px lower than every other row because the help line under *Credential reference* made that grid row taller. The local `Field` now renders its help/error line **absolutely positioned inside a fixed `pb-[17px]` strip**, so a field with a message is exactly as tall as one without — all grid rows are equal height and the row-to-row spacing is a uniform 17px. Notes moves up by that difference.
+- Grid changed `gap-4` → `gap-x-4 gap-y-0` (the reserved strip is now the row gap); container padding `p-[18px]` → `px/pt-[18px] pb-[1px]` so bottom padding still totals 18px. Help/error is `truncate` with a `title` tooltip, and only one of the two shows (error wins) since they now share one slot; the credential help text was shortened to fit a narrow column.
+- Applies to the device **edit** page too (same component).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — new-device form is full width
+
+- `app/(app)/network/new/page.tsx`: dropped `max-w-3xl` from the `Panel`, so the **New device** form now fills the full content section width. `DeviceForm` is untouched (its `md:grid-cols-3` layout just gets wider), so the shared **edit** page (`network/[id]/edit`) keeps its `max-w-3xl` framing. Every other create/edit form still caps at `max-w-3xl`.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — country header "+ New" is now a dropdown
+
+- Added `components/ui/DropdownMenu.tsx` (client) — a reusable menu button reusing the `UserMenu` open/close pattern (outside-click + Escape), `aria-haspopup="menu"` / `aria-expanded`, `role="menu"`/`menuitem`, chevron rotates when open. Takes plain serializable `items: { label, href: Route, hint? }[]`, so server components can render it and **adding another action is one line**.
+- `app/(app)/countries/[code]/page.tsx` header CTA switched from a `<Link><Button>+ New</Button></Link>` to `<DropdownMenu label="+ New" sm />`; the now-unused `Button` import was dropped. Items: **New site** → `/sites/new`, **New network device** → `/network/new`, **New CCTV recorder** → `/cctv/recorders/new`. This restores the only UI entry point to `/network/new` and `/cctv/recorders/new` (both were left URL-only when the Topbar "New record" action was removed).
+- Added `ChevronDownIcon` to `components/layout/icons.tsx`.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings). Not driven live in-app.
+
+## Earlier change (2026-07-22) — country header button label
+
+- Renamed the country dashboard header CTA from **+ New site** to **+ New** (`app/(app)/countries/[code]/page.tsx`); one shared route, so it applies to all 4 country pages. Link target `/sites/new` unchanged. The Sites module list keeps its **+ New site** label.
+
+## Earlier change (2026-07-22) — module header trims
 
 - Removed the **+ New device** button from the Network module page header (`app/(app)/network/page.tsx`); `+ Circuit` and `+ VPN link` remain. Route `/network/new` is untouched and still reachable from the Topbar "New record" action.
 - Removed the **+ New recorder** button from the CCTV module page header (`app/(app)/cctv/page.tsx`); `+ Maintenance` and `+ Camera` remain. Route `/cctv/recorders/new` is untouched (per-row Edit and deep links unaffected).

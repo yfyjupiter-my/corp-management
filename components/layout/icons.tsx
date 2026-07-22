@@ -95,3 +95,9 @@ export const ChevronUpIcon = ({ size = 16, className }: IconProps) => (
     <path d="m6 15 6-6 6 6" />
   </svg>
 );
+
+export const ChevronDownIcon = ({ size = 16, className }: IconProps) => (
+  <svg {...svg(size, className)}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);

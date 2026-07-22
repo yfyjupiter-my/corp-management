@@ -13,7 +13,7 @@ import { Kpi } from "@/components/ui/Kpi";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
-import { Button } from "@/components/ui/Button";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { isBelowRetention } from "@/lib/utils/cctv";
 import { isStale, formatDate, daysUntil } from "@/lib/utils/format";
 import type { CameraStatus } from "@/lib/constants/enums";
@@ -180,13 +180,18 @@ export default async function CountryPage({
   return (
     <>
       <PageHead
-        eyebrow={`${meta.code} · ${meta.timezone} · ${meta.currency}`}
         title={`${meta.name} dashboard`}
         subtitle={`Sites, network, CCTV, and renewals for ${meta.name} only.`}
         actions={
-          <Link href="/sites/new">
-            <Button sm>+ New site</Button>
-          </Link>
+          <DropdownMenu
+            label="+ New"
+            sm
+            items={[
+              { label: "New site", href: "/sites/new" },
+              { label: "New network device", href: "/network/new" },
+              { label: "New CCTV recorder", href: "/cctv/recorders/new" },
+            ]}
+          />
         }
       />
 
