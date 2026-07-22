@@ -6,6 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { recorderSchema, type RecorderInput } from "@/lib/validation/cctv";
 import { Button } from "@/components/ui/Button";
+import { PageHead } from "@/components/ui/PageHead";
+import { Panel } from "@/components/ui/Panel";
+import { cn } from "@/lib/utils/cn";
 
 interface Site {
   id: string;
@@ -38,7 +41,22 @@ export interface RecorderEditValues {
  * last-read `updated_at` for BUS-6 optimistic concurrency (409 on a concurrent
  * change). The Zod schema shared with the server also runs the secrets guard.
  */
-export function RecorderForm({ sites, recorder }: { sites: Site[]; recorder?: RecorderEditValues }) {
+export function RecorderForm({
+  sites,
+  recorder,
+  eyebrow,
+  title,
+  subtitle,
+  panelClassName,
+}: {
+  sites: Site[];
+  recorder?: RecorderEditValues;
+  /** Page heading is rendered here so Cancel/Save can sit on the title line. */
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  panelClassName?: string;
+}) {
   const router = useRouter();
   const isEdit = Boolean(recorder);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -85,65 +103,74 @@ export function RecorderForm({ sites, recorder }: { sites: Site[]; recorder?: Re
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-[18px]">
-        <Field label="Site" required error={errors.site_id?.message} span2>
-          <select className="fld" {...register("site_id")}>
-            <option value="">Select a site…</option>
-            {sites.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.country_code} · {s.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Location" error={errors.location?.message}>
-          <input className="fld" {...register("location")} placeholder="Server room" />
-        </Field>
+      {/* The heading lives inside the form so Cancel/Save sit on the title line
+          and the submit button still submits without a `form=` reference. */}
+      <PageHead
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle}
+        actions={
+          <>
+            {serverError && <span className="text-[12px] text-danger">{serverError}</span>}
+            <Button type="button" variant="ghost" sm onClick={() => router.back()}>
+              Cancel
+            </Button>
+            <Button type="submit" sm disabled={isSubmitting}>
+              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save"}
+            </Button>
+          </>
+        }
+      />
 
-        <Field label="Brand" error={errors.brand?.message}>
-          <input className="fld" {...register("brand")} placeholder="Hikvision" />
-        </Field>
-        <Field label="Model" error={errors.model?.message}>
-          <input className="fld" {...register("model")} placeholder="DS-7616NI" />
-        </Field>
-        <Field label="Firmware" error={errors.firmware?.message}>
-          <input className="fld" {...register("firmware")} placeholder="4.31.005" />
-        </Field>
+      <Panel className={panelClassName}>
+        {/* pb-[1px] + each field's own pb-[17px] = the same 18px as the other sides. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0 px-[18px] pt-[18px] pb-[1px]">
+          <Field label="Site" required error={errors.site_id?.message} span2>
+            <select className="fld" {...register("site_id")}>
+              <option value="">Select a site…</option>
+              {sites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.country_code} · {s.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Location" error={errors.location?.message}>
+            <input className="fld" {...register("location")} placeholder="Server room" />
+          </Field>
 
-        <Field label="Channels" error={errors.channels?.message}>
-          <input className="fld" type="number" min="1" step="1" {...register("channels")} placeholder="16" />
-        </Field>
-        <Field label="Storage (TB)" error={errors.storage_tb?.message}>
-          <input className="fld" type="number" min="0" step="0.1" {...register("storage_tb")} placeholder="8" />
-        </Field>
-        <Field
-          label="Retention (days)"
-          error={errors.retention_days?.message}
-          help="Flagged if below the country minimum."
-        >
-          <input className="fld" type="number" min="0" step="1" {...register("retention_days")} placeholder="30" />
-        </Field>
+          <Field label="Brand" error={errors.brand?.message}>
+            <input className="fld" {...register("brand")} placeholder="Hikvision" />
+          </Field>
+          <Field label="Model" error={errors.model?.message}>
+            <input className="fld" {...register("model")} placeholder="DS-7616NI" />
+          </Field>
+          <Field label="Firmware" error={errors.firmware?.message}>
+            <input className="fld" {...register("firmware")} placeholder="4.31.005" />
+          </Field>
 
-        <Field label="Management IP" error={errors.mgmt_ip?.message}>
-          <input className="fld font-mono" {...register("mgmt_ip")} placeholder="10.10.0.20" />
-        </Field>
-        <Field label="Notes" error={errors.notes?.message} span2>
-          <textarea className="fld min-h-[64px]" {...register("notes")} />
-        </Field>
-      </div>
+          <Field label="Channels" error={errors.channels?.message}>
+            <input className="fld" type="number" min="1" step="1" {...register("channels")} placeholder="16" />
+          </Field>
+          <Field label="Storage (TB)" error={errors.storage_tb?.message}>
+            <input className="fld" type="number" min="0" step="0.1" {...register("storage_tb")} placeholder="8" />
+          </Field>
+          <Field
+            label="Retention (days)"
+            error={errors.retention_days?.message}
+            help="Flagged if below the country minimum."
+          >
+            <input className="fld" type="number" min="0" step="1" {...register("retention_days")} placeholder="30" />
+          </Field>
 
-      <div className="flex items-center gap-2.5 px-[18px] py-3.5 border-t border-border bg-surface-2">
-        <span className="text-[12px] text-fg-subtle mr-auto">
-          Saving writes an entry to the audit log.
-        </span>
-        {serverError && <span className="text-[12px] text-danger">{serverError}</span>}
-        <Button type="button" variant="ghost" onClick={() => router.back()}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save recorder"}
-        </Button>
-      </div>
+          <Field label="Management IP" error={errors.mgmt_ip?.message}>
+            <input className="fld font-mono" {...register("mgmt_ip")} placeholder="10.10.0.20" />
+          </Field>
+          <Field label="Notes" error={errors.notes?.message} span2>
+            <textarea className="fld min-h-[64px]" {...register("notes")} />
+          </Field>
+        </div>
+      </Panel>
 
       <style>{`
         .fld { font-size:13px; color:var(--fg); background:var(--surface);
@@ -155,6 +182,12 @@ export function RecorderForm({ sites, recorder }: { sites: Site[]; recorder?: Re
   );
 }
 
+/**
+ * One labelled control. The help/error line is absolutely positioned inside a
+ * fixed `pb` strip so a field that has one is exactly as tall as a field that
+ * doesn't — grid rows then stay equal height and the vertical rhythm between
+ * every row (including the one above Notes) is the same 17px.
+ */
 function Field({
   label,
   required,
@@ -170,14 +203,24 @@ function Field({
   span2?: boolean;
   children: React.ReactNode;
 }) {
+  const message = error ?? help;
   return (
-    <label className={"flex flex-col gap-1.5" + (span2 ? " md:col-span-2" : "")}>
+    <label className={"relative flex flex-col gap-1.5 pb-[17px]" + (span2 ? " md:col-span-2" : "")}>
       <span className="text-[12px] font-semibold text-fg-muted font-head">
         {label} {required && <span className="text-danger">*</span>}
       </span>
       {children}
-      {help && <span className="text-[11px] text-fg-subtle">{help}</span>}
-      {error && <span className="text-[11px] text-danger">{error}</span>}
+      {message && (
+        <span
+          title={message}
+          className={cn(
+            "absolute left-0 bottom-0 text-[11px] leading-[15px] truncate max-w-full",
+            error ? "text-danger" : "text-fg-subtle",
+          )}
+        >
+          {message}
+        </span>
+      )}
     </label>
   );
 }

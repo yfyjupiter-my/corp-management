@@ -8,7 +8,14 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — maintenance log form removed from CCTV
+## Latest change (2026-07-22) — recorder form adopts the device-form pattern
+
+- `RecorderForm` now matches the other forms: props `title`, `subtitle?`, `eyebrow?`, `panelClassName?`; own `PageHead` inside `<form>` with **Cancel / Save** (edit: **Save changes**) in the header actions; fields wrapped in `Panel`. Bottom action bar + audit-log hint gone; server error renders in the actions row. Grid → `gap-x-4 gap-y-0` + `px/pt-[18px] pb-[1px]`; `Field` uses the absolute `pb-[17px]` message strip (error wins over help).
+- Both pages are now thin fetch-and-delegate wrappers: `cctv/recorders/new/page.tsx` and `cctv/recorders/[id]/edit/page.tsx` dropped `PageHead`/`Panel`/`PanelHeader` ("Recorder details") and `max-w-3xl`. Create dropped `eyebrow="CCTV"`; edit keeps it — same split as the camera pages.
+- This was the last form still on the old layout; all six (device, site, circuit, VPN, camera, recorder) now share the pattern.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — maintenance log form removed from CCTV
 
 - Deleted `app/(app)/cctv/maintenance/**` (`page.tsx` + `MaintenanceLogForm.tsx`) and dropped the **+ Maintenance** action from the CCTV dashboard `PageHead`; subtitle is now "Recorders, cameras, and retention." No other UI linked to the route.
 - The CCTV header action is now a `DropdownMenu` (`label="New"`, `sm`, `variant="ghost"`) with **New recorder** → `/cctv/recorders/new` and **New camera** → `/cctv/cameras/new` — same reusable component as the country dashboard, so it also restores the only UI entry point to the recorder create page. `CameraForm`'s create submit label is now **Save** (was "Save camera"; edit still reads "Save changes").

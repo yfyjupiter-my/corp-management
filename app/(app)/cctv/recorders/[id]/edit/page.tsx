@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PageHead } from "@/components/ui/PageHead";
-import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RecorderForm } from "../../new/RecorderForm";
 
 export const dynamic = "force-dynamic";
@@ -32,16 +30,12 @@ export default async function EditRecorderPage({
   if (!recorder) notFound();
 
   return (
-    <>
-      <PageHead
-        eyebrow="CCTV"
-        title="Edit recorder"
-        subtitle={[recorder.brand, recorder.model].filter(Boolean).join(" ") || "Update recorder details."}
-      />
-      <Panel className="max-w-3xl">
-        <PanelHeader title="Recorder details" />
-        <RecorderForm sites={sites ?? []} recorder={recorder} />
-      </Panel>
-    </>
+    <RecorderForm
+      sites={sites ?? []}
+      recorder={recorder}
+      eyebrow="CCTV"
+      title="Edit recorder"
+      subtitle={[recorder.brand, recorder.model].filter(Boolean).join(" ") || "Update recorder details."}
+    />
   );
 }
