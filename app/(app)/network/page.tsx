@@ -5,6 +5,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { VerifyButton } from "@/components/ui/VerifyButton";
 import { isStale, formatDate } from "@/lib/utils/format";
 
@@ -36,18 +37,15 @@ export default async function NetworkPage() {
         title="Network"
         subtitle="ISP circuits, routers, firewalls, switches, and access points."
         actions={
-          <div className="flex items-center gap-2">
-            <Link href="/network/circuits/new">
-              <Button sm variant="ghost">
-                + Circuit
-              </Button>
-            </Link>
-            <Link href="/network/vpn/new">
-              <Button sm variant="ghost">
-                + VPN link
-              </Button>
-            </Link>
-          </div>
+          <DropdownMenu
+            label="New"
+            sm
+            variant="ghost"
+            items={[
+              { label: "New circuit", href: "/network/circuits/new" },
+              { label: "New VPN link", href: "/network/vpn/new" },
+            ]}
+          />
         }
       />
 
