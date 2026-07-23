@@ -7,6 +7,7 @@ import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { isStale, formatDate } from "@/lib/utils/format";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
  * only sees their own country's sites.
  */
 export default async function SitesPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   const { data: sites } = await supabase
     .from("sites")
@@ -36,11 +38,11 @@ export default async function SitesPage() {
   return (
     <>
       <PageHead
-        title="Sites"
-        subtitle="Offices and infrastructure locations, grouped by country."
+        title={t.sites.title}
+        subtitle={t.sites.subtitle}
         actions={
           <Link href="/sites/new">
-            <Button sm>+ New</Button>
+            <Button sm>{t.sites.newAction}</Button>
           </Link>
         }
       />
@@ -48,20 +50,21 @@ export default async function SitesPage() {
       {byCountry.length === 0 ? (
         <Panel>
           <PanelEmpty>
-            No sites registered yet.{" "}
+            {t.sites.noneYet}{" "}
             <Link href="/sites/new" className="text-accent underline">
-              Add the first site
+              {t.sites.addFirst}
             </Link>
-            .
           </PanelEmpty>
         </Panel>
       ) : (
         <div className="flex flex-col gap-3.5">
           {byCountry.map(({ meta, sites }) => (
             <Panel key={meta.code}>
-              <PanelHeader title={`${meta.name} · ${sites.length} site(s)`} />
+              <PanelHeader title={`${t.countries[meta.code]} · ${t.country.siteCount(sites.length)}`} />
               <Table>
-                <Thead columns={["Site", "Contact", "Verified", "Status", ""]} />
+                <Thead
+                  columns={[t.columns.site, t.columns.contact, t.columns.verified, t.columns.status, ""]}
+                />
                 <tbody>
                   {sites.map((s) => (
                     <Tr key={s.id}>
@@ -80,14 +83,14 @@ export default async function SitesPage() {
                       <Td mono>{formatDate(s.last_verified_at)}</Td>
                       <Td>
                         {isStale(s.last_verified_at) ? (
-                          <Chip tone="warn">Stale</Chip>
+                          <Chip tone="warn">{t.common.stale}</Chip>
                         ) : (
-                          <Chip tone="ok">Fresh</Chip>
+                          <Chip tone="ok">{t.common.fresh}</Chip>
                         )}
                       </Td>
                       <Td>
                         <Link href={`/sites/${s.id}`} className="text-accent text-[12px] hover:underline">
-                          View →
+                          {t.sites.view}
                         </Link>
                       </Td>
                     </Tr>

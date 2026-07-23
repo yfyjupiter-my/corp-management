@@ -6,6 +6,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { InviteForm } from "./InviteForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function UsersPage() {
   const user = await getCurrentUser();
   if (user?.role !== "hq_admin") redirect("/dashboard");
 
+  const t = await getDictionary();
   const supabase = await createClient();
   const { data: profiles } = await supabase
     .from("profiles")
@@ -23,28 +25,28 @@ export default async function UsersPage() {
   return (
     <>
       <PageHead
-        title="Users & roles"
-        subtitle="Invite users and assign a role and country. Public sign-up is disabled."
+        title={t.users.title}
+        subtitle={t.users.subtitle}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-3.5 items-start">
         <Panel>
-          <PanelHeader title={`${profiles?.length ?? 0} user(s)`} />
+          <PanelHeader title={t.users.userCount(profiles?.length ?? 0)} />
           {!profiles || profiles.length === 0 ? (
-            <PanelEmpty>No users yet.</PanelEmpty>
+            <PanelEmpty>{t.users.none}</PanelEmpty>
           ) : (
             <Table>
-              <Thead columns={["Name", "Role", "Country", "Added"]} />
+              <Thead columns={[t.users.colName, t.users.colRole, t.users.colCountry, t.users.colAdded]} />
               <tbody>
                 {profiles.map((p) => (
                   <Tr key={p.user_id}>
                     <Td>{p.full_name ?? "—"}</Td>
                     <Td>
                       <Chip tone={p.role === "hq_admin" ? "info" : "neutral"}>
-                        {p.role === "hq_admin" ? "HQ Admin" : "Country Manager"}
+                        {p.role === "hq_admin" ? t.users.roleHqAdmin : t.users.roleCountryManager}
                       </Chip>
                     </Td>
-                    <Td mono>{p.country_code ?? "ALL"}</Td>
+                    <Td mono>{p.country_code ?? t.users.allCountries}</Td>
                     <Td mono>{new Date(p.created_at).toLocaleDateString("en-GB")}</Td>
                   </Tr>
                 ))}
@@ -54,7 +56,7 @@ export default async function UsersPage() {
         </Panel>
 
         <Panel>
-          <PanelHeader title="Invite a user" />
+          <PanelHeader title={t.users.invitePanel} />
           <div className="p-4">
             <InviteForm />
           </div>

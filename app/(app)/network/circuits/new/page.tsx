@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { CircuitForm } from "./CircuitForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
  * the heading so Cancel/Save render on the title line.
  */
 export default async function NewCircuitPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   const { data: sites } = await supabase
     .from("sites")
@@ -19,8 +21,8 @@ export default async function NewCircuitPage() {
   return (
     <CircuitForm
       sites={sites ?? []}
-      title="New ISP circuit"
-      subtitle="Register a fiber, broadband, or LTE circuit and its contract details."
+      title={t.forms.pages.newCircuitTitle}
+      subtitle={t.forms.pages.newCircuitSubtitle}
     />
   );
 }

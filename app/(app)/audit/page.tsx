@@ -6,6 +6,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { DiffCell } from "./DiffCell";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function AuditPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
+  const t = await getDictionary();
   const user = await getCurrentUser();
   if (user?.role !== "hq_admin") redirect("/dashboard");
 
@@ -63,34 +65,44 @@ export default async function AuditPage({
   return (
     <>
       <PageHead
-        title="Audit log"
-        subtitle="Every create, update, and delete — immutable, most recent first."
+        title={t.audit.title}
+        subtitle={t.audit.subtitle}
       />
 
       <Panel>
         <PanelHeader
           title={
             error
-              ? "Audit log unavailable"
+              ? t.audit.unavailableTitle
               : total === 0
-                ? "No activity"
-                : `${start}–${end} of ${total} event(s)`
+                ? t.audit.noActivityTitle
+                : `${start}–${end} · ${t.audit.entryCount(total)}`
           }
         />
         {error ? (
-          <PanelEmpty>The audit log is temporarily unavailable. Please try again.</PanelEmpty>
+          <PanelEmpty>{t.audit.unavailable}</PanelEmpty>
         ) : !entries || entries.length === 0 ? (
-          <PanelEmpty>No activity recorded yet.</PanelEmpty>
+          <PanelEmpty>{t.audit.noActivity}</PanelEmpty>
         ) : (
           <Table>
-            <Thead columns={["When", "Action", "Table", "Record", "Actor", "Changes"]} />
+            <Thead
+              columns={[
+                t.audit.colWhen,
+                t.audit.colAction,
+                t.audit.colTable,
+                t.audit.colRecord,
+                t.audit.colActor,
+                t.audit.colChanges,
+              ]}
+            />
             <tbody>
               {entries.map((e) => (
                 <Tr key={e.id}>
                   <Td mono>{new Date(e.created_at).toLocaleString("en-GB")}</Td>
                   <Td>
                     <Chip tone={actionTone[e.action as keyof typeof actionTone] ?? "neutral"}>
-                      <span className="capitalize">{e.action}</span>
+                      {t.enums.auditAction[e.action as keyof typeof t.enums.auditAction] ??
+                        e.action}
                     </Chip>
                   </Td>
                   <Td mono>{e.table_name}</Td>
@@ -104,7 +116,7 @@ export default async function AuditPage({
                             {e.actor.slice(0, 8)}
                           </span>
                         ))
-                      : "system"}
+                      : t.audit.systemActor}
                   </Td>
                   <Td>
                     <DiffCell diff={e.diff as Record<string, unknown> | null} />
@@ -119,14 +131,14 @@ export default async function AuditPage({
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-3">
           <span className="text-[12px] text-fg-subtle">
-            Page {page} of {totalPages}
+            {t.audit.pageOf(page, totalPages)}
           </span>
           <div className="flex gap-2">
             <PageLink page={page - 1} disabled={page <= 1}>
-              ← Newer
+              {t.audit.newer}
             </PageLink>
             <PageLink page={page + 1} disabled={page >= totalPages}>
-              Older →
+              {t.audit.older}
             </PageLink>
           </div>
         </div>

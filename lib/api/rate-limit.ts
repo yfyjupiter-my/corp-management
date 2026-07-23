@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 
 /**
  * SEC-5 — in-memory rate limiting for authenticated API routes.
@@ -99,9 +100,12 @@ export const writeLimiter = new RateLimiter({ limit: 60, windowMs: 60_000 });
 export const inviteLimiter = new RateLimiter({ limit: 10, windowMs: 60_000 });
 
 /** 429 response carrying a safe message and a `Retry-After` header. */
-export function rateLimitResponse(result: RateLimitResult): NextResponse {
+export function rateLimitResponse(
+  result: RateLimitResult,
+  t: Dictionary,
+): NextResponse {
   return NextResponse.json(
-    { error: "Too many requests. Please slow down and try again shortly." },
+    { error: t.errors.tooManyRequests },
     {
       status: 429,
       headers: { "Retry-After": String(result.retryAfterSeconds) },

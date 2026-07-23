@@ -1,12 +1,18 @@
 import { z } from "zod";
-import { containsPossibleSecret, SECRET_GUARD_MESSAGE } from "@/lib/utils/secrets";
+import { containsPossibleSecret } from "@/lib/utils/secrets";
+import { V } from "@/lib/i18n/validation";
+
+/**
+ * Messages are dictionary *keys*, not display text — a schema is built at module
+ * scope where there is no locale. `validationMessage()` resolves them (13.29).
+ */
 
 /** A free-text field that must not contain anything resembling a secret. */
 export const safeText = (max = 2000) =>
   z
     .string()
     .max(max)
-    .refine((v) => !containsPossibleSecret(v), { message: SECRET_GUARD_MESSAGE });
+    .refine((v) => !containsPossibleSecret(v), { message: V.secret });
 
 /**
  * Note on the empty→undefined idiom: `.optional().or(z.literal("").transform())`
@@ -38,13 +44,13 @@ export const ipString = z
   .trim()
   .regex(
     /^(\d{1,3}(\.\d{1,3}){3}(\/\d{1,2})?|[0-9a-fA-F:]+(\/\d{1,3})?)$/,
-    "Enter a valid IP address or CIDR",
+    V.ip,
   );
 
 /** ISO date (yyyy-mm-dd) or empty. */
 export const optionalDate = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+  .regex(/^\d{4}-\d{2}-\d{2}$/, V.date)
   .optional()
   .or(z.literal("").transform(() => undefined));
 
@@ -52,6 +58,6 @@ export const optionalDate = z
 export const credentialRef = z
   .string()
   .max(500)
-  .refine((v) => !containsPossibleSecret(v), { message: SECRET_GUARD_MESSAGE })
+  .refine((v) => !containsPossibleSecret(v), { message: V.secret })
   .optional()
   .transform((v) => (v === "" ? undefined : v));

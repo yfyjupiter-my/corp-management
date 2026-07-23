@@ -40,8 +40,3 @@ export function containsPossibleSecret(text: string | null | undefined): boolean
   if (SECRET_PATTERNS.some((re) => re.test(text))) return true;
   return looksLikeHighEntropyToken(text);
 }
-
-/** Human-readable reason for blocking a save; surfaced in validation messages. */
-export const SECRET_GUARD_MESSAGE =
-  "This looks like it may contain a secret. Store a reference to your password " +
-  "manager entry instead — never paste the actual credential.";

@@ -4,6 +4,7 @@ import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelEmpty } from "@/components/ui/Panel";
 import { recorderLabel } from "@/lib/utils/cctv";
 import { CameraForm } from "./CameraForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
  * their own country's sites.
  */
 export default async function NewCameraPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   const [{ data: recorders }, { data: sites }] = await Promise.all([
     supabase.from("cctv_recorders").select("id, site_id, brand, model, location").order("location"),
@@ -31,10 +33,16 @@ export default async function NewCameraPage() {
   if (options.length === 0) {
     return (
       <>
-        <PageHead title="New camera" subtitle="Register a camera against a recorder." />
+        <PageHead
+          title={t.forms.pages.newCameraTitle}
+          subtitle={t.forms.pages.newCameraSubtitle}
+        />
         <Panel>
           <PanelEmpty>
-            No recorders yet — <Link href="/cctv/recorders/new" className="text-accent">add a recorder</Link> first.
+            {t.forms.pages.noRecordersYet}{" "}
+            <Link href="/cctv/recorders/new" className="text-accent">
+              {t.forms.pages.addRecorderFirst}
+            </Link>
           </PanelEmpty>
         </Panel>
       </>
@@ -45,8 +53,8 @@ export default async function NewCameraPage() {
     <CameraForm
       sites={sites ?? []}
       recorders={options}
-      title="New camera"
-      subtitle="Register a camera against a recorder."
+      title={t.forms.pages.newCameraTitle}
+      subtitle={t.forms.pages.newCameraSubtitle}
     />
   );
 }

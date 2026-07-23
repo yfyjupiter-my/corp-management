@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/types/database";
+import { LOCALE_COOKIE, isLocale } from "@/lib/i18n/config";
+
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
 /**
  * Refreshes the Supabase session cookie on every matched request and gates the
@@ -61,6 +64,27 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  // Locale seed (TASKS 13.11): precedence is cookie → profiles.locale → en.
+  // Only runs when the cookie is absent, i.e. once per new browser, so
+  // `getLocale()` stays a pure cookie read on every other request.
+  if (user && !request.cookies.get(LOCALE_COOKIE)) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("locale")
+      .eq("user_id", user.id)
+      .single();
+
+    if (isLocale(data?.locale)) {
+      response.cookies.set(LOCALE_COOKIE, data.locale, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: ONE_YEAR_SECONDS,
+      });
+    }
   }
 
   return response;

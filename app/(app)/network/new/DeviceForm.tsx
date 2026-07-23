@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 interface Site {
   id: string;
@@ -67,7 +69,10 @@ export function DeviceForm({
   panelClassName?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const isEdit = Boolean(device);
+  // Zod messages are dictionary keys (13.29) — resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -105,7 +110,7 @@ export function DeviceForm({
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save device.");
+      setServerError(body.error ?? t.forms.saveFailed.device);
       return;
     }
     router.push("/network");
@@ -124,10 +129,10 @@ export function DeviceForm({
           <>
             {serverError && <span className="text-[12px] text-danger">{serverError}</span>}
             <Button type="button" variant="ghost" sm onClick={() => router.back()}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save"}
+              {isSubmitting ? t.common.saving : isEdit ? t.common.saveChanges : t.common.save}
             </Button>
           </>
         }
@@ -136,9 +141,9 @@ export function DeviceForm({
       <Panel className={panelClassName}>
         {/* pb-[1px] + each field's own pb-[17px] = the same 18px as the other sides. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0 px-[18px] pt-[18px] pb-[1px]">
-          <Field label="Site" required error={errors.site_id?.message} span2>
+          <Field label={t.forms.labels.site} required error={vm(errors.site_id?.message)} span2>
             <select className="fld" {...register("site_id")}>
-              <option value="">Select a site…</option>
+              <option value="">{t.forms.select.site}</option>
               {sites.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.country_code} · {s.name}
@@ -146,62 +151,62 @@ export function DeviceForm({
               ))}
             </select>
           </Field>
-          <Field label="Type" required error={errors.device_type?.message}>
+          <Field label={t.forms.labels.type} required error={vm(errors.device_type?.message)}>
             {fixedType ? (
               // Pinned by the entry point: shown for context, submitted hidden so
               // the disabled control can't drop the value from the payload.
               <>
-                <select className="fld capitalize opacity-70" value={fixedType} disabled onChange={() => {}}>
-                  <option value={fixedType}>{fixedType}</option>
+                <select className="fld opacity-70" value={fixedType} disabled onChange={() => {}}>
+                  <option value={fixedType}>{t.enums.deviceType[fixedType]}</option>
                 </select>
                 <input type="hidden" {...register("device_type")} />
               </>
             ) : (
               <select className="fld" {...register("device_type")}>
-                {DEVICE_TYPES.map((t) => (
-                  <option key={t} value={t} className="capitalize">
-                    {t}
+                {DEVICE_TYPES.map((value) => (
+                  <option key={value} value={value}>
+                    {t.enums.deviceType[value]}
                   </option>
                 ))}
               </select>
             )}
           </Field>
 
-          <Field label="Brand" error={errors.brand?.message}>
-            <input className="fld" {...register("brand")} placeholder="Fortinet" />
+          <Field label={t.forms.labels.brand} error={vm(errors.brand?.message)}>
+            <input className="fld" {...register("brand")} placeholder={t.forms.ph.deviceBrand} />
           </Field>
-          <Field label="Model" error={errors.model?.message}>
-            <input className="fld" {...register("model")} placeholder="FortiGate 60F" />
+          <Field label={t.forms.labels.model} error={vm(errors.model?.message)}>
+            <input className="fld" {...register("model")} placeholder={t.forms.ph.deviceModel} />
           </Field>
-          <Field label="Hostname" error={errors.hostname?.message}>
-            <input className="fld font-mono" {...register("hostname")} placeholder="kl-fw-01" />
-          </Field>
-
-          <Field label="Management IP" error={errors.mgmt_ip?.message}>
-            <input className="fld font-mono" {...register("mgmt_ip")} placeholder="10.10.0.1" />
-          </Field>
-          <Field label="Firmware" error={errors.firmware?.message}>
-            <input className="fld" {...register("firmware")} placeholder="7.4.3" />
-          </Field>
-          <Field label="Serial" error={errors.serial?.message}>
-            <input className="fld font-mono" {...register("serial")} placeholder="FG60F-…" />
+          <Field label={t.forms.labels.hostname} error={vm(errors.hostname?.message)}>
+            <input className="fld font-mono" {...register("hostname")} placeholder={t.forms.ph.hostname} />
           </Field>
 
-          <Field label="Install date" error={errors.install_date?.message}>
+          <Field label={t.forms.labels.mgmtIp} error={vm(errors.mgmt_ip?.message)}>
+            <input className="fld font-mono" {...register("mgmt_ip")} placeholder={t.forms.ph.mgmtIp} />
+          </Field>
+          <Field label={t.forms.labels.firmware} error={vm(errors.firmware?.message)}>
+            <input className="fld" {...register("firmware")} placeholder={t.forms.ph.firmware} />
+          </Field>
+          <Field label={t.forms.labels.serial} error={vm(errors.serial?.message)}>
+            <input className="fld font-mono" {...register("serial")} placeholder={t.forms.ph.serial} />
+          </Field>
+
+          <Field label={t.forms.labels.installDate} error={vm(errors.install_date?.message)}>
             <input className="fld" type="date" {...register("install_date")} />
           </Field>
-          <Field label="Warranty end" error={errors.warranty_end?.message}>
+          <Field label={t.forms.labels.warrantyEnd} error={vm(errors.warranty_end?.message)}>
             <input className="fld" type="date" {...register("warranty_end")} />
           </Field>
           <Field
-            label="Credential reference"
-            error={errors.credential_ref?.message}
-            help="Password-manager link — never paste the secret."
+            label={t.forms.labels.credentialRef}
+            error={vm(errors.credential_ref?.message)}
+            help={t.forms.help.credentialRef}
           >
-            <input className="fld" {...register("credential_ref")} placeholder="vault://it/kl-fw-01" />
+            <input className="fld" {...register("credential_ref")} placeholder={t.forms.ph.credentialRef} />
           </Field>
 
-          <Field label="Notes" error={errors.notes?.message} span2>
+          <Field label={t.forms.labels.notes} error={vm(errors.notes?.message)} span2>
             <textarea className="fld min-h-[64px]" {...register("notes")} />
           </Field>
         </div>

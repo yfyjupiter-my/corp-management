@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { DeviceForm } from "./DeviceForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
  * line while staying inside the form element.
  */
 export default async function NewDevicePage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   const { data: sites } = await supabase
     .from("sites")
@@ -20,8 +22,8 @@ export default async function NewDevicePage() {
   return (
     <DeviceForm
       sites={sites ?? []}
-      title="New device"
-      subtitle="Register a router, firewall, switch, or access point."
+      title={t.forms.pages.newDeviceTitle}
+      subtitle={t.forms.pages.newDeviceSubtitle}
     />
   );
 }

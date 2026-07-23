@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DeviceForm } from "../../new/DeviceForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function EditDevicePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getDictionary();
   const supabase = await createClient();
 
   const [{ data: device }, { data: sites }] = await Promise.all([
@@ -33,9 +35,9 @@ export default async function EditDevicePage({
     <DeviceForm
       sites={sites ?? []}
       device={device}
-      eyebrow="Network"
-      title="Edit device"
-      subtitle={device.hostname ?? "Update device details."}
+      eyebrow={t.nav.network}
+      title={t.forms.pages.editDeviceTitle}
+      subtitle={device.hostname ?? t.forms.pages.editDeviceSubtitle}
       panelClassName="max-w-3xl"
     />
   );

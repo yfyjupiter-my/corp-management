@@ -4,15 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Chip } from "@/components/ui/Chip";
+import { getDictionary } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export const dynamic = "force-dynamic";
 
-const typeLabel: Record<string, string> = {
-  site: "Site",
-  device: "Device",
-  circuit: "Circuit",
-  camera: "Camera",
-};
+/** Result-group headings, keyed by the `type` the search RPC returns. */
+const typeLabel = (t: Dictionary): Record<string, string> => ({
+  site: t.search.typeSite,
+  device: t.search.typeDevice,
+  circuit: t.search.typeCircuit,
+  camera: t.search.typeCamera,
+});
 
 /**
  * CODE-5: route each result to the most specific page for its type. A site
@@ -42,6 +45,7 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
   const query = (q ?? "").trim();
+  const t = await getDictionary();
 
   let results: { type: string; id: string; label: string; country_code: string }[] = [];
   let searchFailed = false;
@@ -64,32 +68,32 @@ export default async function SearchPage({
 
   return (
     <>
-      <PageHead eyebrow="Search" title="Global search" />
+      <PageHead eyebrow={t.search.eyebrow} title={t.search.pageTitle} />
 
       <form className="mb-4" action="/search" method="get">
         <input
           name="q"
           defaultValue={query}
-          placeholder="Search sites, hostnames, IPs, circuit IDs, cameras…"
+          placeholder={t.topbar.searchPlaceholder}
           className="w-full max-w-[560px] px-4 h-[42px] rounded-pill border border-border-strong bg-surface text-[14px] focus:outline-none focus:border-accent focus:shadow-ring"
         />
       </form>
 
       {query.length < 2 ? (
-        <p className="text-[13px] text-fg-subtle">Type at least 2 characters to search.</p>
+        <p className="text-[13px] text-fg-subtle">{t.search.tooShort}</p>
       ) : searchFailed ? (
         <Panel>
-          <PanelEmpty>Search is temporarily unavailable. Please try again.</PanelEmpty>
+          <PanelEmpty>{t.search.unavailable}</PanelEmpty>
         </Panel>
       ) : results.length === 0 ? (
         <Panel>
-          <PanelEmpty>No matches for “{query}”.</PanelEmpty>
+          <PanelEmpty>{t.search.noMatches(query)}</PanelEmpty>
         </Panel>
       ) : (
         <div className="flex flex-col gap-3.5">
           {Object.entries(grouped).map(([type, items]) => (
             <Panel key={type}>
-              <PanelHeader title={`${typeLabel[type] ?? type} · ${items.length}`} />
+              <PanelHeader title={`${typeLabel(t)[type] ?? type} · ${items.length}`} />
               <ul className="divide-y divide-border">
                 {items.map((r) => (
                   <li key={`${r.type}-${r.id}`} className="flex items-center gap-3 px-4 py-3">

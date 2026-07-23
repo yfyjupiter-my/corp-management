@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
+import { getDictionary } from "@/lib/i18n/server";
 
 /**
  * Shown when a user is authenticated but has no `profiles` row. Without this,
@@ -9,7 +10,8 @@ import { Button } from "@/components/ui/Button";
  * (ERR_TOO_MANY_REDIRECTS). This is a plain, ungated route that ends the loop
  * and lets the user sign out.
  */
-export default function NoAccessPage() {
+export default async function NoAccessPage() {
+  const t = await getDictionary();
   async function signOut() {
     "use server";
     const supabase = await createClient();
@@ -25,20 +27,19 @@ export default function NoAccessPage() {
             CM
           </div>
           <div className="leading-tight">
-            <div className="font-head font-semibold text-[15px]">Corp Management</div>
-            <div className="text-[11px] text-fg-subtle">SEA IT Infrastructure Registry</div>
+            <div className="font-head font-semibold text-[15px]">{t.auth.brand}</div>
+            <div className="text-[11px] text-fg-subtle">{t.auth.tagline}</div>
           </div>
         </div>
 
-        <h3 className="text-[17px] font-semibold font-head mb-1">Account not provisioned</h3>
+        <h3 className="text-[17px] font-semibold font-head mb-1">{t.auth.noAccessTitle}</h3>
         <p className="text-[13px] text-fg-muted mb-5">
-          You&apos;re signed in, but your account hasn&apos;t been assigned a role or country
-          yet. Ask your HQ admin to provision access, then sign in again.
+          {t.auth.noAccessBody}
         </p>
 
         <form action={signOut}>
           <Button type="submit" variant="ghost" className="w-full justify-center">
-            Sign out
+            {t.auth.signOut}
           </Button>
         </form>
       </div>

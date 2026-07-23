@@ -8,11 +8,16 @@ import { inviteUserSchema, type InviteUserInput } from "@/lib/validation/user";
 import { COUNTRY_LIST } from "@/lib/constants/countries";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 export function InviteForm() {
+  const t = useT();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Zod messages are dictionary keys (13.29) - resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
 
   const {
     register,
@@ -37,7 +42,7 @@ export function InviteForm() {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Failed to send invite.");
+      setServerError(body.error ?? t.users.inviteFailed);
       return;
     }
     setDone(true);
@@ -47,25 +52,25 @@ export function InviteForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3.5">
-      <Field label="Full name" error={errors.full_name?.message}>
+      <Field label={t.users.fieldFullName} error={vm(errors.full_name?.message)}>
         <input className="field-input" {...register("full_name")} placeholder="Nadia Rahman" />
       </Field>
-      <Field label="Email" error={errors.email?.message}>
+      <Field label={t.users.fieldEmail} error={vm(errors.email?.message)}>
         <input className="field-input" type="email" {...register("email")} placeholder="user@example.com" />
       </Field>
-      <Field label="Role" error={errors.role?.message}>
+      <Field label={t.users.fieldRole} error={vm(errors.role?.message)}>
         <select className="field-input" {...register("role")}>
-          <option value="country_manager">Country Manager</option>
-          <option value="hq_admin">HQ Admin</option>
+          <option value="country_manager">{t.users.roleCountryManager}</option>
+          <option value="hq_admin">{t.users.roleHqAdmin}</option>
         </select>
       </Field>
       {role === "country_manager" && (
-        <Field label="Country" error={errors.country_code?.message}>
+        <Field label={t.users.fieldCountry} error={vm(errors.country_code?.message)}>
           <select className="field-input" {...register("country_code")}>
-            <option value="">Select…</option>
+            <option value="">{t.users.selectPlaceholder}</option>
             {COUNTRY_LIST.map((c) => (
               <option key={c.code} value={c.code}>
-                {c.name}
+                {t.countries[c.code]}
               </option>
             ))}
           </select>
@@ -77,12 +82,12 @@ export function InviteForm() {
       )}
       {done && (
         <div className="text-[12px] text-ok bg-ok-bg rounded-sm px-3 py-2">
-          Invite sent. The user will set their password from the email link.
+          {t.users.inviteSent}
         </div>
       )}
 
       <Button type="submit" disabled={isSubmitting} className="justify-center">
-        {isSubmitting ? "Sending…" : "Send invite"}
+        {isSubmitting ? t.users.sending : t.users.sendInvite}
       </Button>
     </form>
   );

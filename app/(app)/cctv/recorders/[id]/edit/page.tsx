@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { RecorderForm } from "../../new/RecorderForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function EditRecorderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getDictionary();
   const supabase = await createClient();
 
   const [{ data: recorder }, { data: sites }] = await Promise.all([
@@ -33,9 +35,12 @@ export default async function EditRecorderPage({
     <RecorderForm
       sites={sites ?? []}
       recorder={recorder}
-      eyebrow="CCTV"
-      title="Edit recorder"
-      subtitle={[recorder.brand, recorder.model].filter(Boolean).join(" ") || "Update recorder details."}
+      eyebrow={t.nav.cctv}
+      title={t.forms.pages.editRecorderTitle}
+      subtitle={
+        [recorder.brand, recorder.model].filter(Boolean).join(" ") ||
+        t.forms.pages.editRecorderSubtitle
+      }
     />
   );
 }

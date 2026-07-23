@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Renders an audit diff (jsonb). The trigger stores changed-keys-only on UPDATE
  * and the full row on INSERT/DELETE, so we show the field names inline and let
  * the reviewer expand to the raw JSON. Read-only — the audit log is immutable.
+ *
+ * The toggle labels are read from the dictionary here rather than passed in:
+ * they interpolate the field count, and a function cannot cross the RSC
+ * boundary from the server page that renders this cell.
  */
 export function DiffCell({ diff }: { diff: Record<string, unknown> | null }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   if (!diff || typeof diff !== "object") {
@@ -27,7 +33,7 @@ export function DiffCell({ diff }: { diff: Record<string, unknown> | null }) {
         className="text-left text-[12px] text-accent hover:underline font-head"
         aria-expanded={open}
       >
-        {open ? "Hide" : "Show"} {keys.length} field{keys.length === 1 ? "" : "s"}
+        {open ? t.audit.hideFields(keys.length) : t.audit.showFields(keys.length)}
       </button>
       {!open && (
         <span className="text-[11.5px] text-fg-subtle truncate max-w-[280px]">

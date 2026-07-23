@@ -11,6 +11,7 @@ import { VerifyButton } from "@/components/ui/VerifyButton";
 import { DEFAULT_MIN_RETENTION_DAYS } from "@/lib/constants/countries";
 import { isBelowRetention } from "@/lib/utils/cctv";
 import type { CameraStatus } from "@/lib/constants/enums";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ const cameraTone: Record<CameraStatus, "ok" | "danger" | "warn"> = {
 
 /** CCTV module (PRD Story 3): recorders + cameras. RLS-scoped. */
 export default async function CctvPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
 
   const [recorders, cameras, settings] = await Promise.all([
@@ -61,36 +63,38 @@ export default async function CctvPage() {
   return (
     <>
       <PageHead
-        title="CCTV"
-        subtitle="Recorders, cameras, and retention."
+        title={t.cctv.title}
+        subtitle={t.cctv.subtitle}
         actions={
           <DropdownMenu
-            label="New"
+            label={t.common.new}
             sm
             variant="ghost"
             items={[
-              { label: "New recorder", href: "/cctv/recorders/new" },
-              { label: "New camera", href: "/cctv/cameras/new" },
+              { label: t.cctv.newRecorder, href: "/cctv/recorders/new" },
+              { label: t.cctv.newCamera, href: "/cctv/cameras/new" },
             ]}
           />
         }
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
-        <Kpi label="Recorders" value={recorderRows.length} />
-        <Kpi label="Cameras active" value={active} unit={`/ ${cameraCount}`} />
-        <Kpi label="Faulty / offline" value={faulty} accent={faulty > 0 ? "danger" : "accent"} />
-        <Kpi label="Below retention" value={belowRetention} accent={belowRetention > 0 ? "warn" : "accent"} />
+        <Kpi label={t.cctv.kpiRecorders} value={recorderRows.length} />
+        <Kpi label={t.cctv.kpiCamerasActive} value={active} unit={`/ ${cameraCount}`} />
+        <Kpi label={t.cctv.kpiFaultyOffline} value={faulty} accent={faulty > 0 ? "danger" : "accent"} />
+        <Kpi label={t.cctv.kpiBelowRetention} value={belowRetention} accent={belowRetention > 0 ? "warn" : "accent"} />
       </div>
 
       <div className="flex flex-col gap-3.5">
         <Panel>
-          <PanelHeader title={`Recorders · ${recorderRows.length}`} />
+          <PanelHeader title={`${t.cctv.panelRecorders} · ${recorderRows.length}`} />
           {recorderRows.length === 0 ? (
-            <PanelEmpty>No recorders recorded yet.</PanelEmpty>
+            <PanelEmpty>{t.cctv.noRecorders}</PanelEmpty>
           ) : (
             <Table>
-              <Thead columns={["Model", "Channels", "Retention", "Location", ""]} />
+              <Thead
+                columns={[t.columns.model, t.columns.channels, t.columns.retention, t.columns.location, ""]}
+              />
               <tbody>
                 {recorderRows.map((r) => {
                   const below = isBelowRetention(r.retention_days, retentionMin(r));
@@ -104,9 +108,9 @@ export default async function CctvPage() {
                         {r.retention_days == null ? (
                           <span className="mono">—</span>
                         ) : below ? (
-                          <Chip tone="danger">{r.retention_days}d</Chip>
+                          <Chip tone="danger">{t.cctv.daysShort(r.retention_days)}</Chip>
                         ) : (
-                          <span className="mono">{r.retention_days}d</span>
+                          <span className="mono">{t.cctv.daysShort(r.retention_days)}</span>
                         )}
                       </Td>
                       <Td>{r.location ?? "—"}</Td>
@@ -114,7 +118,7 @@ export default async function CctvPage() {
                         <div className="flex items-center justify-end gap-1">
                           <Link href={`/cctv/recorders/${r.id}/edit`}>
                             <Button sm variant="ghost">
-                              Edit
+                              {t.common.edit}
                             </Button>
                           </Link>
                           <VerifyButton table="cctv_recorders" id={r.id} />
@@ -129,31 +133,40 @@ export default async function CctvPage() {
         </Panel>
 
         <Panel>
-          <PanelHeader title={`Cameras · ${cameraCount}`} />
+          <PanelHeader title={`${t.cctv.panelCameras} · ${cameraCount}`} />
           {cameraCount === 0 ? (
-            <PanelEmpty>No cameras recorded yet.</PanelEmpty>
+            <PanelEmpty>{t.cctv.noCameras}</PanelEmpty>
           ) : (
             <Table>
-              <Thead columns={["Label", "Type", "Resolution", "Placement", "Status", ""]} />
+              <Thead
+                columns={[
+                  t.columns.label,
+                  t.columns.type,
+                  t.columns.resolution,
+                  t.columns.placement,
+                  t.columns.status,
+                  "",
+                ]}
+              />
               <tbody>
                 {cameraRows.map((c) => (
                   <Tr key={c.id}>
                     <Td mono>{c.label}</Td>
                     <Td>
-                      <span className="capitalize">{c.camera_type}</span>
+                      {t.enums.cameraType[c.camera_type]}
                     </Td>
                     <Td>{c.resolution ?? "—"}</Td>
-                    <Td>{c.outdoor ? "Outdoor" : "Indoor"}</Td>
+                    <Td>{c.outdoor ? t.country.outdoor : t.country.indoor}</Td>
                     <Td>
                       <Chip tone={cameraTone[c.status]}>
-                        <span className="capitalize">{c.status}</span>
+                        {t.enums.cameraStatus[c.status]}
                       </Chip>
                     </Td>
                     <Td>
                       <div className="flex items-center justify-end gap-1">
                         <Link href={`/cctv/cameras/${c.id}/edit`}>
                           <Button sm variant="ghost">
-                            Edit
+                            {t.common.edit}
                           </Button>
                         </Link>
                         <VerifyButton table="cctv_cameras" id={c.id} />

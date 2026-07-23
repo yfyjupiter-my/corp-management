@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/types/database";
+import { getDictionary } from "@/lib/i18n/server";
+import { validationMessage } from "@/lib/i18n/validation";
 import { dbErrorResponse } from "./db-error";
 import { writeLimiter, rateLimitResponse } from "./rate-limit";
 
@@ -23,23 +25,25 @@ export function createResourceRoute<T extends TableName>(
   schema: z.ZodTypeAny,
 ) {
   return async function POST(request: Request) {
+    const t = await getDictionary();
     try {
       const supabase = await createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      if (!user) return NextResponse.json({ error: t.errors.unauthorized }, { status: 401 });
 
       // SEC-5: cap writes per user. Keyed by user id (auth-gated above), so no
       // spoofable-header trust. Namespaced by table so one resource's bursts
       // don't exhaust another's budget.
       const rl = writeLimiter.check(`create:${String(table)}:${user.id}`);
-      if (!rl.ok) return rateLimitResponse(rl);
+      if (!rl.ok) return rateLimitResponse(rl, t);
 
       const parsed = schema.safeParse(await request.json().catch(() => null));
       if (!parsed.success) {
         return NextResponse.json(
-          { error: parsed.error.issues[0]?.message ?? "Invalid payload" },
+          { error: validationMessage(t, parsed.error.issues[0]?.message) ??
+              t.errors.invalidPayload },
           { status: 400 },
         );
       }
@@ -50,14 +54,14 @@ export function createResourceRoute<T extends TableName>(
         .select("id")
         .single();
 
-      if (error) return dbErrorResponse(error, `POST /${String(table)}`);
+      if (error) return dbErrorResponse(error, `POST /${String(table)}`, t);
       // Every resource table exposes an `id`; the generic table param widens the
       // inferred select type, so narrow it back here.
       const { id } = data as unknown as { id: string };
       return NextResponse.json({ ok: true, id }, { status: 201 });
     } catch (err) {
       console.error(`[route-error] POST /${String(table)}:`, err);
-      return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+      return NextResponse.json({ error: t.errors.serverError }, { status: 500 });
     }
   };
 }

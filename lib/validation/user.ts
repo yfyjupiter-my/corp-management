@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { COUNTRY_CODES } from "@/lib/constants/countries";
 import { USER_ROLES } from "@/lib/constants/enums";
+import { V } from "@/lib/i18n/validation";
 
 /**
  * Invite payload (HQ admin only). A country_manager must have a country; an
@@ -8,8 +9,8 @@ import { USER_ROLES } from "@/lib/constants/enums";
  */
 export const inviteUserSchema = z
   .object({
-    email: z.string().email("Enter a valid email"),
-    full_name: z.string().trim().min(1, "Name is required").max(120),
+    email: z.string().email(V.email),
+    full_name: z.string().trim().min(1, V.fullName).max(120),
     role: z.enum(USER_ROLES),
     country_code: z.enum(COUNTRY_CODES).optional(),
   })
@@ -18,14 +19,14 @@ export const inviteUserSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["country_code"],
-        message: "Country managers must be assigned a country",
+        message: V.countryRequired,
       });
     }
     if (val.role === "hq_admin" && val.country_code) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["country_code"],
-        message: "HQ admins are not scoped to a country",
+        message: V.countryForbidden,
       });
     }
   });

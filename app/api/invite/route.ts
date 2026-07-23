@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { inviteUserSchema } from "@/lib/validation/user";
 import { dbErrorResponse } from "@/lib/api/db-error";
 import { inviteLimiter, rateLimitResponse } from "@/lib/api/rate-limit";
+import { getDictionary } from "@/lib/i18n/server";
+import { validationMessage } from "@/lib/i18n/validation";
 
 /**
  * Invite a user (PRD Story 4). HQ admin only.
@@ -13,21 +15,22 @@ import { inviteLimiter, rateLimitResponse } from "@/lib/api/rate-limit";
  * Authorization is double-checked here because the admin client bypasses RLS.
  */
 export async function POST(request: Request) {
+  const t = await getDictionary();
   try {
     const actor = await getCurrentUser();
     if (actor?.role !== "hq_admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: t.errors.forbidden }, { status: 403 });
     }
 
     // SEC-5: tighter limit — each invite sends an email, so unthrottled calls
     // enable email bombing / user enumeration. Keyed by the acting admin.
     const rl = inviteLimiter.check(`invite:${actor.id}`);
-    if (!rl.ok) return rateLimitResponse(rl);
+    if (!rl.ok) return rateLimitResponse(rl, t);
 
     const parsed = inviteUserSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid payload" },
+        { error: validationMessage(t, parsed.error.issues[0]?.message) ?? t.errors.invalidPayload },
         { status: 400 },
       );
     }
@@ -43,7 +46,7 @@ export async function POST(request: Request) {
     if (error || !data.user) {
       console.error("[invite] inviteUserByEmail failed:", error);
       return NextResponse.json(
-        { error: "Could not send the invite. Please try again." },
+        { error: t.errors.inviteFailed },
         { status: 400 },
       );
     }
@@ -73,7 +76,7 @@ export async function POST(request: Request) {
           delErr,
         );
       }
-      return dbErrorResponse(profileError, "POST /invite (profile insert)");
+      return dbErrorResponse(profileError, "POST /invite (profile insert)", t);
     }
 
     // BUS-2: `profiles` has no audit trigger, and service-role writes record
@@ -95,6 +98,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, userId: data.user.id });
   } catch (err) {
     console.error("[route-error] POST /invite:", err);
-    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+    return NextResponse.json({ error: t.errors.serverError }, { status: 500 });
   }
 }

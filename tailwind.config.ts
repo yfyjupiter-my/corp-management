@@ -46,10 +46,11 @@ const config: Config = {
         danger: { DEFAULT: "var(--danger)", bg: "var(--danger-bg)" },
         info: { DEFAULT: "var(--info)", bg: "var(--info-bg)" },
       },
+      // *-stack = the next/font family + the CJK fallback (see globals.css).
       fontFamily: {
-        head: "var(--font-head)",
-        body: "var(--font-body)",
-        mono: "var(--font-mono)",
+        head: "var(--font-head-stack)",
+        body: "var(--font-body-stack)",
+        mono: "var(--font-mono-stack)",
       },
       borderRadius: {
         DEFAULT: "var(--radius)",

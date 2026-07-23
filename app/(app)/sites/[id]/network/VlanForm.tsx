@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { vlanSchema, type VlanInput } from "@/lib/validation/network";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 /**
  * Add a VLAN to a fixed site (PRD Story 2). Like the IP scheme form, the parent
@@ -14,7 +16,11 @@ import { Button } from "@/components/ui/Button";
  */
 export function VlanForm({ siteId }: { siteId: string }) {
   const router = useRouter();
+  const t = useT();
   const [serverError, setServerError] = useState<string | null>(null);
+  // Zod messages are dictionary keys (13.29) - resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
+
 
   const {
     register,
@@ -35,7 +41,7 @@ export function VlanForm({ siteId }: { siteId: string }) {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save VLAN.");
+      setServerError(body.error ?? t.forms.saveFailed.vlan);
       return;
     }
     reset({ site_id: siteId });
@@ -46,31 +52,31 @@ export function VlanForm({ siteId }: { siteId: string }) {
     <form onSubmit={handleSubmit(onSubmit)}>
       <input type="hidden" {...register("site_id")} />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-[18px]">
-        <Field label="VLAN ID" required error={errors.vlan_id?.message}>
+        <Field label={t.forms.labels.vlanId} required error={vm(errors.vlan_id?.message)}>
           <input
             className="fld font-mono"
             type="number"
             min={1}
             max={4094}
             {...register("vlan_id")}
-            placeholder="10"
+            placeholder={t.forms.ph.vlanId}
           />
         </Field>
-        <Field label="Name" error={errors.name?.message}>
-          <input className="fld" {...register("name")} placeholder="office" />
+        <Field label={t.forms.labels.name} error={vm(errors.name?.message)}>
+          <input className="fld" {...register("name")} placeholder={t.forms.ph.vlanName} />
         </Field>
-        <Field label="Subnet" error={errors.subnet?.message}>
-          <input className="fld font-mono" {...register("subnet")} placeholder="10.10.10.0/24" />
+        <Field label={t.forms.labels.subnet} error={vm(errors.subnet?.message)}>
+          <input className="fld font-mono" {...register("subnet")} placeholder={t.forms.ph.vlanSubnet} />
         </Field>
-        <Field label="Purpose" error={errors.purpose?.message}>
-          <input className="fld" {...register("purpose")} placeholder="Staff workstations" />
+        <Field label={t.forms.labels.purpose} error={vm(errors.purpose?.message)}>
+          <input className="fld" {...register("purpose")} placeholder={t.forms.ph.vlanPurpose} />
         </Field>
       </div>
 
       <div className="flex items-center gap-2.5 px-[18px] py-3 border-t border-border bg-surface-2">
         {serverError && <span className="text-[12px] text-danger mr-auto">{serverError}</span>}
         <Button type="submit" sm disabled={isSubmitting} className={serverError ? "" : "ml-auto"}>
-          {isSubmitting ? "Saving…" : "Add VLAN"}
+          {isSubmitting ? t.common.saving : t.forms.actions.addVlan}
         </Button>
       </div>
 

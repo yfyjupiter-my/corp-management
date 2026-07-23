@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 interface Site {
   id: string;
@@ -42,8 +44,12 @@ export function CircuitForm({
   panelClassName?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const [serverError, setServerError] = useState<string | null>(null);
   const [staticIps, setStaticIps] = useState("");
+  // Zod messages are dictionary keys (13.29) - resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
+
 
   const {
     register,
@@ -69,7 +75,7 @@ export function CircuitForm({
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save circuit.");
+      setServerError(body.error ?? t.forms.saveFailed.circuit);
       return;
     }
     router.push("/network");
@@ -88,10 +94,10 @@ export function CircuitForm({
           <>
             {serverError && <span className="text-[12px] text-danger">{serverError}</span>}
             <Button type="button" variant="ghost" sm onClick={() => router.back()}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : "Save"}
+              {isSubmitting ? t.common.saving : t.common.save}
             </Button>
           </>
         }
@@ -100,9 +106,9 @@ export function CircuitForm({
       <Panel className={panelClassName}>
         {/* pb-[1px] + each field's own pb-[17px] = the same 18px as the other sides. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0 px-[18px] pt-[18px] pb-[1px]">
-          <Field label="Site" required error={errors.site_id?.message} span2>
+          <Field label={t.forms.labels.site} required error={vm(errors.site_id?.message)} span2>
             <select className="fld" {...register("site_id")}>
-              <option value="">Select a site…</option>
+              <option value="">{t.forms.select.site}</option>
               {sites.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.country_code} · {s.name}
@@ -110,56 +116,56 @@ export function CircuitForm({
               ))}
             </select>
           </Field>
-          <Field label="Type" required error={errors.type?.message}>
+          <Field label={t.forms.labels.type} required error={vm(errors.type?.message)}>
             <select className="fld" {...register("type")}>
-              {CIRCUIT_TYPES.map((t) => (
-                <option key={t} value={t} className="capitalize">
-                  {t}
+              {CIRCUIT_TYPES.map((value) => (
+                <option key={value} value={value}>
+                  {t.enums.circuitType[value]}
                 </option>
               ))}
             </select>
           </Field>
 
-          <Field label="Provider" required error={errors.provider?.message}>
-            <input className="fld" {...register("provider")} placeholder="TM Unifi" />
+          <Field label={t.forms.labels.provider} required error={vm(errors.provider?.message)}>
+            <input className="fld" {...register("provider")} placeholder={t.forms.ph.provider} />
           </Field>
-          <Field label="Circuit ID" error={errors.circuit_id?.message}>
-            <input className="fld font-mono" {...register("circuit_id")} placeholder="TM-KL-004821" />
+          <Field label={t.forms.labels.circuitId} error={vm(errors.circuit_id?.message)}>
+            <input className="fld font-mono" {...register("circuit_id")} placeholder={t.forms.ph.circuitId} />
           </Field>
-          <Field label="Bandwidth" error={errors.bandwidth?.message}>
-            <input className="fld" {...register("bandwidth")} placeholder="1 Gbps" />
+          <Field label={t.forms.labels.bandwidth} error={vm(errors.bandwidth?.message)}>
+            <input className="fld" {...register("bandwidth")} placeholder={t.forms.ph.bandwidth} />
           </Field>
 
-          <Field label="Static IPs" help="Comma or space separated." span2>
+          <Field label={t.forms.labels.staticIps} help={t.forms.help.staticIps} span2>
             <textarea
               className="fld font-mono min-h-[44px]"
               value={staticIps}
               onChange={(e) => setStaticIps(e.target.value)}
-              placeholder="203.0.113.10, 203.0.113.11"
+              placeholder={t.forms.ph.staticIps}
             />
           </Field>
-          <Field label="Monthly cost" error={errors.monthly_cost?.message}>
+          <Field label={t.forms.labels.monthlyCost} error={vm(errors.monthly_cost?.message)}>
             <input
               className="fld"
               type="number"
               step="0.01"
               min="0"
               {...register("monthly_cost")}
-              placeholder="899.00"
+              placeholder={t.forms.ph.monthlyCost}
             />
           </Field>
 
-          <Field label="Contract start" error={errors.contract_start?.message}>
+          <Field label={t.forms.labels.contractStart} error={vm(errors.contract_start?.message)}>
             <input className="fld" type="date" {...register("contract_start")} />
           </Field>
-          <Field label="Contract end" error={errors.contract_end?.message}>
+          <Field label={t.forms.labels.contractEnd} error={vm(errors.contract_end?.message)}>
             <input className="fld" type="date" {...register("contract_end")} />
           </Field>
-          <Field label="Support phone" error={errors.support_phone?.message}>
-            <input className="fld" {...register("support_phone")} placeholder="100" />
+          <Field label={t.forms.labels.supportPhone} error={vm(errors.support_phone?.message)}>
+            <input className="fld" {...register("support_phone")} placeholder={t.forms.ph.supportPhone} />
           </Field>
 
-          <Field label="Notes" error={errors.notes?.message} span2>
+          <Field label={t.forms.labels.notes} error={vm(errors.notes?.message)} span2>
             <textarea className="fld min-h-[64px]" {...register("notes")} />
           </Field>
         </div>

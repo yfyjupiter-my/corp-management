@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 interface Recorder {
   id: string;
@@ -66,7 +68,10 @@ export function CameraForm({
   panelClassName?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const isEdit = Boolean(camera);
+  // Zod messages are dictionary keys (13.29) - resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
   const [serverError, setServerError] = useState<string | null>(null);
 
   /**
@@ -113,7 +118,7 @@ export function CameraForm({
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save camera.");
+      setServerError(body.error ?? t.forms.saveFailed.camera);
       return;
     }
     router.push("/cctv");
@@ -132,10 +137,10 @@ export function CameraForm({
           <>
             {serverError && <span className="text-[12px] text-danger">{serverError}</span>}
             <Button type="button" variant="ghost" sm onClick={() => router.back()}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save"}
+              {isSubmitting ? t.common.saving : isEdit ? t.common.saveChanges : t.common.save}
             </Button>
           </>
         }
@@ -144,7 +149,7 @@ export function CameraForm({
       <Panel className={panelClassName}>
         {/* pb-[1px] + each field's own pb-[17px] = the same 18px as the other sides. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0 px-[18px] pt-[18px] pb-[1px]">
-          <Field label="Site" required span2>
+          <Field label={t.forms.labels.site} required span2>
             <select
               className="fld"
               value={siteId}
@@ -153,7 +158,7 @@ export function CameraForm({
                 setValue("recorder_id", "", { shouldValidate: false });
               }}
             >
-              <option value="">Select a site…</option>
+              <option value="">{t.forms.select.site}</option>
               {sites.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.country_code} · {s.name}
@@ -161,28 +166,30 @@ export function CameraForm({
               ))}
             </select>
           </Field>
-          <Field label="Type" required error={errors.camera_type?.message}>
+          <Field label={t.forms.labels.type} required error={vm(errors.camera_type?.message)}>
             <select className="fld" {...register("camera_type")}>
-              {CAMERA_TYPES.map((t) => (
-                <option key={t} value={t} className="capitalize">
-                  {t}
+              {CAMERA_TYPES.map((value) => (
+                <option key={value} value={value}>
+                  {t.enums.cameraType[value]}
                 </option>
               ))}
             </select>
           </Field>
 
-          <Field label="Label" required error={errors.label?.message}>
-            <input className="fld font-mono" {...register("label")} placeholder="CAM-01" />
+          <Field label={t.forms.labels.label} required error={vm(errors.label?.message)}>
+            <input className="fld font-mono" {...register("label")} placeholder={t.forms.ph.cameraLabel} />
           </Field>
           <Field
-            label="Recorder"
+            label={t.forms.labels.recorder}
             required
-            error={errors.recorder_id?.message}
-            help={siteId && siteRecorders.length === 0 ? "No recorders on this site yet." : undefined}
+            error={vm(errors.recorder_id?.message)}
+            help={
+              siteId && siteRecorders.length === 0 ? t.forms.help.noRecordersOnSite : undefined
+            }
             span2
           >
             <select className="fld" {...register("recorder_id")} disabled={!siteId}>
-              <option value="">{siteId ? "Select a recorder…" : "Select a site first…"}</option>
+              <option value="">{siteId ? t.forms.select.recorder : t.forms.select.siteFirst}</option>
               {siteRecorders.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.label}
@@ -191,26 +198,26 @@ export function CameraForm({
             </select>
           </Field>
 
-          <Field label="Resolution" error={errors.resolution?.message}>
-            <input className="fld" {...register("resolution")} placeholder="4MP" />
+          <Field label={t.forms.labels.resolution} error={vm(errors.resolution?.message)}>
+            <input className="fld" {...register("resolution")} placeholder={t.forms.ph.resolution} />
           </Field>
-          <Field label="Status" required error={errors.status?.message}>
+          <Field label={t.forms.labels.status} required error={vm(errors.status?.message)}>
             <select className="fld" {...register("status")}>
               {CAMERA_STATUSES.map((s) => (
-                <option key={s} value={s} className="capitalize">
-                  {s}
+                <option key={s} value={s}>
+                  {t.enums.cameraStatus[s]}
                 </option>
               ))}
             </select>
           </Field>
-          <Field label="Placement">
+          <Field label={t.forms.labels.placement}>
             <label className="flex items-center gap-2 text-[13px] text-fg py-2">
               <input type="checkbox" {...register("outdoor")} />
-              Outdoor
+              {t.forms.labels.outdoor}
             </label>
           </Field>
 
-          <Field label="Notes" error={errors.notes?.message} span2>
+          <Field label={t.forms.labels.notes} error={vm(errors.notes?.message)} span2>
             <textarea className="fld min-h-[64px]" {...register("notes")} />
           </Field>
         </div>

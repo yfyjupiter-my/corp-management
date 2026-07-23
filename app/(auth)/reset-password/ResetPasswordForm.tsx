@@ -6,10 +6,12 @@ import type { Route } from "next";
 import { createClient } from "@/lib/supabase/client";
 import { safeInternalPath } from "@/lib/utils/safe-redirect";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
 
 const MIN_LENGTH = 8;
 
 export function ResetPasswordForm() {
+  const t = useT();
   const router = useRouter();
   const params = useSearchParams();
   const [password, setPassword] = useState("");
@@ -34,7 +36,7 @@ export function ResetPasswordForm() {
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match.");
+      setError(t.auth.passwordsDoNotMatch);
       return;
     }
     setLoading(true);
@@ -58,10 +60,10 @@ export function ResetPasswordForm() {
     return (
       <div className="flex flex-col gap-3.5">
         <div className="text-[13px] text-danger bg-danger-bg rounded-sm px-3 py-3">
-          This reset link is invalid or has expired. Request a new one.
+          {t.auth.linkInvalid}
         </div>
         <a href="/forgot-password">
-          <Button className="w-full justify-center">Request a new link</Button>
+          <Button className="w-full justify-center">{t.auth.requestNewLink}</Button>
         </a>
       </div>
     );
@@ -70,7 +72,7 @@ export function ResetPasswordForm() {
   if (done) {
     return (
       <div className="text-[13px] text-fg-muted bg-surface-2 border border-border rounded-sm px-3 py-3">
-        Password updated. Signing you in…
+        {t.auth.passwordUpdated}
       </div>
     );
   }
@@ -78,7 +80,7 @@ export function ResetPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3.5">
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold text-fg-muted font-head">New password</span>
+        <span className="text-[12px] font-semibold text-fg-muted font-head">{t.auth.newPassword}</span>
         <input
           type="password"
           required
@@ -90,7 +92,7 @@ export function ResetPasswordForm() {
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold text-fg-muted font-head">Confirm password</span>
+        <span className="text-[12px] font-semibold text-fg-muted font-head">{t.auth.confirmPassword}</span>
         <input
           type="password"
           required
@@ -111,7 +113,7 @@ export function ResetPasswordForm() {
         disabled={loading || ready === null}
         className="w-full justify-center mt-1"
       >
-        {loading ? "Updating…" : "Update password"}
+        {loading ? t.auth.updating : t.auth.updatePassword}
       </Button>
     </form>
   );

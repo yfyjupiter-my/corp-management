@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
 
 export function ForgotPasswordForm() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -42,7 +44,7 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3.5">
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold text-fg-muted font-head">Email</span>
+        <span className="text-[12px] font-semibold text-fg-muted font-head">{t.auth.email}</span>
         <input
           type="email"
           required
@@ -50,7 +52,7 @@ export function ForgotPasswordForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="input-base"
-          placeholder="you@example.com"
+          placeholder={t.auth.emailPlaceholder}
         />
       </label>
 
@@ -59,7 +61,7 @@ export function ForgotPasswordForm() {
       )}
 
       <Button type="submit" disabled={loading} className="w-full justify-center mt-1">
-        {loading ? "Sending…" : "Send reset link"}
+        {loading ? t.auth.sending : t.auth.sendResetLink}
       </Button>
 
       <style>{`

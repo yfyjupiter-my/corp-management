@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CAMERA_STATUSES, CAMERA_TYPES } from "@/lib/constants/enums";
 import { ipString, optionalSafeText } from "./common";
+import { V } from "@/lib/i18n/validation";
 
 export const recorderSchema = z.object({
   site_id: z.string().uuid(),
@@ -18,7 +19,7 @@ export type RecorderInput = z.infer<typeof recorderSchema>;
 
 export const cameraSchema = z.object({
   recorder_id: z.string().uuid(),
-  label: z.string().trim().min(1, "Label is required").max(120),
+  label: z.string().trim().min(1, V.label).max(120),
   location_desc: optionalSafeText(200),
   camera_type: z.enum(CAMERA_TYPES),
   resolution: z.string().max(40).optional().or(z.literal("").transform(() => undefined)),

@@ -2,13 +2,108 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-16 (Phase 9) |
+| **Last updated** | 2026-07-23 (Phase 13F + first live run) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · unit tests **49 passed**, 4 RLS integration skipped (need live Supabase env) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-22) — Sites list drops the archived toggle
+## Latest change (2026-07-23) — first live run: RSC boundary fix + VPN orphan deleted
+
+- 🟢 **The app boots and is reachable again** — confirmed in-browser. This was the first time Phase 13 had been driven live at all; every entry below said "not yet driven live", and the run surfaced a real defect immediately.
+- 🚫→✅ **"Functions cannot be passed directly to Client Components."** `app/layout.tsx` passed the *resolved dictionary* into the client `I18nProvider`, but interpolating entries are **functions** (`country.title(name)`, `audit.showFields(n)`, `forms.pages.editSiteTitle(name)`) and a function cannot be serialized across the RSC boundary. `I18nProvider` now takes the **locale string** and resolves the dictionary client-side, so only a string is in the payload.
+  - **Not a 13F regression** — the provider has been passing functions since 13.15/13.22, when 13E gave the `dashboard`/`country` namespaces their first function entries. 13F merely added the `forms.pages` object that React named in the error.
+  - **Second instance, same cause:** `audit/page.tsx` passed `showLabel`/`hideLabel` functions to the client `DiffCell`. `DiffCell` now calls `useT()` itself — cleaner regardless, since the field count is only known inside it.
+  - **Tradeoff, measured not assumed:** both dictionaries now ship client-side. Routes with client components went ~130kB → ~140kB First Load JS; the shared chunk is unchanged at 102kB and server-only pages (`/renewals`, `/search`, `/sites`) are untouched at ~103–106kB. This reverses the 13.5 note about keeping `en` out of client bundles; the reasoning is recorded in the provider's doc comment. Shipping only the active locale would need a per-locale dynamic import + Suspense.
+  - ⚠️ **The local helpers that take strings as props** (`ModuleHead`, `MoreRows`, `ChildPanel`) are plain functions in server files, not client components — passing `t.country.showing` to them crosses no boundary and is fine. The rule to remember: **only `"use client"` components constrain what a dictionary entry may be.**
+- **`InviteForm` rendered raw `v.*` keys** — a genuine 13.29 defect: it showed `errors.*.message` without `validationMessage()`, so its four validation messages would have read `v.fullName` / `v.email`. Fixed; a sweep confirmed no other form was missing the call.
+- **The orphaned VPN form is gone** — `app/(app)/network/vpn/` (page + `VpnForm`) and the empty `app/api/vpn-links/` directory deleted; `/network/vpn/new` no longer exists in the route types. VPN link **reads** are untouched as designed (table, RLS/audit policies, site-detail panel, country stat, verify allowlist). `vpnLinkSchema` now has no caller — harmless, but a candidate for the next dead-code sweep. There is now **no English UI left in the app**.
+- Verified: `npm run build` ✅ · `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **58 passed**, 4 RLS skipped.
+- **Still open in Phase 13:** 13.33 (the rest of the smoke test — actually switching to 繁中, CJK glyph check, a validation message in Chinese, the no-cookie second-browser case) and 13.34 (security checks).
+
+## Earlier change (2026-07-23) — Phase 13: 13F forms, validation & API complete (13.28–13.31)
+
+- **String extraction is done.** Every form field, Zod message and API error now comes from the dictionary; the only English left in the app is the orphaned `network/vpn/new/VpnForm.tsx` (see the 13C entry — untracked, its POST target no longer exists, deletion is still your call).
+- **Zod messages became keys, not text** (13.29). A schema is built at module scope where there is no request and therefore no locale, so `lib/validation/*` now emits `v.*` tokens (`lib/i18n/validation.ts`) that `validationMessage(t, msg)` resolves at render time — in the form's `Field`, and in the route handler before it responds. Built-in Zod messages carry no `v.` prefix and **pass through untouched**; translating Zod's own catalogue is out of scope, and collapsing them to one generic string would lose detail the English UI has today. `SECRET_GUARD_MESSAGE` was deleted from `lib/utils/secrets.ts` — its text is now `validation.secret`.
+- **API errors localise in place** (13.30). All 13 route handlers call `getDictionary()`. The three shared helpers stayed **pure** and take the dictionary as an argument (`dbErrorResponse(error, context, t)`, `rateLimitResponse(rl, t)`) instead of importing `next/headers` themselves — that would have made `lib/api/rate-limit.ts` unusable from its unit test. `CONFLICT_MESSAGE` moved to `errors.conflict`; the 5 SQLSTATE messages in `db-error.ts` became keys into `errors.db`, so the ROB-3 "never leak Postgres internals" guarantee is unchanged — only the lookup target moved.
+- **The 10 create/edit page wrappers had to come too** (not in the plan's 13.28 list): they own the `title`/`subtitle`/`eyebrow` props, so leaving them would have left every form heading English. `sites/new/page.tsx` became `async`; the three eyebrows now reuse `nav.sites`/`nav.network`/`nav.cctv`.
+- **`forms` grew 6 sub-namespaces** — `labels` (47), `ph` (39), `help`, `select`, `actions`, `saveFailed`, `pages`. **All placeholders went into the dictionary**, including technical examples (`Fortinet`, `10.10.0.1`, `FG60F-…`) whose zh values are identical — a half-in/half-out split would have been arbitrary and re-litigated. The camera page's no-recorder empty state was split into a sentence + a link label; "No recorders yet — {link} first." does not survive translation.
+- **Two new tests beyond the plan:** every `V.*` key must resolve to real text in both locales — an unresolved key would silently render the `v.foo` token, which neither `tsc` nor the key-parity test can see — and built-in Zod messages must pass through unchanged.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **58 passed**, 4 RLS skipped. **Not yet driven live** — 13.33 (smoke) and 13.34 (security checks) are all that remain in Phase 13.
+
+## Earlier change (2026-07-23) — Phase 13: 13E page strings complete (13.22–13.27)
+
+- **Every list, detail, dashboard and auth page now renders from the dictionary.** What is still English: the 6 create/edit **forms** and their page wrappers (13.28), Zod messages (13.29) and API route errors (13.30) — i.e. all of 13F.
+- Pages done: dashboard + country dashboard (13.22) · sites list / site detail / site network (13.23) · network + CCTV modules (13.24) · renewals + search (13.25) · audit + `DiffCell` + users + `InviteForm` (13.26) · login / forgot-password / reset-password + their 3 forms, `no-access`, `not-found` (13.27).
+- **Dictionary grew to ~260 keys** across 18 namespaces; two new shared ones: **`columns`** (21 table headers reused across modules) and **`countries`** (display names, so `COUNTRIES[code].name` is no longer rendered anywhere).
+- **Interpolating entries are functions**, e.g. `country.title(name)`, `audit.pageOf(page, total)`, `renewals.resultCount(n, days)`. Composing them from JSX fragments does not survive translation — Chinese puts the count and the noun in a different order. `tests/i18n.test.ts` was extended to match: a function leaf must take at least one argument and **must include every argument in its output**, so a translation that silently drops an interpolated value fails the suite.
+- **Four structural changes the string swap forced**, each a latent bug if left alone:
+  - `renewals`: `Renewal.kind` was the union `"ISP contract" | "Device warranty"` and was compared by value to pick the chip tone. Now `"contract" | "warranty"` — a translated label cannot double as a comparison key.
+  - `DiffCell`: assembled "Show N field(s)" from `{open ? "Hide" : "Show"}` + a pluralising ternary. Now takes `showLabel`/`hideLabel` functions.
+  - `search`: `typeLabel` was a module-level `Record`; now a `(t) => Record<…>` factory, since module scope has no dictionary.
+  - Local helpers (`ModuleHead`, `MoreRows`, `ChildPanel`, `PageLink`) take their strings as props — they are declared outside the component that holds `t`.
+- **`app/layout.tsx`: static `metadata` → `generateMetadata()`** — a static export cannot read the locale cookie, so the browser-tab title would have been stuck in English.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **56 passed**, 4 RLS skipped. **Not yet driven live.**
+
+## Earlier change (2026-07-23) — Phase 13: 13D chrome & shared strings complete (13.18–13.21)
+
+- **`0005_locale.sql` has been applied** to the linked Supabase project (`supabase db push`, 2026-07-23) — 13.32 done, and the app is runnable again.
+- **The switch now visibly changes the UI.** Everything outside the page bodies flips language: sidebar groups + nav + brand tagline, the user menu, the Topbar search placeholder and role pill, every Verify button, and all enum values in tables and selects. Page titles/subtitles and form fields are still English — that's 13E/13F.
+- **`Sidebar.tsx`** (13.18) — group labels and all nav items via `useT()`. Added a **`countries` namespace** (VN/TH/ID/MY) so the 國家 group doesn't list "Vietnam"; `lib/constants/countries.ts` stays untouched, same rule the plan set for `enums.ts`.
+- **`UserMenu.tsx`** (13.19) — role line hoisted to a single `roleLine` const (it was duplicated in the panel and the button), plus Log out / Signing out…. **`Topbar.tsx`** went with it (chrome, not a separate task): it is now `async` and uses `getDictionary()` for the search placeholder and role pill.
+- **`components/ui/*`** (13.20) — audited all 9. Only `VerifyButton` owns literals; the other eight (`Panel`/`PanelEmpty`/`Chip`/`CredentialRef`/`DropdownMenu`/`PageHead`/`Table`/`Kpi`/`Button`) are purely structural, every string caller-supplied. Nothing to translate there, now or later.
+- **Enum labels** (13.21) — `enums.{deviceType,circuitType,cameraType,cameraStatus,vpnStatus,auditAction}` added to both dictionaries and **16 of the 17 `capitalize` spans replaced** across `network/page.tsx`, `cctv/page.tsx`, `countries/[code]/page.tsx`, `sites/[id]/page.tsx`, `audit/page.tsx`, `DeviceForm`, `CameraForm`, `CircuitForm`. The `capitalize` class is gone with them — labels now carry their own casing. **Two cases the plan missed:** the audit `action` chip (needed `auditAction`, from `lower(tg_op)`) and the site-detail VPN status chip (needed `vpnStatus`). `ap` reads "Access point" rather than "AP".
+- ⚠️ **The 17th `capitalize` is in `app/(app)/network/vpn/new/VpnForm.tsx`** — the untracked orphan flagged below. Left untranslated deliberately: touching it would muddy the decision to delete it. It is the only English enum rendering left in the app.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **56 passed**, 4 RLS skipped. **Not yet driven live** — the smoke test in 13.33 is worth running now that the switch does something visible.
+
+## Earlier change (2026-07-23) — Phase 13: 13C switch UI & shell complete (13.13–13.17)
+
+- **The switch is now live in the UI** — first visible change of Phase 13. It flips `<html lang>`, the cookie and `profiles.locale`; the strings themselves are still English everywhere because extraction (13D–13F) hasn't run. Expect only the switch pill itself to react so far.
+- **`components/layout/LocaleSwitch.tsx`** (13.13) — client segmented control, two buttons in one pill, existing DESIGN.md tokens only. `useTransition` + the `setLocale` server action, mirroring the logout pattern in `UserMenu.tsx`; disabled while pending and on the active option. A11y: `role="group"` + `aria-label` (translated), `aria-pressed`, and `lang={l}` per button so each label renders in its own language.
+- **`components/layout/Topbar.tsx`** (13.14) — mounted between the search link and the role pill, with `ml-auto` so the pair stays right-aligned.
+- **`app/layout.tsx`** (13.15) — now `async`: emits `lang={HTML_LANG[locale]}` and wraps `children` in `I18nProvider`. **Build cost confirmed, not assumed:** `npm run build` passes and `/_not-found` flipped from static to `ƒ` (dynamic); every other route was already dynamic, so that is the entire cost.
+- **`app/globals.css` + `tailwind.config.ts`** (13.16) — `--font-cjk` (`PingFang TC`, `Microsoft JhengHei`, `Noto Sans TC`, `Heiti TC`) plus `--font-{head,body,mono}-stack` composites; the four `font-family` declarations now use the stacks. **`tailwind.config.ts` also had to change** (not in the plan): its `fontFamily` mapped `font-head`/`font-body`/`font-mono` directly to the bare next/font vars, so utility-class text — sidebar, chips, KPI labels — would still have rendered tofu.
+- **`app/(auth)/layout.tsx`** (13.17) — new shell putting the switch top-right on login / forgot-password / reset-password, so someone who cannot read English can switch before signing in. One layout instead of three page edits.
+- ⚠️ **Unrelated pre-existing discrepancy found:** `app/(app)/network/vpn/new/{page.tsx,VpnForm.tsx}` still exist **untracked** on disk and still build as a live route, even though commit `b44897f` retired VPN link creation and this file records them as deleted. Their POST target `app/api/vpn-links/` is an empty directory, so **submitting that form would 404**. Left alone — deleting is your call.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **56 passed**, 4 RLS skipped. **Not driven live** — and it cannot be until `0005_locale.sql` is applied (see below).
+
+## Earlier change (2026-07-23) — Phase 13: 13B persistence complete (13.7–13.12)
+
+- 🚫 **`0005_locale.sql` must be applied to the linked Supabase project before the app will run.** `getCurrentUser()` now selects `profiles.locale`; against a DB without the column that select errors, `profile` comes back null, and **every request looks signed-out**. Migration written but **not applied** (13.32 still open — no Docker in this env for a local `db reset`).
+- **`supabase/migrations/0005_locale.sql`** (13.7/13.8) — `profiles.locale text check (locale is null or locale in ('en','zh-TW'))` + `set_my_locale(p_locale text)`: `security definer`, `set search_path = public`, `plpgsql`, re-validates the argument and raises `22023` on anything else, raises `28000` when `auth.uid()` is null, updates **only** `locale` for the calling user; `revoke all from public, anon` + `grant execute to authenticated`. **No self-update RLS policy was added** — RLS cannot restrict columns, so any policy permissive enough for locale would let a `country_manager` set `role='hq_admin'`, which is what `current_role_is_hq()` reads. The function is the sole write path; the reasoning is recorded in the migration header.
+- **`lib/actions/locale.ts`** (13.10) — `"use server"` `setLocale(next)`: `isLocale()` guard **before any write**, then the cookie (`httpOnly`, `sameSite: "lax"`, `path: "/"`, `secure` in prod, 1-year `maxAge`), then the RPC only when signed in (the login page is translated too, so a signed-out switch still works via cookie), then `revalidatePath("/", "layout")`.
+- **`lib/supabase/middleware.ts`** (13.11) — when the locale cookie is absent and a session exists, reads `profiles.locale` and sets the cookie on the response. Placed after the redirect branches so redirects don't pay for the query; precedence is **cookie → `profiles.locale` → `en`**, and it costs one query per new browser only. Root `middleware.ts` unchanged (pure delegation).
+- **Types** (13.9/13.12) — `locale` added to the `profiles` `Row`/`Insert` and `set_my_locale` to the `Functions` block in `lib/types/database.ts`; `CurrentUser.locale` + the `profiles` select in `lib/auth.ts`. Both typed `Locale | null` off `lib/i18n/config`, so the DB check constraint and the TS union can't drift apart silently.
+- Still no visible UI change — the switch itself is 13C. Next: 13.13–13.17 (`LocaleSwitch`, Topbar mount, `app/layout.tsx` `lang` + provider, the `--font-cjk` fallback, and the switch on the auth pages).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **56 passed**, 4 RLS skipped. **Not exercised against a live DB.**
+
+## Earlier change (2026-07-23) — Phase 13: 13A locale core complete (13.1–13.6)
+
+- **`lib/i18n/server.ts`** (13.4) — `getLocale()` (cookie → `en`) and `getDictionary()` for the 38 server components. Importing `next/headers` makes it server-only, so the lookup table itself was split into **`lib/i18n/dictionaries/index.ts`** (`DICTIONARIES: Record<Locale, Dictionary>`, `dictionaryFor()`) — a pure function usable from middleware (13.11 needs it) and tests.
+- **`lib/i18n/client.tsx`** (13.5) — `I18nProvider({ dict, locale })` + `useT()` / `useLocale()` for the 17 client components, same `t.common.save` shape as the server side. **No fallback dictionary:** the context defaults to `null` and the hooks throw outside the provider — defaulting to `en` would ship the whole English object into every client bundle and hide a missing provider behind silently-English UI.
+- **`tests/i18n.test.ts`** (13.6) — 7 tests: recursive dotted-path key parity `en` ↔ `zh-TW`, parity for every locale in `LOCALES` via `dictionaryFor`, no empty/non-string values, a copy-paste guard (zh values actually differ), plus `LOCALE_LABELS`/`HTML_LANG` coverage and `isLocale` accept/reject.
+- Suite is now **56 passed** (was 49), 4 RLS integration skipped. Still nothing consumes i18n — no behaviour change.
+- Next: **13B persistence** — `0005_locale.sql` (`profiles.locale` + the `set_my_locale` security-definer RPC), `lib/actions/locale.ts`, the middleware cookie seed, and the `CurrentUser`/`Database` type updates.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **56 passed**, 4 RLS skipped.
+
+## Earlier change (2026-07-23) — Phase 13: 13.1–13.3 (locale config + both dictionaries)
+
+- **`lib/i18n/config.ts`** (13.1): `LOCALES = ["en","zh-TW"]` + `Locale` type, `DEFAULT_LOCALE` (`en`), `LOCALE_COOKIE` (`"locale"`), `LOCALE_LABELS` (`EN` / `繁中`), `HTML_LANG` (`en` / `zh-Hant-TW`), `isLocale(value: unknown)` guard. Zero imports, so it is usable from server components, client components and middleware alike.
+- **`lib/i18n/dictionaries/en.ts`** (13.2) — 16 namespaces (`common`, `nav`, `topbar`, `dashboard`, `country`, `sites`, `network`, `cctv`, `renewals`, `audit`, `users`, `search`, `auth`, `forms`, `enums`, `errors`) + `export type Dictionary = typeof en`. Seeded with the shared chrome only: Save / Save changes / Saving… / Cancel / Edit / New / Verify / Fresh / Stale, the sidebar groups + nav labels, the Topbar search placeholder and role pill, and each module's real `PageHead` title/subtitle. `forms` and `enums` are intentionally empty — 13.28 and 13.21 fill them.
+- **`lib/i18n/dictionaries/zh-TW.ts`** (13.3) — full 繁體中文 mirror annotated `: Dictionary`.
+- **Deviation from the plan:** `en` is **not** `as const`. Literal value types would have forced `zh-TW` to repeat the English strings verbatim; widened `string` values still enforce the exact key shape. **Guard proven**, not assumed: adding a probe key to `en` alone failed `tsc` with `TS2741 … missing in type` at `zh-TW.ts`; removed and re-verified clean.
+- Nothing consumes any of this yet — no behaviour change. Next: 13.4/13.5 (`getDictionary()` for the 38 server components, `I18nProvider`/`useT()` for the 17 client ones), then 13.6 (runtime key-parity test).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings).
+
+## Earlier change (2026-07-22) — Phase 13 (i18n) planned, not yet started
+
+- **`TASKS.md` gains Phase 13 — EN / 繁體中文 language switch**: 35 subtasks in 7 groups (13A locale core · 13B persistence · 13C switch UI & shell · 13D chrome & shared · 13E pages · 13F forms/validation/API · 13G verification). **No code written yet.**
+- Approach: cookie + `profiles.locale`, hand-rolled typed dictionary in `lib/i18n/` (`zh-TW.ts` annotated `: Dictionary`, so a missing key is a `tsc` error). A `[locale]` URL segment is ruled out — `typedRoutes: true` would mean rewriting every route and `Link href`.
+- Two findings that shape the work: (1) `profiles` has **no self-UPDATE policy**, and adding one would be a privilege-escalation hole (RLS can't restrict columns → a `country_manager` could set `role='hq_admin'`), so the locale write goes through a column-scoped `security definer` RPC; (2) all three `next/font` families load `subsets: ["latin"]` and have **no CJK glyphs** — needs a `--font-cjk` fallback in `globals.css`.
+- Scope reality: **55 `.tsx` files / ~5,000 lines**, 38 server + 17 client components, 16 `capitalize` enum renders, 13 API routes, 8 Zod messages. Dates/money stay `en-GB`/`en-US` in both locales (reversible).
+- Plan file: `~/.claude/plans/adding-dual-switches-languages-cryptic-jellyfish.md`.
+
+## Earlier change (2026-07-22) — Sites list drops the archived toggle
 
 - Removed the **Show archived / Hide archived** button from the Sites module header (`app/(app)/sites/page.tsx`); the header action is now a single **+ New** button (relabelled from "+ New site", matching the country dashboards). The page no longer reads `searchParams`, so `?archived=1` does nothing — archived sites are always filtered out (`.is("archived_at", null)` is now unconditional).
 - `archived_at` dropped from the select and the now-unreachable **Archived** chip removed from the Status cell; the chip is Stale/Fresh only.

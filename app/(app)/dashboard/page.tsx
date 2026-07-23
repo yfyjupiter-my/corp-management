@@ -12,6 +12,7 @@ import {
   DEFAULT_REVIEW_CYCLE_MONTHS,
 } from "@/lib/constants/countries";
 import { daysUntil, formatDate, isStale } from "@/lib/utils/format";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export const dynamic = "force-dynamic";
  * country; HQ admins see all four offices.
  */
 export default async function DashboardPage() {
+  const t = await getDictionary();
   const user = await getCurrentUser();
   const supabase = await createClient();
 
@@ -169,30 +171,30 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHead
-        eyebrow="Overview"
-        title="Registry dashboard"
+        eyebrow={t.dashboard.eyebrow}
+        title={t.dashboard.title}
         subtitle={
           isHq
-            ? "Infrastructure health across all four SEA offices."
-            : `Infrastructure health for ${user?.countryCode}.`
+            ? t.dashboard.subtitleAll
+            : t.dashboard.subtitleCountry(user?.countryCode ?? "")
         }
       />
 
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
-        <Kpi label="Active sites" value={failed.sites ? "—" : siteRows.length} />
+        <Kpi label={t.dashboard.kpiActiveSites} value={failed.sites ? "—" : siteRows.length} />
         <Kpi
-          label="Cameras online"
+          label={t.dashboard.kpiCamerasOnline}
           value={failed.cameras ? "—" : activeCameras}
           unit={failed.cameras ? undefined : `/ ${cameraRows.length}`}
         />
         <Kpi
-          label="Cameras faulty/offline"
+          label={t.dashboard.kpiCamerasFaulty}
           value={failed.cameras ? "—" : faultyCameras}
           accent={!failed.cameras && faultyCameras > 0 ? "danger" : "accent"}
         />
         <Kpi
-          label="Circuits expiring ≤90d"
+          label={t.dashboard.kpiCircuitsExpiring}
           value={failed.circuits ? "—" : expiringSoon.length}
           accent={!failed.circuits && expiringSoon.length > 0 ? "warn" : "accent"}
         />
@@ -211,38 +213,38 @@ export default async function DashboardPage() {
                     className="flex items-center gap-2 hover:text-accent"
                   >
                     <span className="font-mono text-[11px] text-fg-subtle">{c.code}</span>
-                    {c.name}
+                    {t.countries[c.code]}
                   </Link>
                 }
                 actions={
                   <div className="flex items-center gap-1.5">
                     {!failed.recorders && a.belowRetention > 0 && (
-                      <Chip tone="danger">{a.belowRetention} low retention</Chip>
+                      <Chip tone="danger">{t.dashboard.lowRetention(a.belowRetention)}</Chip>
                     )}
-                    {c.code === "MY" && <Chip tone="info">Pilot</Chip>}
+                    {c.code === "MY" && <Chip tone="info">{t.dashboard.pilot}</Chip>}
                   </div>
                 }
               />
               <div className="grid grid-cols-3 gap-px bg-border">
-                <Stat label="Sites" value={failed.sites ? "—" : a.sites} />
-                <Stat label="Devices" value={failed.devices ? "—" : a.devices} />
+                <Stat label={t.dashboard.statSites} value={failed.sites ? "—" : a.sites} />
+                <Stat label={t.dashboard.statDevices} value={failed.devices ? "—" : a.devices} />
                 <Stat
-                  label="Cameras"
+                  label={t.dashboard.statCameras}
                   value={failed.camerasByCountry ? "—" : a.activeCameras}
                   unit={failed.camerasByCountry ? undefined : `/ ${a.cameras}`}
                 />
                 <Stat
-                  label="Faulty cams"
+                  label={t.dashboard.statFaultyCams}
                   value={failed.camerasByCountry ? "—" : a.faultyCameras}
                   tone={!failed.camerasByCountry && a.faultyCameras > 0 ? "danger" : undefined}
                 />
                 <Stat
-                  label="Circuits ≤90d"
+                  label={t.dashboard.statCircuits90d}
                   value={failed.circuits ? "—" : a.expiringCircuits}
                   tone={!failed.circuits && a.expiringCircuits > 0 ? "warn" : undefined}
                 />
                 <Stat
-                  label="Stale records"
+                  label={t.country.staleRecords}
                   value={failed.stale ? "—" : a.stale}
                   tone={!failed.stale && a.stale > 0 ? "warn" : undefined}
                 />
@@ -255,38 +257,36 @@ export default async function DashboardPage() {
       {/* Attention: retention + renewals */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
         <Panel>
-          <PanelHeader title="Recorders below retention minimum" />
+          <PanelHeader title={t.dashboard.retentionTitle} />
           <div className="px-4 py-3.5 text-[13px]">
             {failed.recorders ? (
-              <span className="text-fg-subtle">Retention data unavailable.</span>
+              <span className="text-fg-subtle">{t.dashboard.retentionUnavailable}</span>
             ) : belowMinRetention === 0 ? (
-              <span className="text-fg-muted">
-                All recorders meet their country&rsquo;s retention minimum.
-              </span>
+              <span className="text-fg-muted">{t.dashboard.retentionAllOk}</span>
             ) : (
-              <Chip tone="danger">
-                {belowMinRetention} recorder(s) below their country&rsquo;s minimum
-              </Chip>
+              <Chip tone="danger">{t.dashboard.retentionBelow(belowMinRetention)}</Chip>
             )}
           </div>
         </Panel>
 
         <Panel>
-          <PanelHeader title="Circuits expiring within 90 days" />
+          <PanelHeader title={t.dashboard.circuitsTitle} />
           {failed.circuits ? (
-            <div className="px-4 py-6 text-[13px] text-fg-subtle">Renewal data unavailable.</div>
+            <div className="px-4 py-6 text-[13px] text-fg-subtle">{t.dashboard.renewalsUnavailable}</div>
           ) : expiringSoon.length === 0 ? (
-            <div className="px-4 py-6 text-[13px] text-fg-subtle">Nothing expiring soon.</div>
+            <div className="px-4 py-6 text-[13px] text-fg-subtle">{t.dashboard.nothingExpiring}</div>
           ) : (
             <Table>
-              <Thead columns={["Provider", "Ends", "In"]} />
+              <Thead columns={[t.columns.provider, t.columns.ends, t.columns.in]} />
               <tbody>
                 {expiringSoon.slice(0, 6).map((c) => (
                   <Tr key={c.id}>
                     <Td>{c.provider}</Td>
                     <Td mono>{formatDate(c.contract_end)}</Td>
                     <Td>
-                      <Chip tone={c.days! <= 30 ? "danger" : "warn"}>{c.days}d</Chip>
+                      <Chip tone={c.days! <= 30 ? "danger" : "warn"}>
+                        {t.dashboard.daysShort(c.days!)}
+                      </Chip>
                     </Td>
                   </Tr>
                 ))}

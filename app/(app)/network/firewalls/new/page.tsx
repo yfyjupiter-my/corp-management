@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { DeviceForm } from "../../new/DeviceForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
  * pinned — same columns, same RLS-scoped site list, same `POST /api/devices`.
  */
 export default async function NewFirewallPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   const { data: sites } = await supabase
     .from("sites")
@@ -20,8 +22,8 @@ export default async function NewFirewallPage() {
     <DeviceForm
       sites={sites ?? []}
       fixedType="firewall"
-      title="New Firewall"
-      subtitle="Register a perimeter firewall: model, management address, firmware, and support dates."
+      title={t.forms.pages.newFirewallTitle}
+      subtitle={t.forms.pages.newFirewallSubtitle}
     />
   );
 }

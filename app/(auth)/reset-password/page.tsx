@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 /** Set a new password. Reached via the recovery link after /auth/callback grants a session. */
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage() {
+  const t = await getDictionary();
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg p-8">
       <div className="w-[360px] bg-surface border border-border rounded shadow-md p-[26px]">
@@ -11,14 +13,14 @@ export default function ResetPasswordPage() {
             CM
           </div>
           <div className="leading-tight">
-            <div className="font-head font-semibold text-[15px]">Corp Management</div>
-            <div className="text-[11px] text-fg-subtle">SEA IT Infrastructure Registry</div>
+            <div className="font-head font-semibold text-[15px]">{t.auth.brand}</div>
+            <div className="text-[11px] text-fg-subtle">{t.auth.tagline}</div>
           </div>
         </div>
 
-        <h3 className="text-[17px] font-semibold font-head mb-1">Choose a new password</h3>
+        <h3 className="text-[17px] font-semibold font-head mb-1">{t.auth.newPasswordTitle}</h3>
         <p className="text-[13px] text-fg-muted mb-5">
-          Enter a new password for your account below.
+          {t.auth.newPasswordSubtitle}
         </p>
 
         <Suspense fallback={null}>

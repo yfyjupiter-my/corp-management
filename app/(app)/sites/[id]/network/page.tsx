@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { COUNTRIES } from "@/lib/constants/countries";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { IpSchemeForm } from "./IpSchemeForm";
 import { VlanForm } from "./VlanForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,7 @@ export default async function SiteNetworkPage({
   const { id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
 
+  const t = await getDictionary();
   const supabase = await createClient();
   const { data: site } = await supabase
     .from("sites")
@@ -41,29 +42,30 @@ export default async function SiteNetworkPage({
 
   const ipRows = ipSchemes.data ?? [];
   const vlanRows = vlans.data ?? [];
-  const meta = COUNTRIES[site.country_code];
 
   return (
     <>
       <PageHead
-        eyebrow={`${meta.code} · ${meta.name} · ${site.name}`}
-        title="IP schemes & VLANs"
-        subtitle="Subnets, gateways, DNS, DHCP ranges, and the site's VLAN table."
+        eyebrow={`${site.country_code} · ${t.countries[site.country_code]} · ${site.name}`}
+        title={t.site.networkTitle}
+        subtitle={t.site.networkSubtitle}
         actions={
           <Link href={`/sites/${site.id}`}>
-            <Button sm variant="ghost">← Back to site</Button>
+            <Button sm variant="ghost">{t.site.backToSite}</Button>
           </Link>
         }
       />
 
       <div className="flex flex-col gap-3.5">
         <Panel>
-          <PanelHeader title={`IP schemes · ${ipRows.length}`} />
+          <PanelHeader title={`${t.site.panelIpSchemes} · ${ipRows.length}`} />
           {ipRows.length === 0 ? (
-            <PanelEmpty>No IP schemes for this site yet.</PanelEmpty>
+            <PanelEmpty>{t.site.noIpSchemesYet}</PanelEmpty>
           ) : (
             <Table>
-              <Thead columns={["Subnet", "Gateway", "DNS", "DHCP range", "Notes"]} />
+              <Thead
+                columns={[t.site.colSubnet, t.site.colGateway, t.site.colDns, t.site.colDhcpRange, t.site.colNotes]}
+              />
               <tbody>
                 {ipRows.map((s) => (
                   <Tr key={s.id}>
@@ -83,12 +85,12 @@ export default async function SiteNetworkPage({
         </Panel>
 
         <Panel>
-          <PanelHeader title={`VLANs · ${vlanRows.length}`} />
+          <PanelHeader title={`${t.site.panelVlans} · ${vlanRows.length}`} />
           {vlanRows.length === 0 ? (
-            <PanelEmpty>No VLANs for this site yet.</PanelEmpty>
+            <PanelEmpty>{t.site.noVlansYet}</PanelEmpty>
           ) : (
             <Table>
-              <Thead columns={["VLAN", "Name", "Subnet", "Purpose"]} />
+              <Thead columns={[t.site.colVlan, t.site.colName, t.site.colSubnet, t.site.colPurpose]} />
               <tbody>
                 {vlanRows.map((v) => (
                   <Tr key={v.id}>

@@ -3,7 +3,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { siteSchema } from "@/lib/validation/site";
 import { dbErrorResponse } from "@/lib/api/db-error";
-import { classifyGuardedUpdate, CONFLICT_MESSAGE } from "@/lib/api/optimistic";
+import { classifyGuardedUpdate } from "@/lib/api/optimistic";
+import { getDictionary } from "@/lib/i18n/server";
+import { validationMessage } from "@/lib/i18n/validation";
 import type { Database } from "@/lib/types/database";
 
 /**
@@ -25,22 +27,23 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const t = await getDictionary();
   try {
     const { id } = await params;
     if (!z.string().uuid().safeParse(id).success) {
-      return NextResponse.json({ error: "Invalid site id" }, { status: 400 });
+      return NextResponse.json({ error: t.errors.invalidSiteId }, { status: 400 });
     }
 
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return NextResponse.json({ error: t.errors.unauthorized }, { status: 401 });
 
     const parsed = patchSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid payload" },
+        { error: validationMessage(t, parsed.error.issues[0]?.message) ?? t.errors.invalidPayload },
         { status: 400 },
       );
     }
@@ -51,14 +54,14 @@ export async function PATCH(
       patch.archived_at = archived ? new Date().toISOString() : null;
     }
     if (Object.keys(patch).length === 0) {
-      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+      return NextResponse.json({ error: t.errors.nothingToUpdate }, { status: 400 });
     }
 
     // BUS-6: guard on the last-read updated_at when the client supplied it.
     let update = supabase.from("sites").update(patch).eq("id", id);
     if (expected_updated_at) update = update.eq("updated_at", expected_updated_at);
     const { data: updated, error } = await update.select("id");
-    if (error) return dbErrorResponse(error, `PATCH /sites/${id}`);
+    if (error) return dbErrorResponse(error, `PATCH /sites/${id}`, t);
 
     // A guarded update touching 0 rows is ambiguous: concurrent change vs. the
     // row being gone / invisible under RLS. Re-read visibility to tell them apart.
@@ -79,15 +82,15 @@ export async function PATCH(
       rowVisible,
     });
     if (outcome === "conflict") {
-      return NextResponse.json({ error: CONFLICT_MESSAGE }, { status: 409 });
+      return NextResponse.json({ error: t.errors.conflict }, { status: 409 });
     }
     if (outcome === "not_found") {
-      return NextResponse.json({ error: "Site not found." }, { status: 404 });
+      return NextResponse.json({ error: t.errors.siteNotFound }, { status: 404 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[route-error] PATCH /sites/[id]:", err);
-    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+    return NextResponse.json({ error: t.errors.serverError }, { status: 500 });
   }
 }

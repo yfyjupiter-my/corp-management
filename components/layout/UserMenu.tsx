@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
 import { signOut } from "@/lib/actions/auth";
 import type { CurrentUser } from "@/lib/auth";
 import { ChevronUpIcon, LogoutIcon } from "./icons";
@@ -14,8 +15,14 @@ export function UserMenu({ user }: { user: CurrentUser }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   const isHq = user.role === "hq_admin";
+  // "HQ Admin · all countries" / "Manager · MY" — the country code is data, so
+  // it stays outside the dictionary.
+  const roleLine = isHq
+    ? `${t.topbar.hqAdmin} · ${t.topbar.allCountries}`
+    : `${t.topbar.manager} · ${user.countryCode}`;
 
   // Close on outside click / Escape.
   useEffect(() => {
@@ -46,7 +53,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
               <div className="text-[11px] text-sidebar-fg/70 truncate">{user.email}</div>
             )}
             <div className="text-[11px] text-sidebar-fg/70 truncate">
-              {isHq ? "HQ Admin · all countries" : `Manager · ${user.countryCode}`}
+              {roleLine}
             </div>
           </div>
           <button
@@ -56,7 +63,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
             className="w-full flex items-center gap-2.5 px-3 py-[9px] text-[13px] font-medium text-sidebar-fg hover:bg-white/[.06] transition-colors disabled:opacity-60"
           >
             <LogoutIcon />
-            {pending ? "Signing out…" : "Log out"}
+            {pending ? t.auth.signingOut : t.auth.logOut}
           </button>
         </div>
       )}
@@ -79,7 +86,7 @@ export function UserMenu({ user }: { user: CurrentUser }) {
             {user.fullName ?? user.email}
           </div>
           <div className="text-[11px] text-sidebar-fg/70 truncate">
-            {isHq ? "HQ Admin · all countries" : `Manager · ${user.countryCode}`}
+            {roleLine}
           </div>
         </div>
         <ChevronUpIcon

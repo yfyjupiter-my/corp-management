@@ -7,10 +7,11 @@ import {
   optionalSafeText,
   optionalString,
 } from "./common";
+import { V } from "@/lib/i18n/validation";
 
 export const ispCircuitSchema = z.object({
   site_id: z.string().uuid(),
-  provider: z.string().trim().min(1, "Provider is required").max(120),
+  provider: z.string().trim().min(1, V.provider).max(120),
   circuit_id: optionalString(120),
   bandwidth: optionalString(60),
   type: z.enum(CIRCUIT_TYPES),

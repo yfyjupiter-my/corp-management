@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { COUNTRY_CODES } from "@/lib/constants/countries";
 import { optionalSafeText, optionalString } from "./common";
+import { V } from "@/lib/i18n/validation";
 
 export const siteSchema = z.object({
   country_code: z.enum(COUNTRY_CODES),
-  name: z.string().trim().min(1, "Site name is required").max(120),
+  name: z.string().trim().min(1, V.siteName).max(120),
   address: optionalSafeText(500),
   timezone: z.string().min(1), // defaulted per country on create
   currency: z.string().length(3),
@@ -12,7 +13,7 @@ export const siteSchema = z.object({
   contact_phone: optionalString(40),
   contact_email: z
     .string()
-    .email("Enter a valid email")
+    .email(V.email)
     .optional()
     .or(z.literal("").transform(() => undefined)),
   notes: optionalSafeText(2000),

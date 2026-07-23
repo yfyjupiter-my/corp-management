@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
 
 export function LoginForm() {
+  const t = useT();
   const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
@@ -30,7 +32,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3.5">
-      <Field label="Email">
+      <Field label={t.auth.email}>
         <input
           type="email"
           required
@@ -38,10 +40,10 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="input-base"
-          placeholder="you@example.com"
+          placeholder={t.auth.emailPlaceholder}
         />
       </Field>
-      <Field label="Password">
+      <Field label={t.auth.password}>
         <input
           type="password"
           required
@@ -55,7 +57,7 @@ export function LoginForm() {
           href="/forgot-password"
           className="text-[11px] text-accent hover:underline self-end -mt-0.5"
         >
-          Forgot password?
+          {t.auth.forgotPassword}
         </a>
       </Field>
 
@@ -64,7 +66,7 @@ export function LoginForm() {
       )}
 
       <Button type="submit" disabled={loading} className="w-full justify-center mt-1">
-        {loading ? "Signing in…" : "Sign in"}
+        {loading ? t.auth.signingIn : t.auth.signIn}
       </Button>
 
       <style>{`

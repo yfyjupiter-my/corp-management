@@ -4,7 +4,6 @@ import type { Route } from "next";
 import { createClient } from "@/lib/supabase/server";
 import {
   isCountryCode,
-  COUNTRIES,
   DEFAULT_MIN_RETENTION_DAYS,
   DEFAULT_REVIEW_CYCLE_MONTHS,
 } from "@/lib/constants/countries";
@@ -16,6 +15,7 @@ import { Chip } from "@/components/ui/Chip";
 import { isBelowRetention } from "@/lib/utils/cctv";
 import { isStale, formatDate, daysUntil } from "@/lib/utils/format";
 import type { CameraStatus } from "@/lib/constants/enums";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,8 @@ export default async function CountryPage({
   const { code } = await params;
   if (!isCountryCode(code)) notFound();
 
-  const meta = COUNTRIES[code];
+  const t = await getDictionary();
+  const countryName = t.countries[code];
   const supabase = await createClient();
 
   // --- sites for this country (the anchor for every child query) -------------
@@ -157,7 +158,7 @@ export default async function CountryPage({
   const renewals = [
     ...circuitRows.map((c) => ({
       id: `circuit-${c.id}`,
-      kind: "ISP circuit",
+      kind: t.country.kindCircuit,
       label: c.provider,
       site: siteNameById.get(c.site_id) ?? "—",
       date: c.contract_end,
@@ -165,8 +166,8 @@ export default async function CountryPage({
     })),
     ...deviceRows.map((d) => ({
       id: `device-${d.id}`,
-      kind: "Device warranty",
-      label: d.hostname ?? ([d.brand, d.model].filter(Boolean).join(" ") || "Device"),
+      kind: t.country.kindWarranty,
+      label: d.hostname ?? ([d.brand, d.model].filter(Boolean).join(" ") || t.country.unnamedDevice),
       site: siteNameById.get(d.site_id) ?? "—",
       date: d.warranty_end,
       days: daysUntil(d.warranty_end),
@@ -174,40 +175,40 @@ export default async function CountryPage({
   ]
     .filter((r) => r.days != null && r.days <= 90)
     .sort((a, b) => a.days! - b.days!);
-  const expiringCircuits = renewals.filter((r) => r.kind === "ISP circuit").length;
+  const expiringCircuits = renewals.filter((r) => r.kind === t.country.kindCircuit).length;
 
   return (
     <>
       <PageHead
-        title={`${meta.name} dashboard`}
-        subtitle={`Sites, network, CCTV, and renewals for ${meta.name} only.`}
+        title={t.country.title(countryName)}
+        subtitle={t.country.subtitle(countryName)}
       />
 
       {/* Country KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
-        <Kpi label="Active sites" value={failed.sites ? "—" : activeSites.length} />
-        <Kpi label="Network devices" value={failed.devices ? "—" : deviceRows.length} />
+        <Kpi label={t.country.kpiActiveSites} value={failed.sites ? "—" : activeSites.length} />
+        <Kpi label={t.country.kpiNetworkDevices} value={failed.devices ? "—" : deviceRows.length} />
         <Kpi
-          label="Cameras online"
+          label={t.country.kpiCamerasOnline}
           value={failed.cameras ? "—" : activeCameras}
           unit={failed.cameras ? undefined : `/ ${cameraRows.length}`}
           accent={!failed.cameras && faultyCameras > 0 ? "danger" : "accent"}
         />
         <Kpi
-          label="Stale records"
+          label={t.country.staleRecords}
           value={failed.sites ? "—" : staleCount}
           accent={!failed.sites && staleCount > 0 ? "warn" : "accent"}
         />
       </div>
 
       {/* ---------------------------------------------------------------- */}
-      <ModuleHead title="Network" href="/network" />
+      <ModuleHead title={t.nav.network} href="/network" linkLabel={t.country.openModule} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border border border-border rounded overflow-hidden mb-3.5">
-        <Stat label="Devices" value={failed.devices ? "—" : deviceRows.length} />
-        <Stat label="ISP circuits" value={failed.circuits ? "—" : circuitRows.length} />
-        <Stat label="VPN links" value={failed.vpn ? "—" : vpnRows.length} />
+        <Stat label={t.country.statDevices} value={failed.devices ? "—" : deviceRows.length} />
+        <Stat label={t.country.statCircuits} value={failed.circuits ? "—" : circuitRows.length} />
+        <Stat label={t.country.statVpn} value={failed.vpn ? "—" : vpnRows.length} />
         <Stat
-          label="Circuits ≤90d"
+          label={t.country.statCircuits90d}
           value={failed.circuits ? "—" : expiringCircuits}
           tone={!failed.circuits && expiringCircuits > 0 ? "warn" : undefined}
         />
@@ -215,51 +216,74 @@ export default async function CountryPage({
 
       <div className="flex flex-col gap-3.5 mb-6">
         <Panel>
-          <PanelHeader title={`Devices · ${failed.devices ? "—" : deviceRows.length}`} />
+          <PanelHeader title={`${t.country.panelDevices} · ${failed.devices ? "—" : deviceRows.length}`} />
           {failed.devices ? (
-            <PanelEmpty>Device data temporarily unavailable.</PanelEmpty>
+            <PanelEmpty>{t.country.deviceDataUnavailable}</PanelEmpty>
           ) : deviceRows.length === 0 ? (
-            <PanelEmpty>No network devices recorded for {meta.name}.</PanelEmpty>
+            <PanelEmpty>{t.country.noDevices(countryName)}</PanelEmpty>
           ) : (
             <>
               <Table>
-                <Thead columns={["Hostname", "Type", "Model", "Site", "Warranty", "Status"]} />
+                <Thead
+                  columns={[
+                    t.columns.hostname,
+                    t.columns.type,
+                    t.columns.model,
+                    t.columns.site,
+                    t.columns.warranty,
+                    t.columns.status,
+                  ]}
+                />
                 <tbody>
                   {deviceRows.slice(0, PREVIEW_ROWS).map((d) => (
                     <Tr key={d.id}>
                       <Td mono>{d.hostname ?? "—"}</Td>
                       <Td>
-                        <span className="capitalize">{d.device_type}</span>
+                        {t.enums.deviceType[d.device_type]}
                       </Td>
                       <Td>{[d.brand, d.model].filter(Boolean).join(" ") || "—"}</Td>
                       <Td>{siteNameById.get(d.site_id) ?? "—"}</Td>
                       <Td mono>{formatDate(d.warranty_end)}</Td>
                       <Td>
                         {isStale(d.last_verified_at, reviewMonths) ? (
-                          <Chip tone="warn">Stale</Chip>
+                          <Chip tone="warn">{t.common.stale}</Chip>
                         ) : (
-                          <Chip tone="ok">Fresh</Chip>
+                          <Chip tone="ok">{t.common.fresh}</Chip>
                         )}
                       </Td>
                     </Tr>
                   ))}
                 </tbody>
               </Table>
-              <MoreRows total={deviceRows.length} href="/network" />
+              <MoreRows
+                total={deviceRows.length}
+                href="/network"
+                showing={t.country.showing}
+                viewAll={t.common.viewAll}
+              />
             </>
           )}
         </Panel>
 
         <Panel>
-          <PanelHeader title={`ISP circuits · ${failed.circuits ? "—" : circuitRows.length}`} />
+          <PanelHeader title={`${t.country.panelCircuits} · ${failed.circuits ? "—" : circuitRows.length}`} />
           {failed.circuits ? (
-            <PanelEmpty>Circuit data temporarily unavailable.</PanelEmpty>
+            <PanelEmpty>{t.country.circuitDataUnavailable}</PanelEmpty>
           ) : circuitRows.length === 0 ? (
-            <PanelEmpty>No ISP circuits recorded for {meta.name}.</PanelEmpty>
+            <PanelEmpty>{t.country.noCircuits(countryName)}</PanelEmpty>
           ) : (
             <>
               <Table>
-                <Thead columns={["Provider", "Circuit ID", "Bandwidth", "Type", "Site", "Contract end"]} />
+                <Thead
+                  columns={[
+                    t.columns.provider,
+                    t.columns.circuitId,
+                    t.columns.bandwidth,
+                    t.columns.type,
+                    t.columns.site,
+                    t.columns.contractEnd,
+                  ]}
+                />
                 <tbody>
                   {circuitRows.slice(0, PREVIEW_ROWS).map((c) => (
                     <Tr key={c.id}>
@@ -267,7 +291,7 @@ export default async function CountryPage({
                       <Td mono>{c.circuit_id ?? "—"}</Td>
                       <Td>{c.bandwidth ?? "—"}</Td>
                       <Td>
-                        <span className="capitalize">{c.type}</span>
+                        {t.enums.circuitType[c.type]}
                       </Td>
                       <Td>{siteNameById.get(c.site_id) ?? "—"}</Td>
                       <Td mono>{formatDate(c.contract_end)}</Td>
@@ -275,28 +299,33 @@ export default async function CountryPage({
                   ))}
                 </tbody>
               </Table>
-              <MoreRows total={circuitRows.length} href="/network" />
+              <MoreRows
+                total={circuitRows.length}
+                href="/network"
+                showing={t.country.showing}
+                viewAll={t.common.viewAll}
+              />
             </>
           )}
         </Panel>
       </div>
 
       {/* ---------------------------------------------------------------- */}
-      <ModuleHead title="CCTV" href="/cctv" />
+      <ModuleHead title={t.nav.cctv} href="/cctv" linkLabel={t.country.openModule} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border border border-border rounded overflow-hidden mb-3.5">
-        <Stat label="Recorders" value={failed.recorders ? "—" : recorderRows.length} />
+        <Stat label={t.country.statRecorders} value={failed.recorders ? "—" : recorderRows.length} />
         <Stat
-          label="Cameras active"
+          label={t.country.statCamerasActive}
           value={failed.cameras ? "—" : activeCameras}
           unit={failed.cameras ? undefined : `/ ${cameraRows.length}`}
         />
         <Stat
-          label="Faulty / offline"
+          label={t.country.statFaultyOffline}
           value={failed.cameras ? "—" : faultyCameras}
           tone={!failed.cameras && faultyCameras > 0 ? "danger" : undefined}
         />
         <Stat
-          label={`Below ${minRetention}d retention`}
+          label={t.country.statBelowRetention(minRetention)}
           value={failed.recorders ? "—" : belowRetention}
           tone={!failed.recorders && belowRetention > 0 ? "danger" : undefined}
         />
@@ -304,15 +333,23 @@ export default async function CountryPage({
 
       <div className="flex flex-col gap-3.5 mb-6">
         <Panel>
-          <PanelHeader title={`Recorders · ${failed.recorders ? "—" : recorderRows.length}`} />
+          <PanelHeader title={`${t.country.panelRecorders} · ${failed.recorders ? "—" : recorderRows.length}`} />
           {failed.recorders ? (
-            <PanelEmpty>Recorder data temporarily unavailable.</PanelEmpty>
+            <PanelEmpty>{t.country.recorderDataUnavailable}</PanelEmpty>
           ) : recorderRows.length === 0 ? (
-            <PanelEmpty>No recorders recorded for {meta.name}.</PanelEmpty>
+            <PanelEmpty>{t.country.noRecorders(countryName)}</PanelEmpty>
           ) : (
             <>
               <Table>
-                <Thead columns={["Model", "Channels", "Retention", "Location", "Site"]} />
+                <Thead
+                  columns={[
+                    t.columns.model,
+                    t.columns.channels,
+                    t.columns.retention,
+                    t.columns.location,
+                    t.columns.site,
+                  ]}
+                />
                 <tbody>
                   {recorderRows.slice(0, PREVIEW_ROWS).map((r) => {
                     const below = isBelowRetention(r.retention_days, minRetention);
@@ -336,57 +373,77 @@ export default async function CountryPage({
                   })}
                 </tbody>
               </Table>
-              <MoreRows total={recorderRows.length} href="/cctv" />
+              <MoreRows
+                total={recorderRows.length}
+                href="/cctv"
+                showing={t.country.showing}
+                viewAll={t.common.viewAll}
+              />
             </>
           )}
         </Panel>
 
         <Panel>
-          <PanelHeader title={`Cameras · ${failed.cameras ? "—" : cameraRows.length}`} />
+          <PanelHeader title={`${t.country.panelCameras} · ${failed.cameras ? "—" : cameraRows.length}`} />
           {failed.cameras ? (
-            <PanelEmpty>Camera data temporarily unavailable.</PanelEmpty>
+            <PanelEmpty>{t.country.cameraDataUnavailable}</PanelEmpty>
           ) : cameraRows.length === 0 ? (
-            <PanelEmpty>No cameras recorded for {meta.name}.</PanelEmpty>
+            <PanelEmpty>{t.country.noCameras(countryName)}</PanelEmpty>
           ) : (
             <>
               <Table>
-                <Thead columns={["Label", "Type", "Resolution", "Placement", "Status"]} />
+                <Thead
+                  columns={[
+                    t.columns.label,
+                    t.columns.type,
+                    t.columns.resolution,
+                    t.columns.placement,
+                    t.columns.status,
+                  ]}
+                />
                 <tbody>
                   {cameraRows.slice(0, PREVIEW_ROWS).map((c) => (
                     <Tr key={c.id}>
                       <Td mono>{c.label}</Td>
                       <Td>
-                        <span className="capitalize">{c.camera_type}</span>
+                        {t.enums.cameraType[c.camera_type]}
                       </Td>
                       <Td>{c.resolution ?? "—"}</Td>
-                      <Td>{c.outdoor ? "Outdoor" : "Indoor"}</Td>
+                      <Td>{c.outdoor ? t.country.outdoor : t.country.indoor}</Td>
                       <Td>
                         <Chip tone={cameraTone[c.status]}>
-                          <span className="capitalize">{c.status}</span>
+                          {t.enums.cameraStatus[c.status]}
                         </Chip>
                       </Td>
                     </Tr>
                   ))}
                 </tbody>
               </Table>
-              <MoreRows total={cameraRows.length} href="/cctv" />
+              <MoreRows
+                total={cameraRows.length}
+                href="/cctv"
+                showing={t.country.showing}
+                viewAll={t.common.viewAll}
+              />
             </>
           )}
         </Panel>
       </div>
 
       {/* ---------------------------------------------------------------- */}
-      <ModuleHead title="Renewals" href="/renewals" />
+      <ModuleHead title={t.nav.renewals} href="/renewals" linkLabel={t.country.openModule} />
       <Panel className="mb-6">
-        <PanelHeader title="Due within 90 days" />
+        <PanelHeader title={t.country.panelDue} />
         {failed.circuits || failed.devices ? (
-          <PanelEmpty>Renewal data temporarily unavailable.</PanelEmpty>
+          <PanelEmpty>{t.country.renewalDataUnavailable}</PanelEmpty>
         ) : renewals.length === 0 ? (
-          <PanelEmpty>Nothing due in the next 90 days for {meta.name}.</PanelEmpty>
+          <PanelEmpty>{t.country.nothingDue(countryName)}</PanelEmpty>
         ) : (
           <>
             <Table>
-              <Thead columns={["Item", "Type", "Site", "Ends", "In"]} />
+              <Thead
+              columns={[t.columns.item, t.columns.type, t.columns.site, t.columns.ends, t.columns.in]}
+            />
               <tbody>
                 {renewals.slice(0, PREVIEW_ROWS).map((r) => (
                   <Tr key={r.id}>
@@ -395,28 +452,37 @@ export default async function CountryPage({
                     <Td>{r.site}</Td>
                     <Td mono>{formatDate(r.date)}</Td>
                     <Td>
-                      <Chip tone={r.days! <= 30 ? "danger" : "warn"}>{r.days}d</Chip>
+                      <Chip tone={r.days! <= 30 ? "danger" : "warn"}>
+                        {t.dashboard.daysShort(r.days!)}
+                      </Chip>
                     </Td>
                   </Tr>
                 ))}
               </tbody>
             </Table>
-            <MoreRows total={renewals.length} href="/renewals" />
+            <MoreRows
+                total={renewals.length}
+                href="/renewals"
+                showing={t.country.showing}
+                viewAll={t.common.viewAll}
+              />
           </>
         )}
       </Panel>
 
       {/* ---------------------------------------------------------------- */}
-      <ModuleHead title="Sites" />
+      <ModuleHead title={t.nav.sites} linkLabel={t.country.openModule} />
       <Panel>
-        <PanelHeader title={`${failed.sites ? "—" : siteRows.length} site(s)`} />
+        <PanelHeader title={failed.sites ? "—" : t.country.siteCount(siteRows.length)} />
         {failed.sites ? (
-          <PanelEmpty>Site data temporarily unavailable.</PanelEmpty>
+          <PanelEmpty>{t.country.siteDataUnavailable}</PanelEmpty>
         ) : siteRows.length === 0 ? (
-          <PanelEmpty>No sites registered yet for {meta.name}.</PanelEmpty>
+          <PanelEmpty>{t.country.noSites(countryName)}</PanelEmpty>
         ) : (
           <Table>
-            <Thead columns={["Site", "Contact", "Verified", "Status"]} />
+            <Thead
+              columns={[t.columns.site, t.columns.contact, t.columns.verified, t.columns.status]}
+            />
             <tbody>
               {siteRows.map((s) => (
                 <Tr key={s.id}>
@@ -435,11 +501,11 @@ export default async function CountryPage({
                   <Td mono>{formatDate(s.last_verified_at)}</Td>
                   <Td>
                     {s.archived_at ? (
-                      <Chip tone="neutral">Archived</Chip>
+                      <Chip tone="neutral">{t.common.archived}</Chip>
                     ) : isStale(s.last_verified_at, reviewMonths) ? (
-                      <Chip tone="warn">Stale</Chip>
+                      <Chip tone="warn">{t.common.stale}</Chip>
                     ) : (
-                      <Chip tone="ok">Fresh</Chip>
+                      <Chip tone="ok">{t.common.fresh}</Chip>
                     )}
                   </Td>
                 </Tr>
@@ -453,7 +519,15 @@ export default async function CountryPage({
 }
 
 /** Section heading for one sidebar module, with a link to the full module. */
-function ModuleHead({ title, href }: { title: string; href?: Route }) {
+function ModuleHead({
+  title,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  href?: Route;
+  linkLabel: string;
+}) {
   return (
     <div className="flex items-center gap-3 mb-2.5">
       <h4 className="font-head text-[13px] font-bold tracking-[0.08em] uppercase text-fg-subtle">
@@ -461,7 +535,7 @@ function ModuleHead({ title, href }: { title: string; href?: Route }) {
       </h4>
       {href && (
         <Link href={href} className="ml-auto text-[12px] text-accent font-semibold hover:underline">
-          Open module →
+          {linkLabel}
         </Link>
       )}
     </div>
@@ -495,13 +569,23 @@ function Stat({
 }
 
 /** Footer link shown when a module table is truncated to the preview rows. */
-function MoreRows({ total, href }: { total: number; href: Route }) {
+function MoreRows({
+  total,
+  href,
+  showing,
+  viewAll,
+}: {
+  total: number;
+  href: Route;
+  showing: (shown: number, total: number) => string;
+  viewAll: string;
+}) {
   if (total <= PREVIEW_ROWS) return null;
   return (
     <div className="px-4 py-2.5 border-t border-border text-[12px] text-fg-subtle">
-      Showing {PREVIEW_ROWS} of {total} —{" "}
+      {showing(PREVIEW_ROWS, total)}
       <Link href={href} className="text-accent font-semibold hover:underline">
-        view all
+        {viewAll}
       </Link>
     </div>
   );

@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Lexend, Source_Sans_3, JetBrains_Mono } from "next/font/google";
+import { HTML_LANG } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
+import { dictionaryFor } from "@/lib/i18n/dictionaries";
+import { I18nProvider } from "@/lib/i18n/client";
 import "./globals.css";
 
 // Self-hosted via next/font — no external <link>, no layout-shift, and the
@@ -25,19 +29,27 @@ const fontMono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Corp Management — SEA IT Registry",
-  description:
-    "Network & CCTV infrastructure registry for the company's Southeast Asia offices.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = dictionaryFor(await getLocale());
+  return { title: t.auth.metaTitle, description: t.auth.metaDescription };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Reading the locale cookie opts the tree into dynamic rendering; nearly every
+// page is already `force-dynamic`, so in practice only `app/not-found.tsx`
+// loses static optimization.
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+
   return (
     <html
-      lang="en"
+      lang={HTML_LANG[locale]}
       className={`${fontHead.variable} ${fontBody.variable} ${fontMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {/* Locale string only — the dictionary holds functions, which cannot
+            cross the RSC boundary. The provider resolves it client-side. */}
+        <I18nProvider locale={locale}>{children}</I18nProvider>
+      </body>
     </html>
   );
 }

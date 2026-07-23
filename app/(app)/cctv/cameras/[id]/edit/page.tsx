@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { recorderLabel } from "@/lib/utils/cctv";
 import { CameraForm } from "../../new/CameraForm";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function EditCameraPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getDictionary();
   const supabase = await createClient();
 
   const [{ data: camera }, { data: recorders }, { data: sites }] = await Promise.all([
@@ -42,8 +44,8 @@ export default async function EditCameraPage({
       sites={sites ?? []}
       recorders={options}
       camera={camera}
-      eyebrow="CCTV"
-      title="Edit camera"
+      eyebrow={t.nav.cctv}
+      title={t.forms.pages.editCameraTitle}
       subtitle={camera.label}
     />
   );

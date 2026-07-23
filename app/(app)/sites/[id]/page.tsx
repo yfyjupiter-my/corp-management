@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { COUNTRIES } from "@/lib/constants/countries";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
@@ -12,6 +11,7 @@ import { VerifyButton } from "@/components/ui/VerifyButton";
 import { CredentialRef } from "@/components/ui/CredentialRef";
 import { ArchiveButton } from "../ArchiveButton";
 import { isStale, formatDate, formatMoney } from "@/lib/utils/format";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +28,7 @@ export default async function SiteDetailPage({
   const { id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
 
+  const t = await getDictionary();
   const supabase = await createClient();
   const { data: site } = await supabase.from("sites").select("*").eq("id", id).single();
   if (!site) notFound();
@@ -40,12 +41,10 @@ export default async function SiteDetailPage({
     supabase.from("cctv_recorders").select("id, brand, model, channels, retention_days, location").eq("site_id", id).order("location"),
   ]);
 
-  const meta = COUNTRIES[site.country_code];
-
   return (
     <>
       <PageHead
-        eyebrow={`${meta.code} · ${meta.name}`}
+        eyebrow={`${site.country_code} · ${t.countries[site.country_code]}`}
         title={site.name}
         subtitle={site.address ?? undefined}
         actions={
@@ -53,7 +52,7 @@ export default async function SiteDetailPage({
             <VerifyButton table="sites" id={site.id} />
             <ArchiveButton id={site.id} archived={Boolean(site.archived_at)} />
             <Link href={`/sites/${site.id}/edit`}>
-              <Button sm>Edit</Button>
+              <Button sm>{t.common.edit}</Button>
             </Link>
           </div>
         }
@@ -62,24 +61,24 @@ export default async function SiteDetailPage({
       {/* Metadata panel */}
       <Panel className="mb-3.5">
         <PanelHeader
-          title="Overview"
+          title={t.site.overview}
           actions={
             site.archived_at ? (
-              <Chip tone="neutral">Archived</Chip>
+              <Chip tone="neutral">{t.common.archived}</Chip>
             ) : isStale(site.last_verified_at) ? (
-              <Chip tone="warn">Stale</Chip>
+              <Chip tone="warn">{t.common.stale}</Chip>
             ) : (
-              <Chip tone="ok">Fresh</Chip>
+              <Chip tone="ok">{t.common.fresh}</Chip>
             )
           }
         />
         <dl className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 p-[18px] text-[13px]">
-          <Meta label="Timezone" value={site.timezone} mono />
-          <Meta label="Currency" value={site.currency} mono />
-          <Meta label="Contact" value={site.contact_name ?? "—"} />
-          <Meta label="Phone" value={site.contact_phone ?? "—"} mono />
-          <Meta label="Email" value={site.contact_email ?? "—"} />
-          <Meta label="Last verified" value={formatDate(site.last_verified_at)} mono />
+          <Meta label={t.site.timezone} value={site.timezone} mono />
+          <Meta label={t.site.currency} value={site.currency} mono />
+          <Meta label={t.site.contact} value={site.contact_name ?? "—"} />
+          <Meta label={t.site.phone} value={site.contact_phone ?? "—"} mono />
+          <Meta label={t.site.email} value={site.contact_email ?? "—"} />
+          <Meta label={t.site.lastVerified} value={formatDate(site.last_verified_at)} mono />
         </dl>
         {site.notes && (
           <div className="px-[18px] pb-[18px] text-[13px] text-fg-muted whitespace-pre-wrap">
@@ -89,16 +88,18 @@ export default async function SiteDetailPage({
       </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-        <ChildPanel title="ISP circuits" count={circuits.data?.length} href="/network">
+        <ChildPanel manage={t.site.manage} title={t.site.panelCircuits} count={circuits.data?.length} href="/network">
           {circuits.data?.length ? (
             <Table>
-              <Thead columns={["Provider", "Circuit", "Type", "Contract end", "Monthly"]} />
+              <Thead
+                columns={[t.columns.provider, t.site.colCircuit, t.columns.type, t.columns.contractEnd, t.site.colMonthly]}
+              />
               <tbody>
                 {circuits.data.map((c) => (
                   <Tr key={c.id}>
                     <Td>{c.provider}</Td>
                     <Td mono>{c.circuit_id ?? "—"}</Td>
-                    <Td><span className="capitalize">{c.type}</span></Td>
+                    <Td>{t.enums.circuitType[c.type]}</Td>
                     <Td mono>{formatDate(c.contract_end)}</Td>
                     <Td mono>{formatMoney(c.monthly_cost, site.currency)}</Td>
                   </Tr>
@@ -106,19 +107,21 @@ export default async function SiteDetailPage({
               </tbody>
             </Table>
           ) : (
-            <PanelEmpty>No ISP circuits for this site.</PanelEmpty>
+            <PanelEmpty>{t.site.noCircuits}</PanelEmpty>
           )}
         </ChildPanel>
 
-        <ChildPanel title="Network devices" count={devices.data?.length} href="/network">
+        <ChildPanel manage={t.site.manage} title={t.site.panelDevices} count={devices.data?.length} href="/network">
           {devices.data?.length ? (
             <Table>
-              <Thead columns={["Hostname", "Type", "Model", "Mgmt IP", "Credential"]} />
+              <Thead
+                columns={[t.columns.hostname, t.columns.type, t.columns.model, t.site.colMgmtIp, t.site.colCredential]}
+              />
               <tbody>
                 {devices.data.map((d) => (
                   <Tr key={d.id}>
                     <Td mono>{d.hostname ?? "—"}</Td>
-                    <Td><span className="capitalize">{d.device_type}</span></Td>
+                    <Td>{t.enums.deviceType[d.device_type]}</Td>
                     <Td>{d.brand} {d.model}</Td>
                     <Td mono>{d.mgmt_ip ?? "—"}</Td>
                     <Td><CredentialRef value={d.credential_ref} /></Td>
@@ -127,14 +130,14 @@ export default async function SiteDetailPage({
               </tbody>
             </Table>
           ) : (
-            <PanelEmpty>No network devices for this site.</PanelEmpty>
+            <PanelEmpty>{t.site.noDevices}</PanelEmpty>
           )}
         </ChildPanel>
 
-        <ChildPanel title="IP schemes" count={ipSchemes.data?.length} href={`/sites/${site.id}/network`}>
+        <ChildPanel manage={t.site.manage} title={t.site.panelIpSchemes} count={ipSchemes.data?.length} href={`/sites/${site.id}/network`}>
           {ipSchemes.data?.length ? (
             <Table>
-              <Thead columns={["Subnet", "Gateway", "DNS"]} />
+              <Thead columns={[t.site.colSubnet, t.site.colGateway, t.site.colDns]} />
               <tbody>
                 {ipSchemes.data.map((s) => (
                   <Tr key={s.id}>
@@ -146,14 +149,14 @@ export default async function SiteDetailPage({
               </tbody>
             </Table>
           ) : (
-            <PanelEmpty>No IP schemes for this site.</PanelEmpty>
+            <PanelEmpty>{t.site.noIpSchemes}</PanelEmpty>
           )}
         </ChildPanel>
 
-        <ChildPanel title="VPN links" count={vpnLinks.data?.length}>
+        <ChildPanel manage={t.site.manage} title={t.site.panelVpn} count={vpnLinks.data?.length}>
           {vpnLinks.data?.length ? (
             <Table>
-              <Thead columns={["Peer", "Tunnel", "Status"]} />
+              <Thead columns={[t.site.colPeer, t.site.colTunnel, t.columns.status]} />
               <tbody>
                 {vpnLinks.data.map((v) => (
                   <Tr key={v.id}>
@@ -161,7 +164,7 @@ export default async function SiteDetailPage({
                     <Td>{v.tunnel_type ?? "—"}</Td>
                     <Td>
                       <Chip tone={v.status === "up" ? "ok" : v.status === "down" ? "danger" : "neutral"}>
-                        {v.status}
+                        {t.enums.vpnStatus[v.status]}
                       </Chip>
                     </Td>
                   </Tr>
@@ -169,14 +172,14 @@ export default async function SiteDetailPage({
               </tbody>
             </Table>
           ) : (
-            <PanelEmpty>No VPN links for this site.</PanelEmpty>
+            <PanelEmpty>{t.site.noVpn}</PanelEmpty>
           )}
         </ChildPanel>
 
-        <ChildPanel title="CCTV recorders" count={recorders.data?.length} href="/cctv">
+        <ChildPanel manage={t.site.manage} title={t.site.panelRecorders} count={recorders.data?.length} href="/cctv">
           {recorders.data?.length ? (
             <Table>
-              <Thead columns={["Location", "Model", "Channels", "Retention"]} />
+              <Thead columns={[t.columns.location, t.columns.model, t.columns.channels, t.columns.retention]} />
               <tbody>
                 {recorders.data.map((r) => (
                   <Tr key={r.id}>
@@ -189,7 +192,7 @@ export default async function SiteDetailPage({
               </tbody>
             </Table>
           ) : (
-            <PanelEmpty>No CCTV recorders for this site.</PanelEmpty>
+            <PanelEmpty>{t.site.noRecorders}</PanelEmpty>
           )}
         </ChildPanel>
       </div>
@@ -210,11 +213,13 @@ function ChildPanel({
   title,
   count,
   href,
+  manage,
   children,
 }: {
   title: string;
   count?: number;
   href?: string;
+  manage: string;
   children: React.ReactNode;
 }) {
   return (
@@ -224,7 +229,7 @@ function ChildPanel({
         actions={
           href ? (
             <Link href={href as never} className="text-accent text-[12px] hover:underline">
-              Manage →
+              {manage}
             </Link>
           ) : undefined
         }

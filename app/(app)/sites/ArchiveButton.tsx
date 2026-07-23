@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Archive / restore a site (soft delete via `archived_at`). Archived sites are
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/Button";
  */
 export function ArchiveButton({ id, archived }: { id: string; archived: boolean }) {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState(false);
 
   async function toggle() {
@@ -25,7 +27,7 @@ export function ArchiveButton({ id, archived }: { id: string; archived: boolean 
 
   return (
     <Button sm variant="subtle" onClick={toggle} disabled={busy}>
-      {busy ? "…" : archived ? "Restore" : "Archive"}
+      {busy ? "…" : archived ? t.common.restore : t.common.archive}
     </Button>
   );
 }

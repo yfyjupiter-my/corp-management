@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CountryCode } from "@/lib/constants/countries";
 import type { UserRole } from "@/lib/constants/enums";
+import type { Locale } from "@/lib/i18n/config";
 
 export interface CurrentUser {
   id: string;
@@ -8,6 +9,7 @@ export interface CurrentUser {
   fullName: string | null;
   role: UserRole;
   countryCode: CountryCode | null; // null for hq_admin
+  locale: Locale | null; // null = follow the app default
 }
 
 /**
@@ -25,7 +27,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, country_code")
+    .select("full_name, role, country_code, locale")
     .eq("user_id", user.id)
     .single();
 
@@ -37,6 +39,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     fullName: profile.full_name,
     role: profile.role,
     countryCode: profile.country_code,
+    locale: profile.locale,
   };
 }
 

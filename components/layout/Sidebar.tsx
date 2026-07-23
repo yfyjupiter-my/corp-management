@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
 import { COUNTRY_LIST } from "@/lib/constants/countries";
 import type { CurrentUser } from "@/lib/auth";
 import { UserMenu } from "./UserMenu";
@@ -24,6 +25,7 @@ interface SidebarProps {
 /** Left navigation rail — DESIGN.md §4 + §5.1. */
 export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
   const pathname = usePathname();
+  const t = useT();
   const isHq = user.role === "hq_admin";
 
   // Country managers only see their own country in the Countries group.
@@ -42,12 +44,12 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
           CM
         </div>
         <div className="leading-tight">
-          <div className="font-head font-semibold text-white text-sm">Corp Mgmt</div>
-          <div className="text-[11px] text-sidebar-fg/70">SEA IT Registry</div>
+          <div className="font-head font-semibold text-white text-sm">{t.nav.brand}</div>
+          <div className="text-[11px] text-sidebar-fg/70">{t.nav.tagline}</div>
         </div>
       </div>
 
-      <Group label="Countries" />
+      <Group label={t.nav.groupCountries} />
       {countries.map((c) => (
         <NavItem
           key={c.code}
@@ -58,24 +60,24 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
           <span className="inline-block w-3.5 text-[11px] font-mono text-sidebar-fg/60">
             {c.code}
           </span>
-          {c.name}
+          {t.countries[c.code]}
         </NavItem>
       ))}
 
-      <Group label="Modules" />
+      <Group label={t.nav.groupModules} />
       <NavItem
         href="/sites"
         active={pathname.startsWith("/sites")}
         icon={<SitesIcon />}
         count={siteCount}
       >
-        Sites
+        {t.nav.sites}
       </NavItem>
       <NavItem href="/network" active={pathname.startsWith("/network")} icon={<NetworkIcon />}>
-        Network
+        {t.nav.network}
       </NavItem>
       <NavItem href="/cctv" active={pathname.startsWith("/cctv")} icon={<CctvIcon />}>
-        CCTV
+        {t.nav.cctv}
       </NavItem>
       <NavItem
         href="/renewals"
@@ -83,17 +85,17 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
         icon={<RenewalsIcon />}
         count={renewalsCount}
       >
-        Renewals
+        {t.nav.renewals}
       </NavItem>
 
       {isHq && (
         <>
-          <Group label="Administration" />
+          <Group label={t.nav.groupAdministration} />
           <NavItem href="/users" active={pathname.startsWith("/users")} icon={<UsersIcon />}>
-            Users &amp; roles
+            {t.nav.users}
           </NavItem>
           <NavItem href="/audit" active={pathname.startsWith("/audit")} icon={<AuditIcon />}>
-            Audit log
+            {t.nav.audit}
           </NavItem>
         </>
       )}

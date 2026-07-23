@@ -133,6 +133,72 @@
 - [ ] **12.3** CI applies migrations (Supabase CLI) + runs RLS/unit tests on PR.
 - [ ] **12.4** Pre-launch manual pen-test of API routes for cross-country access (finalize risk mitigation).
 
+## Phase 13 — Internationalization: EN / 繁體中文 switch
+
+> A two-position language switch in the Topbar flipping the whole UI between English and Traditional Chinese. No i18n exists today — every string across **55 `.tsx` files / ~5,000 lines** is hardcoded English.
+> **Approach:** cookie + `profiles.locale` persistence, hand-rolled typed dictionary (no new dependency). A `[locale]` URL segment is ruled out — `typedRoutes: true` would mean rewriting every route and `Link href`.
+> **Definition of done for any string task:** no English literal remains in the file, both dictionaries carry the key, and `tsc --noEmit` passes.
+
+### 13A — Locale core
+
+- [x] **13.1** `lib/i18n/config.ts` — `LOCALES = ["en","zh-TW"]`, `Locale` type, `DEFAULT_LOCALE`, `LOCALE_COOKIE`, `LOCALE_LABELS` (`EN` / `繁中`), `HTML_LANG` (`en` / `zh-Hant-TW`), `isLocale()` guard. No imports, so it is safe on both sides of the RSC boundary.
+- [x] **13.2** `lib/i18n/dictionaries/en.ts` — namespaced `as const` object (`common`, `nav`, `topbar`, `sites`, `network`, `cctv`, `renewals`, `audit`, `users`, `dashboard`, `country`, `search`, `auth`, `forms`, `enums`, `errors`) + `export type Dictionary = typeof en`. Seed with shared strings only (Save / Cancel / Edit / Saving… / Fresh / Stale / nav labels); each later task adds its own keys. **Deviation:** `as const` was dropped — literal value types would force `zh-TW.ts` to repeat the English strings verbatim; widened `string` values still enforce the exact key shape.
+- [x] **13.3** `lib/i18n/dictionaries/zh-TW.ts` — `export const zhTW: Dictionary = { … }`. The explicit annotation (not `as const`) is the drift guard: a missing or misspelled key becomes a `tsc` error.
+- [x] **13.4** `lib/i18n/server.ts` — `getLocale()` (cookie → default) and `getDictionary()`, for the 38 server components. Lookup itself lives in `lib/i18n/dictionaries/index.ts` (`DICTIONARIES`, `dictionaryFor`) so it stays free of `next/headers` and is usable from middleware/tests.
+- [x] **13.5** `lib/i18n/client.tsx` — `"use client"`; `I18nProvider({ dict, locale })`, `useT()`, `useLocale()`, for the 17 client components. Same `t.common.save` shape as the server side. No fallback dictionary — `useT()` outside the provider throws rather than silently rendering English (and keeps `en` out of every client bundle).
+- [x] **13.6** Unit test `tests/i18n.test.ts` — recursive key-parity assertion between `en` and `zhTW`, so an accidental `any` cast can't hide drift the type system would otherwise catch.
+
+### 13B — Persistence
+
+- [x] **13.7** `supabase/migrations/0005_locale.sql` — `alter table profiles add column locale text check (locale is null or locale in ('en','zh-TW'))`. **No new RLS policy on `profiles`** (see 13.8).
+- [x] **13.8** Same migration: `set_my_locale(p_locale text)` — also raises on an unauthenticated caller (`auth.uid() is null`), `language plpgsql` so it can `raise`. — `security definer`, `set search_path = public`, re-validates the input, updates **only** `locale` for `auth.uid()`; `revoke all from public, anon` + `grant execute to authenticated`. A plain self-update policy would be a **privilege-escalation hole** — RLS cannot restrict columns, so a `country_manager` could set `role='hq_admin'`, which is exactly what `current_role_is_hq()` reads.
+- [x] **13.9** `lib/types/database.ts` — add `locale` to the `profiles` `Row`/`Insert` and `set_my_locale` to the schema's `Functions` block.
+- [x] **13.10** `lib/actions/locale.ts` — `"use server"` `setLocale(next: string)`: `isLocale()` guard first, set the cookie (`httpOnly`, `sameSite: "lax"`, `path: "/"`, `secure` in prod, 1-year `maxAge`), call the RPC (no-op when signed out), `revalidatePath("/", "layout")`. Mirrors `lib/actions/auth.ts`.
+- [x] **13.11** `lib/supabase/middleware.ts` (root `middleware.ts` needed no change — it just delegates) — when the locale cookie is absent, read `profiles.locale` for the session user and set the cookie on the response. Precedence **cookie → `profiles.locale` → `en`**; afterwards `getLocale()` is a pure cookie read everywhere, so the extra query costs only a new browser's first request.
+- [x] **13.12** `lib/auth.ts` — add `locale` to the `CurrentUser` interface and to the profile `select`.
+
+### 13C — Switch UI & shell
+
+- [x] **13.13** `components/layout/LocaleSwitch.tsx` — client segmented control (two buttons in one pill; active `bg-surface shadow-sm text-fg`, inactive `text-fg-subtle`), `useTransition` + `setLocale` following the logout pattern in `UserMenu.tsx`, disabled while pending. A11y: `role="group"` + `aria-label`, `aria-pressed` and `lang={l}` per button. Existing DESIGN.md tokens only — no new CSS.
+- [x] **13.14** `components/layout/Topbar.tsx` — mounted between the search link and the role pill, with `ml-auto` so the pair stays right-aligned. The search link keeps `flex-1 max-w-[440px]`.
+- [x] **13.15** `app/layout.tsx` — make it `async`, emit `lang={HTML_LANG[locale]}`, wrap `children` in `I18nProvider`. **Note:** `cookies()` here opts the tree into dynamic rendering; nearly every page is already `force-dynamic`, so the practical cost is `app/not-found.tsx` losing static optimization. Confirm the build output after this task. **Confirmed:** `npm run build` passes and `/_not-found` is now `ƒ` (dynamic); every other route was already dynamic, so that is the whole cost.
+- [x] **13.16** `app/globals.css` — added `--font-cjk` plus `--font-{head,body,mono}-stack` composites, and pointed the four `font-family` declarations at them. **`tailwind.config.ts` had to change too** (not in the original plan): its `fontFamily` mapped `font-head`/`font-body`/`font-mono` straight to the bare next/font vars, so utility-class text would still have rendered tofu. The three `next/font` families load `subsets: ["latin"]` and have **no CJK glyphs**. **Do not** pull a CJK family through `next/font/google` — multi-megabyte and it subsets poorly.
+- [x] **13.17** Rendered top-right via a new `app/(auth)/layout.tsx` (one file rather than three page edits; the pages keep their own centering). Without it, a user who cannot read English has no way to reach the switch before signing in.
+
+### 13D — String extraction: chrome & shared
+
+- [x] **13.18** `components/layout/Sidebar.tsx` — group labels (Countries / Modules / Administration) + all nav items via `useT()`. Also added a `countries` namespace (VN/TH/ID/MY display names) — `lib/constants/countries.ts` stays untouched, same rule as `enums.ts`.
+- [x] **13.19** `components/layout/UserMenu.tsx` — role lines (hoisted to one `roleLine` const, it was duplicated), "Log out", "Signing out…". **Also `Topbar.tsx`** (chrome, not listed separately): search placeholder + role pill; it became `async` and uses `getDictionary()`.
+- [x] **13.20** `components/ui/*` — audited all 9: only `VerifyButton` owns literals ("Verify — still accurate" / "Verifying…"), now via `useT()`. `Panel`/`PanelEmpty`/`Chip`/`CredentialRef`/`DropdownMenu`/`PageHead`/`Table`/`Kpi`/`Button` are purely structural — every string is caller-supplied.
+- [x] **13.21** Enum labels — add `enums.deviceType` / `circuitType` / `cameraType` / `cameraStatus` / `vpnStatus` to both dictionaries, then replace all **16 `capitalize` spans** across `network/page.tsx` (×2), `cctv/page.tsx` (×2), `countries/[code]/page.tsx` (×4), `sites/[id]/page.tsx` (×2), `audit/page.tsx`, `DeviceForm`, `CameraForm`, `CircuitForm`. `capitalize` is meaningless for Chinese. **`lib/constants/enums.ts` stays untouched** — it mirrors the Postgres check constraints. **Done:** 16 of 17 replaced (the 17th is in the orphaned `network/vpn/new/VpnForm.tsx`, see below). Two extras found beyond the plan's list: the audit `action` chip needed an `enums.auditAction` set (`lower(tg_op)` → insert/update/delete) and the site-detail VPN status chip needed `enums.vpnStatus`. `ap` renders as "Access point", not "AP".
+
+### 13E — String extraction: pages (38 server components)
+
+Same two-line pattern each: `const t = await getDictionary();`, then replace literals in `PageHead` titles/subtitles, `Thead columns`, `PanelHeader`, `PanelEmpty`, chips and links.
+
+- [x] **13.22** `app/(app)/dashboard/page.tsx` + `app/(app)/countries/[code]/page.tsx`. Country names now come from the new `countries` dictionary namespace, so `COUNTRIES[code].name` is no longer rendered anywhere on these pages. Local helper components (`ModuleHead`, `MoreRows`, `ChildPanel`, `DiffCell`) take their strings as props — they sit outside the component that holds `t`.
+- [x] **13.23** `app/(app)/sites/page.tsx`, `sites/[id]/page.tsx`, `sites/[id]/network/page.tsx`.
+- [x] **13.24** `app/(app)/network/page.tsx` + `app/(app)/cctv/page.tsx` (incl. their `DropdownMenu` item labels).
+- [x] **13.25** `app/(app)/renewals/page.tsx` (window + country filter pills) and `app/(app)/search/page.tsx`. The renewals `Renewal.kind` union changed from display strings (`"ISP contract"`) to stable keys (`"contract" | "warranty"`) — a translated label can no longer be used as a comparison value. `search`'s `typeLabel` map became a `(t) => Record<…>` factory.
+- [x] **13.26** `app/(app)/audit/page.tsx` + `DiffCell.tsx`, `app/(app)/users/page.tsx` + `InviteForm.tsx`. `DiffCell` takes `showLabel`/`hideLabel` functions rather than assembling "Show N field(s)" from fragments, which does not translate.
+- [x] **13.27** `app/(auth)/**` (login, forgot-password, reset-password + their 3 client forms), `app/no-access/page.tsx`, `app/not-found.tsx`. The three auth pages and `no-access`/`not-found` became `async`. **`metadata` became `generateMetadata()`** — a static export cannot read the locale cookie.
+
+### 13F — String extraction: forms, validation, API
+
+- [x] **13.28** The 6 forms — `SiteForm`, `DeviceForm`, `CircuitForm`, `CameraForm`, `RecorderForm`, plus `IpSchemeForm`/`VlanForm`/`ArchiveButton`: `useT()` for field labels, placeholders, help text, submit labels (`Save` / `Save changes` / `Saving…`), Cancel. **Also the 10 create/edit page wrappers** (not listed separately in the plan): they own the `title`/`subtitle`/`eyebrow` props, so leaving them would have left every form heading English. `sites/new/page.tsx` became `async`; the three eyebrows now reuse `nav.sites`/`nav.network`/`nav.cctv`. `forms` grew 6 sub-namespaces — `labels` (47), `ph` (39), `help`, `select`, `actions`, `saveFailed`, `pages`. **Placeholders all moved into the dictionary**, including the technical examples (`Fortinet`, `10.10.0.1`, `FG60F-…`) whose zh values are identical — a half-in/half-out split would have been arbitrary. The camera page's no-recorder empty state was split into a sentence + a link label; the old "No recorders yet — {link} first." does not survive translation.
+- [x] **13.29** `lib/validation/*` — the schemas now carry **`v.*` dictionary keys** rather than English text, resolved at render time by `validationMessage(t, msg)` (`lib/i18n/validation.ts`). A schema is built at module scope where there is no request and therefore no locale, so a function-message approach would have meant rebuilding every schema per request. Built-in Zod messages (`Invalid uuid`, `String must contain at most 80 character(s)`) have no `v.` prefix and **pass through untouched** — translating Zod's own catalogue is out of scope, and collapsing them to one generic string would lose detail the English UI has today. `SECRET_GUARD_MESSAGE` was deleted from `lib/utils/secrets.ts`; its text is now `validation.secret`.
+- [x] **13.30** The 13 `app/api/**/route.ts` handlers — every `{ error: … }` now comes from `getDictionary()`. The three shared helpers stayed **pure** and take the dictionary as an argument (`dbErrorResponse(error, context, t)`, `rateLimitResponse(rl, t)`) rather than importing `next/headers` themselves, which would have made `lib/api/rate-limit.ts` unusable from its unit test. `CONFLICT_MESSAGE` was deleted from `lib/api/optimistic.ts` → `errors.conflict`; the 5 SQLSTATE messages in `db-error.ts` became keys into `errors.db`. Zod issues surfaced by a route go through `validationMessage()` too, so a 400 from the API reads in the caller's language.
+
+### 13G — Verification
+
+- [x] **13.31** `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **58 passed**, 4 RLS skipped (2026-07-23). Two tests were added beyond the plan: every `V.*` key must resolve to real text in **both** locales (an unresolved key would silently render the `v.foo` token, which neither `tsc` nor the parity test can see), and built-in Zod messages must pass through unchanged.
+- [x] **13.32** Applied to the linked Supabase project via `supabase db push` (2026-07-23).
+- [ ] **13.33** Live smoke: sign in → click **繁中** → sidebar/topbar/all module pages render Chinese with URLs unchanged; glyphs render in a real CJK face (inspect computed `font-family`, no tofu); submit a form with a blank required field → Chinese validation message; save → redirect works; log out → login page still Chinese and its switch works; sign in from a second browser with no cookie → UI comes up Chinese from `profiles.locale`; switch back to **EN** for a clean round trip.
+- [ ] **13.34** Security checks (CLAUDE.md top priority): as a `country_manager`, `set_my_locale('en')` succeeds, but a direct `update profiles set role='hq_admin' where user_id = auth.uid()` is **rejected** by RLS; `set_my_locale('xx')` raises and writes nothing; a locale change adds **no** rows to `audit_log` (`profiles` carries no audit trigger).
+- [ ] **13.35** Update `STATUS.md` and tick the Phase 13 boxes.
+
+**Explicit decisions (reversible):** dates stay `en-GB` and money `en-US` in both locales — they render as data in mono columns, and localizing would touch ~40 call sites for little gain. The switch also appears on the auth pages (13.17), not only the Topbar as literally asked.
+
 ---
 
 ## Dependency order (recommended)
@@ -144,3 +210,4 @@
 5. **Phase 9** (roles/audit/users) — needs auth core + at least one mutating flow.
 6. **Phase 10** cross-cutting — apply continuously alongside 3–9.
 7. **Phase 11–12** — gate before launch.
+8. **Phase 13** (i18n) — independent of 10–12, but do it **after** the UI has settled: every new page or form written afterwards must be authored against the dictionary rather than retrofitted. Within the phase the order is strict: 13A → 13B → 13C, then 13D–13F in any order (13.21 needs 13D's enum keys).

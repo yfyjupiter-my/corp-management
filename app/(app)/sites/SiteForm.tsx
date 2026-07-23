@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 /**
  * Create/edit a site (PRD Story 1). React Hook Form + shared Zod schema; mutations
@@ -32,7 +34,10 @@ export function SiteForm({
   panelClassName?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const isEdit = Boolean(site);
+  // Zod messages are dictionary keys (13.29) — resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const defaultCountry = (site?.country_code ?? "MY") as CountryCode;
@@ -72,7 +77,7 @@ export function SiteForm({
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save site.");
+      setServerError(body.error ?? t.forms.saveFailed.site);
       return;
     }
     const body = await res.json().catch(() => ({}));
@@ -92,10 +97,10 @@ export function SiteForm({
           <>
             {serverError && <span className="text-[12px] text-danger">{serverError}</span>}
             <Button type="button" variant="ghost" sm onClick={() => router.back()}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save"}
+              {isSubmitting ? t.common.saving : isEdit ? t.common.saveChanges : t.common.save}
             </Button>
           </>
         }
@@ -104,44 +109,44 @@ export function SiteForm({
       <Panel className={panelClassName}>
         {/* pb-[1px] + each field's own pb-[17px] = the same 18px as the other sides. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0 px-[18px] pt-[18px] pb-[1px]">
-          <Field label="Country" required error={errors.country_code?.message}>
+          <Field label={t.forms.labels.country} required error={vm(errors.country_code?.message)}>
             <select
               className="fld"
               {...register("country_code", { onChange: (e) => onCountryChange(e.target.value) })}
             >
               {COUNTRY_LIST.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {c.code} · {c.name}
+                  {c.code} · {t.countries[c.code]}
                 </option>
               ))}
             </select>
           </Field>
-          <Field label="Site name" required error={errors.name?.message} span2>
-            <input className="fld" {...register("name")} placeholder="Kuala Lumpur HQ" />
+          <Field label={t.forms.labels.siteName} required error={vm(errors.name?.message)} span2>
+            <input className="fld" {...register("name")} placeholder={t.forms.ph.siteName} />
           </Field>
 
-          <Field label="Address" error={errors.address?.message} span2>
-            <input className="fld" {...register("address")} placeholder="Level 12, Menara …" />
+          <Field label={t.forms.labels.address} error={vm(errors.address?.message)} span2>
+            <input className="fld" {...register("address")} placeholder={t.forms.ph.address} />
           </Field>
-          <Field label="Timezone" required error={errors.timezone?.message}>
-            <input className="fld font-mono" {...register("timezone")} placeholder="Asia/Kuala_Lumpur" />
-          </Field>
-
-          <Field label="Currency" required error={errors.currency?.message}>
-            <input className="fld font-mono uppercase" maxLength={3} {...register("currency")} placeholder="MYR" />
-          </Field>
-          <Field label="Contact name" error={errors.contact_name?.message}>
-            <input className="fld" {...register("contact_name")} placeholder="Site IT lead" />
-          </Field>
-          <Field label="Contact phone" error={errors.contact_phone?.message}>
-            <input className="fld font-mono" {...register("contact_phone")} placeholder="+60 …" />
+          <Field label={t.forms.labels.timezone} required error={vm(errors.timezone?.message)}>
+            <input className="fld font-mono" {...register("timezone")} placeholder={t.forms.ph.timezone} />
           </Field>
 
-          <Field label="Contact email" error={errors.contact_email?.message} span2>
-            <input className="fld" {...register("contact_email")} placeholder="it.kl@example.com" />
+          <Field label={t.forms.labels.currency} required error={vm(errors.currency?.message)}>
+            <input className="fld font-mono uppercase" maxLength={3} {...register("currency")} placeholder={t.forms.ph.currency} />
+          </Field>
+          <Field label={t.forms.labels.contactName} error={vm(errors.contact_name?.message)}>
+            <input className="fld" {...register("contact_name")} placeholder={t.forms.ph.contactName} />
+          </Field>
+          <Field label={t.forms.labels.contactPhone} error={vm(errors.contact_phone?.message)}>
+            <input className="fld font-mono" {...register("contact_phone")} placeholder={t.forms.ph.contactPhone} />
           </Field>
 
-          <Field label="Notes" error={errors.notes?.message} span2>
+          <Field label={t.forms.labels.contactEmail} error={vm(errors.contact_email?.message)} span2>
+            <input className="fld" {...register("contact_email")} placeholder={t.forms.ph.contactEmail} />
+          </Field>
+
+          <Field label={t.forms.labels.notes} error={vm(errors.notes?.message)} span2>
             <textarea className="fld min-h-[64px]" {...register("notes")} />
           </Field>
         </div>

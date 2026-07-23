@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 
 /** Shape of a PostgREST / Postgres error as returned by supabase-js. */
 type DbError = {
@@ -9,27 +10,26 @@ type DbError = {
 };
 
 /**
- * Safe, user-facing messages keyed by Postgres SQLSTATE. Anything not listed
- * falls back to a generic message so we never leak constraint names, column
- * names, or RLS hints to the client (ROB-3).
+ * Safe, user-facing messages keyed by Postgres SQLSTATE — as dictionary keys, so
+ * the text is localised at response time (13.30). Anything not listed falls back
+ * to a generic message so we never leak constraint names, column names, or RLS
+ * hints to the client (ROB-3).
  */
-const SAFE_MESSAGES: Record<string, string> = {
-  "23505": "A record with these details already exists.",
-  "23503": "A referenced record was not found.",
-  "23514": "Some values are outside the allowed range.",
-  "23502": "A required field is missing.",
-  "42501": "You do not have permission to perform this action.",
+const SAFE_MESSAGES: Record<string, keyof Dictionary["errors"]["db"]> = {
+  "23505": "duplicate",
+  "23503": "missingReference",
+  "23514": "outOfRange",
+  "23502": "missingField",
+  "42501": "noPermission",
 };
 
 /**
  * Logs the raw DB error server-side and returns a NextResponse carrying only a
  * safe message. `context` identifies the call site in server logs.
  */
-export function dbErrorResponse(error: DbError, context: string) {
+export function dbErrorResponse(error: DbError, context: string, t: Dictionary) {
   console.error(`[db-error] ${context}:`, error);
   const status = error.code === "42501" ? 403 : 400;
-  const message =
-    (error.code && SAFE_MESSAGES[error.code]) ??
-    "Could not save your changes. Please check your input and try again.";
-  return NextResponse.json({ error: message }, { status });
+  const key = error.code ? SAFE_MESSAGES[error.code] : undefined;
+  return NextResponse.json({ error: t.errors.db[key ?? "generic"] }, { status });
 }

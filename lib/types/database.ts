@@ -16,6 +16,7 @@ import type {
   VpnStatus,
   MaintenanceTarget,
 } from "@/lib/constants/enums";
+import type { Locale } from "@/lib/i18n/config";
 
 /** Columns maintained by the DB / audit triggers — never sent by clients. */
 type AutoCols = "created_by" | "created_at" | "updated_at";
@@ -50,6 +51,7 @@ export interface Database {
           full_name: string | null;
           role: UserRole;
           country_code: CountryCode | null;
+          locale: Locale | null; // null = follow the app default (en)
           created_at: string;
         };
         Insert: {
@@ -57,6 +59,7 @@ export interface Database {
           full_name?: string | null;
           role: UserRole;
           country_code?: CountryCode | null;
+          locale?: Locale | null;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
         Relationships: [];
@@ -242,6 +245,8 @@ export interface Database {
       };
       current_role_is_hq: { Args: Record<string, never>; Returns: boolean };
       current_country: { Args: Record<string, never>; Returns: CountryCode | null };
+      /** Column-scoped locale writer — profiles has no self-update policy (0005). */
+      set_my_locale: { Args: { p_locale: string }; Returns: void };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

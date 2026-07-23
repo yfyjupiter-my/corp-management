@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 interface Site {
   id: string;
@@ -58,7 +60,10 @@ export function RecorderForm({
   panelClassName?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const isEdit = Boolean(recorder);
+  // Zod messages are dictionary keys (13.29) - resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -94,7 +99,7 @@ export function RecorderForm({
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save recorder.");
+      setServerError(body.error ?? t.forms.saveFailed.recorder);
       return;
     }
     router.push("/cctv");
@@ -113,10 +118,10 @@ export function RecorderForm({
           <>
             {serverError && <span className="text-[12px] text-danger">{serverError}</span>}
             <Button type="button" variant="ghost" sm onClick={() => router.back()}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save"}
+              {isSubmitting ? t.common.saving : isEdit ? t.common.saveChanges : t.common.save}
             </Button>
           </>
         }
@@ -125,9 +130,9 @@ export function RecorderForm({
       <Panel className={panelClassName}>
         {/* pb-[1px] + each field's own pb-[17px] = the same 18px as the other sides. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0 px-[18px] pt-[18px] pb-[1px]">
-          <Field label="Site" required error={errors.site_id?.message} span2>
+          <Field label={t.forms.labels.site} required error={vm(errors.site_id?.message)} span2>
             <select className="fld" {...register("site_id")}>
-              <option value="">Select a site…</option>
+              <option value="">{t.forms.select.site}</option>
               {sites.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.country_code} · {s.name}
@@ -135,38 +140,38 @@ export function RecorderForm({
               ))}
             </select>
           </Field>
-          <Field label="Location" error={errors.location?.message}>
-            <input className="fld" {...register("location")} placeholder="Server room" />
+          <Field label={t.forms.labels.location} error={vm(errors.location?.message)}>
+            <input className="fld" {...register("location")} placeholder={t.forms.ph.recorderLocation} />
           </Field>
 
-          <Field label="Brand" error={errors.brand?.message}>
-            <input className="fld" {...register("brand")} placeholder="Hikvision" />
+          <Field label={t.forms.labels.brand} error={vm(errors.brand?.message)}>
+            <input className="fld" {...register("brand")} placeholder={t.forms.ph.recorderBrand} />
           </Field>
-          <Field label="Model" error={errors.model?.message}>
-            <input className="fld" {...register("model")} placeholder="DS-7616NI" />
+          <Field label={t.forms.labels.model} error={vm(errors.model?.message)}>
+            <input className="fld" {...register("model")} placeholder={t.forms.ph.recorderModel} />
           </Field>
-          <Field label="Firmware" error={errors.firmware?.message}>
-            <input className="fld" {...register("firmware")} placeholder="4.31.005" />
+          <Field label={t.forms.labels.firmware} error={vm(errors.firmware?.message)}>
+            <input className="fld" {...register("firmware")} placeholder={t.forms.ph.recorderFirmware} />
           </Field>
 
-          <Field label="Channels" error={errors.channels?.message}>
-            <input className="fld" type="number" min="1" step="1" {...register("channels")} placeholder="16" />
+          <Field label={t.forms.labels.channels} error={vm(errors.channels?.message)}>
+            <input className="fld" type="number" min="1" step="1" {...register("channels")} placeholder={t.forms.ph.channels} />
           </Field>
-          <Field label="Storage (TB)" error={errors.storage_tb?.message}>
-            <input className="fld" type="number" min="0" step="0.1" {...register("storage_tb")} placeholder="8" />
+          <Field label={t.forms.labels.storageTb} error={vm(errors.storage_tb?.message)}>
+            <input className="fld" type="number" min="0" step="0.1" {...register("storage_tb")} placeholder={t.forms.ph.storageTb} />
           </Field>
           <Field
-            label="Retention (days)"
-            error={errors.retention_days?.message}
-            help="Flagged if below the country minimum."
+            label={t.forms.labels.retentionDays}
+            error={vm(errors.retention_days?.message)}
+            help={t.forms.help.retentionDays}
           >
-            <input className="fld" type="number" min="0" step="1" {...register("retention_days")} placeholder="30" />
+            <input className="fld" type="number" min="0" step="1" {...register("retention_days")} placeholder={t.forms.ph.retentionDays} />
           </Field>
 
-          <Field label="Management IP" error={errors.mgmt_ip?.message}>
-            <input className="fld font-mono" {...register("mgmt_ip")} placeholder="10.10.0.20" />
+          <Field label={t.forms.labels.mgmtIp} error={vm(errors.mgmt_ip?.message)}>
+            <input className="fld font-mono" {...register("mgmt_ip")} placeholder={t.forms.ph.recorderMgmtIp} />
           </Field>
-          <Field label="Notes" error={errors.notes?.message} span2>
+          <Field label={t.forms.labels.notes} error={vm(errors.notes?.message)} span2>
             <textarea className="fld min-h-[64px]" {...register("notes")} />
           </Field>
         </div>

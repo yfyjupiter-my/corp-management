@@ -29,6 +29,5 @@ export function classifyGuardedUpdate(input: {
   return input.rowVisible ? "conflict" : "not_found";
 }
 
-export const CONFLICT_MESSAGE =
-  "This record was changed by someone else since you opened it. Reload to see " +
-  "the latest version, then re-apply your changes.";
+// The 409 message itself lives in the dictionary (`errors.conflict`) — the
+// routes resolve it with `getDictionary()` so it is localised (13.30).

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { SiteForm } from "../../SiteForm";
 import type { SiteInput } from "@/lib/validation/site";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function EditSitePage({
 }) {
   const { id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
+  const t = await getDictionary();
 
   const supabase = await createClient();
   const { data: site } = await supabase
@@ -44,9 +46,9 @@ export default async function EditSitePage({
   return (
     <SiteForm
       site={initial}
-      eyebrow="Sites"
-      title={`Edit · ${site.name}`}
-      subtitle="Update site details."
+      eyebrow={t.nav.sites}
+      title={t.forms.pages.editSiteTitle(site.name)}
+      subtitle={t.forms.pages.editSiteSubtitle}
     />
   );
 }

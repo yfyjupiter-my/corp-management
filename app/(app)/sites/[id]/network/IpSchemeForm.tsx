@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { ipSchemeSchema, type IpSchemeInput } from "@/lib/validation/network";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
+import { validationMessage } from "@/lib/i18n/validation";
 
 /**
  * Add an IP scheme to a fixed site (PRD Story 2). The parent site isn't a form
@@ -14,7 +16,11 @@ import { Button } from "@/components/ui/Button";
  */
 export function IpSchemeForm({ siteId }: { siteId: string }) {
   const router = useRouter();
+  const t = useT();
   const [serverError, setServerError] = useState<string | null>(null);
+  // Zod messages are dictionary keys (13.29) - resolve them for display.
+  const vm = (message?: string) => validationMessage(t, message);
+
 
   const {
     register,
@@ -35,7 +41,7 @@ export function IpSchemeForm({ siteId }: { siteId: string }) {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? "Could not save IP scheme.");
+      setServerError(body.error ?? t.forms.saveFailed.ipScheme);
       return;
     }
     reset({ site_id: siteId });
@@ -46,27 +52,27 @@ export function IpSchemeForm({ siteId }: { siteId: string }) {
     <form onSubmit={handleSubmit(onSubmit)}>
       <input type="hidden" {...register("site_id")} />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-[18px]">
-        <Field label="Subnet / CIDR" required error={errors.subnet?.message}>
-          <input className="fld font-mono" {...register("subnet")} placeholder="10.10.0.0/24" />
+        <Field label={t.forms.labels.subnetCidr} required error={vm(errors.subnet?.message)}>
+          <input className="fld font-mono" {...register("subnet")} placeholder={t.forms.ph.subnet} />
         </Field>
-        <Field label="Gateway" error={errors.gateway?.message}>
-          <input className="fld font-mono" {...register("gateway")} placeholder="10.10.0.1" />
+        <Field label={t.forms.labels.gateway} error={vm(errors.gateway?.message)}>
+          <input className="fld font-mono" {...register("gateway")} placeholder={t.forms.ph.gateway} />
         </Field>
-        <Field label="DNS" error={errors.dns?.message}>
-          <input className="fld font-mono" {...register("dns")} placeholder="10.10.0.1, 1.1.1.1" />
+        <Field label={t.forms.labels.dns} error={vm(errors.dns?.message)}>
+          <input className="fld font-mono" {...register("dns")} placeholder={t.forms.ph.dns} />
         </Field>
-        <Field label="DHCP range" error={errors.dhcp_range?.message}>
-          <input className="fld font-mono" {...register("dhcp_range")} placeholder="10.10.0.100–200" />
+        <Field label={t.forms.labels.dhcpRange} error={vm(errors.dhcp_range?.message)}>
+          <input className="fld font-mono" {...register("dhcp_range")} placeholder={t.forms.ph.dhcpRange} />
         </Field>
-        <Field label="Notes" error={errors.notes?.message} span={4}>
-          <input className="fld" {...register("notes")} placeholder="VLAN 10 · office LAN" />
+        <Field label={t.forms.labels.notes} error={vm(errors.notes?.message)} span={4}>
+          <input className="fld" {...register("notes")} placeholder={t.forms.ph.ipSchemeNotes} />
         </Field>
       </div>
 
       <div className="flex items-center gap-2.5 px-[18px] py-3 border-t border-border bg-surface-2">
         {serverError && <span className="text-[12px] text-danger mr-auto">{serverError}</span>}
         <Button type="submit" sm disabled={isSubmitting} className={serverError ? "" : "ml-auto"}>
-          {isSubmitting ? "Saving…" : "Add IP scheme"}
+          {isSubmitting ? t.common.saving : t.forms.actions.addIpScheme}
         </Button>
       </div>
 
