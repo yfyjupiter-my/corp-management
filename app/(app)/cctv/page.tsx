@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHead } from "@/components/ui/PageHead";
-import { Kpi } from "@/components/ui/Kpi";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
-import { VerifyButton } from "@/components/ui/VerifyButton";
 import { DEFAULT_MIN_RETENTION_DAYS } from "@/lib/constants/countries";
 import { isBelowRetention } from "@/lib/utils/cctv";
 import type { CameraStatus } from "@/lib/constants/enums";
@@ -44,8 +42,6 @@ export default async function CctvPage() {
   const recorderRows = recorders.data ?? [];
   const cameraRows = cameras.data ?? [];
   const cameraCount = cameraRows.length;
-  const active = cameraRows.filter((c) => c.status === "active").length;
-  const faulty = cameraRows.filter((c) => c.status !== "active").length;
 
   const minByCountry = new Map<string, number>(
     (settings.data ?? []).map((s) => [s.country_code, s.min_retention_days]),
@@ -56,10 +52,6 @@ export default async function CctvPage() {
     const code = Array.isArray(site) ? site[0]?.country_code : site?.country_code;
     return (code ? minByCountry.get(code) : undefined) ?? DEFAULT_MIN_RETENTION_DAYS;
   };
-  const belowRetention = recorderRows.filter((r) =>
-    isBelowRetention(r.retention_days, retentionMin(r)),
-  ).length;
-
   return (
     <>
       <PageHead
@@ -77,13 +69,6 @@ export default async function CctvPage() {
           />
         }
       />
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
-        <Kpi label={t.cctv.kpiRecorders} value={recorderRows.length} />
-        <Kpi label={t.cctv.kpiCamerasActive} value={active} unit={`/ ${cameraCount}`} />
-        <Kpi label={t.cctv.kpiFaultyOffline} value={faulty} accent={faulty > 0 ? "danger" : "accent"} />
-        <Kpi label={t.cctv.kpiBelowRetention} value={belowRetention} accent={belowRetention > 0 ? "warn" : "accent"} />
-      </div>
 
       <div className="flex flex-col gap-3.5">
         <Panel>
@@ -121,7 +106,6 @@ export default async function CctvPage() {
                               {t.common.edit}
                             </Button>
                           </Link>
-                          <VerifyButton table="cctv_recorders" id={r.id} />
                         </div>
                       </Td>
                     </Tr>
@@ -169,7 +153,6 @@ export default async function CctvPage() {
                             {t.common.edit}
                           </Button>
                         </Link>
-                        <VerifyButton table="cctv_cameras" id={c.id} />
                       </div>
                     </Td>
                   </Tr>

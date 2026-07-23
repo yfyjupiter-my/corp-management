@@ -7,7 +7,6 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
-import { VerifyButton } from "@/components/ui/VerifyButton";
 import { CredentialRef } from "@/components/ui/CredentialRef";
 import { ArchiveButton } from "../ArchiveButton";
 import { isStale, formatDate, formatMoney } from "@/lib/utils/format";
@@ -49,7 +48,6 @@ export default async function SiteDetailPage({
         subtitle={site.address ?? undefined}
         actions={
           <div className="flex items-center gap-2">
-            <VerifyButton table="sites" id={site.id} />
             <ArchiveButton id={site.id} archived={Boolean(site.archived_at)} />
             <Link href={`/sites/${site.id}/edit`}>
               <Button sm>{t.common.edit}</Button>

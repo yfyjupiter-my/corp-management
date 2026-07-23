@@ -5,6 +5,7 @@ import {
   daysUntil,
   isStale,
   countryName,
+  orDash,
 } from "@/lib/utils/format";
 
 afterEach(() => {
@@ -72,6 +73,23 @@ describe("isStale", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-01T00:00:00Z"));
     expect(isStale("2025-01-01T00:00:00Z", 6)).toBe(true);
+  });
+});
+
+describe("orDash", () => {
+  it("returns the value when it has content", () => {
+    expect(orDash("Summerskye")).toBe("Summerskye");
+  });
+
+  it("dashes null and undefined", () => {
+    expect(orDash(null)).toBe("—");
+    expect(orDash(undefined)).toBe("—");
+  });
+
+  // The case `?? "—"` missed: optional text columns store "" as well as null.
+  it("dashes an empty or whitespace-only string", () => {
+    expect(orDash("")).toBe("—");
+    expect(orDash("   ")).toBe("—");
   });
 });
 

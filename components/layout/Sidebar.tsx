@@ -8,6 +8,7 @@ import { COUNTRY_LIST } from "@/lib/constants/countries";
 import type { CurrentUser } from "@/lib/auth";
 import { UserMenu } from "./UserMenu";
 import {
+  DashboardIcon,
   SitesIcon,
   NetworkIcon,
   CctvIcon,
@@ -48,6 +49,14 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
           <div className="text-[11px] text-sidebar-fg/70">{t.nav.tagline}</div>
         </div>
       </div>
+
+      <NavItem
+        href="/dashboard"
+        active={pathname.startsWith("/dashboard")}
+        icon={<DashboardIcon />}
+      >
+        {t.nav.dashboard}
+      </NavItem>
 
       <Group label={t.nav.groupCountries} />
       {countries.map((c) => (

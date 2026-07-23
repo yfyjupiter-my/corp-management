@@ -54,6 +54,15 @@ export function isStale(
   return d.getTime() < cutoff.getTime();
 }
 
+/**
+ * Placeholder for an absent text value. `?? "—"` is not enough: optional text
+ * columns store `""` as readily as `null` (the forms submit empty inputs), and
+ * a blank cell reads as a rendering bug next to a row that shows the dash.
+ */
+export function orDash(value: string | null | undefined): string {
+  return value?.trim() ? value : "—";
+}
+
 export function countryName(code: CountryCode | string): string {
   return (COUNTRIES as Record<string, { name: string }>)[code]?.name ?? code;
 }

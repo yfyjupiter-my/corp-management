@@ -8,7 +8,101 @@
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-23) — first live run: RSC boundary fix + VPN orphan deleted
+## Latest change (2026-07-23) — CCTV module drops its 4 KPI cards
+
+- `app/(app)/cctv/page.tsx`: removed the `grid-cols-2 md:grid-cols-4` KPI row — **Recorders · Cameras active · Faulty / offline · Below retention**. The page now goes straight from `PageHead` to the Recorders/Cameras panels. `Kpi` import dropped.
+- Dead derivations removed with them: `active`, `faulty`, `belowRetention`. **`retentionMin()`, the `country_settings` query and `isBelowRetention` all stay** — the per-row Retention cell still renders a `danger` chip when a recorder is under its country's minimum, so the below-retention signal is not lost, only the roll-up count.
+- The four `cctv.kpi*` keys had no other caller and were **removed from both locales** (`en.ts`, `zh-TW.ts`), keeping key parity — same treatment as `sites.view`.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **61 passed**, 4 RLS skipped. Not driven live in-app.
+
+## Earlier change (2026-07-23) — Sites list row action is now **Edit**, matching Network
+
+- `app/(app)/sites/page.tsx`: the last column's `View →` accent link is replaced by the network module's row action — `<Link href={`/sites/${id}/edit`}><Button sm variant="ghost">Edit</Button></Link>` inside a `flex items-center justify-end` cell, identical to `network/page.tsx:90`. Uses the existing `common.edit` key, so no dictionary parity change.
+- **The detail page is still reachable** — the site **name** in the first column has always linked to `/sites/{id}`; only the trailing column changed target (detail → edit). `/sites/[id]/edit` already exists.
+- `sites.view` had exactly one caller, so the key was **removed from both locales** (`en.ts`, `zh-TW.ts`) to keep key parity and avoid dead entries.
+- Column widths unchanged (`34/22/16/16/12%`); the button is right-aligned in the 12% cell.
+- Verified: `tsc --noEmit` ✅. Not driven live in-app.
+
+## Earlier change (2026-07-23) — `/sites` shows all four country panels
+
+- **Vietnam and Indonesia now render too.** They were never missing by design — `app/(app)/sites/page.tsx` ended its grouping with `.filter((g) => g.sites.length > 0)`, and both countries have **0 rows**, so their panels were dropped. Filter removed: every visible country gets the same panel, same title format (`Vietnam · 0 sites`), same fixed column widths.
+- **Empty country → `PanelEmpty` inside its own panel**, reusing `t.country.noSites(country)` ("No sites registered yet for Vietnam.") + the existing `sites.addFirst` link. No new dictionary keys, so key parity is untouched. The column headers are **not** drawn for an empty country — a header row over nothing reads as a failed load; this matches the country dashboard's convention.
+- ⚠️ **Role scoping was required, not optional.** Rendering `COUNTRY_LIST` unconditionally would have shown a `country_manager` four panels including three countries they have no business seeing. The page now calls `getCurrentUser()` and mirrors the **Sidebar** rule: `hq_admin` → all four, anyone else → their own `countryCode` only. RLS is still the boundary — a country that slipped through would render an *empty* panel, never another country's rows.
+- The page-level "no sites at all" empty state is kept as the fallback for a user with **no visible country** (no role match / null `countryCode`); it is otherwise unreachable now.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **61 passed**, 4 RLS skipped. ⚠️ **Not driven live** — the role-scoping branch in particular is worth a smoke test as HQ *and* as a country manager.
+
+## Earlier change (2026-07-23) — Thailand's sites table now matches Malaysia's
+
+Screenshot showed the two country panels on `/sites` drawing different layouts. **Two independent causes, both fixed:**
+
+- 🐛 **Blank cells, not missing data.** Chonburi (TH) stores `""` for `address` / `contact_name` / `contact_phone`; Johor Bharu (MY) stores `null`. Both tables rendered `?? "—"`, which **only catches `null`** — so the MY row showed a dash and the TH row showed nothing, and the TH row drew shorter. New **`orDash()`** in `lib/utils/format.ts` treats empty and whitespace-only strings as absent; applied to the sites table on `/sites` **and** on the country dashboard (same data, same bug). Covered by 3 new tests (**61 passed**, was 58).
+- 🐛 **Column widths didn't line up between panels.** Each country group renders **its own `<table>`**, and the default auto layout sizes columns to that table's own rows — Thailand's one short site produced narrower SITE/CONTACT columns than Malaysia's long KL address. `components/ui/Table.tsx` gained an opt-in **`Table fixed`** (`table-fixed`) + **`Thead widths`**; `/sites` passes `SITE_COL_WIDTHS = 34/22/16/16/12%`. **Opt-in on purpose** — `Table` is shared by network, CCTV, audit, renewals and search, and forcing fixed layout on all of them was not asked for and would reflow every module.
+- ⚠️ The empty-string data itself is untouched — the forms still submit `""` for a blank optional input. `orDash` fixes the *display* everywhere it is used; other modules' tables still use `?? "—"` and would show the same blank cell for an empty-string value. Worth a sweep if it shows up again.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **61 passed**, 4 RLS skipped. Layout not re-driven live — worth a refresh of `/sites` to confirm.
+
+## Earlier change (2026-07-23) — Sites panel titles normalised
+
+- **`/sites` renders one title template for every country** — `${country} · ${siteCount(n)}` (`app/(app)/sites/page.tsx:63`), and always has. Checked against live data: only **TH (1 site)** and **MY (3 sites)** have rows, so those are the only two panels that render — the other two countries are absent because they are empty, not because of a title bug. Column headers come from a single `Thead` call, identical for all countries.
+- **Fixed the one real defect in that title:** `country.siteCount` emitted `"1 site(s)"`. EN is now plural-aware — **"Thailand · 1 site" / "Malaysia · 3 sites"**. zh-TW (`${n} 個據點`) is unchanged; Chinese has no plural form.
+- **Aligned the odd panel header out:** the country dashboard's Sites panel (`countries/[code]/page.tsx:476`) read just `"3 site(s)"` while its four siblings on the same page read `Devices · 6`, `ISP circuits · 2`, … It is now **`Sites · 3`**, same `label · count` shape, and the failed-query case degrades to `Sites · —` instead of a bare `—`.
+- ⚠️ **Panel order on `/sites` is `COUNTRY_LIST` order (VN, TH, ID, MY), not alphabetical** — so Thailand sorts above Malaysia. Left as-is: it mirrors the `country_code` enum and the sidebar. Say the word if you want the list alphabetised by localised name instead.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `tests/i18n.test.ts` **9 passed** (the function-leaf rule still holds — `siteCount` uses `n` in both branches). Not driven live in-app.
+
+## Earlier change (2026-07-23) — Verify feature deleted (component + API route)
+
+- **Deleted `components/ui/VerifyButton.tsx` and `app/api/verify/` (`route.ts`).** Both had zero callers after the three button removals below. `/api/verify` no longer exists as a route, and with it the 8-table `VERIFIABLE` allow-list.
+- ⚠️ **`last_verified_at` is now permanently read-only from the app** on all 8 tables (`sites`, `isp_circuits`, `network_devices`, `ip_schemes`, `vlans`, `vpn_links`, `cctv_recorders`, `cctv_cameras`). Nothing writes it. The column, its RLS/audit policies and the `database.ts` types are untouched, so values persist and keep ageing — every row will eventually read **Stale** with no in-app way to refresh it. Reinstating means restoring the route, not a migration.
+- **Deliberately left in place:** the `common.verify` / `common.verifying` dictionary entries in **both** locales (unused now, but key parity is what `tests/i18n.test.ts` enforces — dropping them from one side only would fail) and the Fresh/Stale chips + the dashboard "stale records" KPI, which are reads.
+- ⚠️ **`tsc` failed once on a stale artifact, not on the source:** Next's generated `.next/types/app/api/verify/route.ts` still referenced the deleted handler (`TS2307`). Removing that directory cleared it — worth knowing after any route deletion in this repo.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **58 passed**, 4 RLS skipped.
+
+## Earlier change (2026-07-23) — Site detail drops the Verify button: **no Verify action left in the app**
+
+- `app/(app)/sites/[id]/page.tsx`: removed `<VerifyButton table="sites" …/>` from the `PageHead` actions; the row is now **Archive/Restore + Edit**. Import dropped.
+- ⚠️ **`components/ui/VerifyButton.tsx` now has zero callers** — with the network and CCTV trims below, nothing in the UI can stamp `last_verified_at` on any table any more. The component, `POST /api/verify` and its 6-table allow-list were **left in place** (deleting them wasn't asked for) — they are dead code pending a decision, alongside `vpnLinkSchema`.
+- **Reads are unaffected**: every Fresh/Stale chip, the dashboard "stale records" KPI and `reviewMonthsFor()` still read `last_verified_at`, so existing values keep ageing and rows will drift to **Stale** with no way to clear them.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings). Not driven live in-app.
+
+## Earlier change (2026-07-23) — CCTV module drops the Verify button
+
+- `app/(app)/cctv/page.tsx`: removed **both** per-row `VerifyButton`s — recorders (`cctv_recorders`) and cameras (`cctv_cameras`). Both action cells are now **Edit** only; import dropped.
+- Follows the same trim on the network module (below). `VerifyButton` now has **one remaining caller**: the site detail page (`app/(app)/sites/[id]/page.tsx`). The component, `POST /api/verify` and its allow-list are still untouched.
+- The recorder Fresh/Stale chip still reads `last_verified_at`; it can no longer be stamped from this page.
+- Verified: `tsc --noEmit` ✅. Not driven live in-app.
+
+## Earlier change (2026-07-23) — Network module drops the Verify button
+
+- `app/(app)/network/page.tsx`: removed the per-row **`VerifyButton`** ("Verify — still accurate") from the devices table; the row actions cell is now **Edit** only. Import dropped.
+- Scope is the network module only — `VerifyButton` still ships on the **CCTV** module and the **site detail** page, so the component, `POST /api/verify` and its server-side table allow-list are all untouched. `network_devices.last_verified_at` still drives the Fresh/Stale chip on this page; it just can't be stamped from here anymore.
+- Verified: `tsc --noEmit` ✅. Not driven live in-app.
+
+## Earlier change (2026-07-23) — Dashboard back in the sidebar (top item)
+
+- `components/layout/Sidebar.tsx`: added a **Dashboard** `NavItem` (`/dashboard`, `DashboardIcon`, active on `pathname.startsWith("/dashboard")`) as the **first item in the rail**, directly under the logo and above the Countries group — outside any group heading, since it isn't a country or a module. No count badge.
+- Nothing else was needed: `DashboardIcon` was already exported from `icons.tsx` and `t.nav.dashboard` already existed in **both** dictionaries (EN "Dashboard" / 繁中 "儀表板") — both were left in place when the entry was trimmed on 2026-07-22. No dictionary or i18n change, so the key-parity test is unaffected.
+- Reverses the "Dashboard stays out of the rail" decision from the 2026-07-22 nav trim; `/dashboard` was reachable only via post-login redirect until now.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings). Not driven live in-app.
+
+## Earlier change (2026-07-23) — 13.33 live smoke passed: **Phase 13 is complete**
+
+- ✅ **The EN / 繁體中文 switch works end to end in a real browser.** Driven as a throwaway `hq_admin` (created + deleted via the service role) so the smoke test never touched the real account's preference.
+- **Every module page flips and URLs never change** — `/dashboard`, `/sites`, `/network`, `/cctv`, `/renewals`, `/users`, `/audit`, `/countries/MY`, `/search`, site detail. Chrome, page heads, table headers, empty states, KPI labels and enum values all render Chinese; `<html lang>` = `zh-Hant-TW` and `generateMetadata()` gives the tab `Corp Management — 東南亞 IT 資產登錄`. The only English left is **data** (site names, hostnames, `Fortinet`) and the audit log's DB identifiers — both correct.
+- ⚠️ **CJK glyphs: `document.fonts.check()` is not a valid tofu test.** It returns `true` for *any* family name, because the browser answers about the font it would fall back to — it reported all four CJK families "installed" and would have passed on a broken stack. Proved instead by **advance width**: `據` measures 32px (a full em) against 22.5px for a guaranteed-missing codepoint, so the glyph is not `.notdef`. The 13.16 `--font-cjk` composite is present in the computed stack and a screenshot confirms it visually.
+- **Chinese validation message** (blank required field → 請填寫據點名稱, no leaked `v.*` token) · **save → redirect** works · **log out → login page stays Chinese** and its switch works signed-out.
+- **The no-cookie case is the one that proves the precedence chain:** a fresh browser started with 0 locale cookies and an English login page; after sign-in the 13.11 middleware seeded `locale=zh-TW` from `profiles.locale` and the dashboard came up Chinese. Round trip back to EN clean.
+- **Bonus confirmation of the 13.10 design:** switching while *signed out* set only the cookie — `profiles.locale` stayed `zh-TW` while the UI went EN, exactly as intended (the RPC is skipped with no session).
+- ⚠️ **`audit_log` grew 22 → 24** — the insert and delete of one test site. Immutable by design, so those rows were **left in place** rather than tampered with. No other residue: temp user deleted (profile cascaded), sites back to 4.
+- **Tooling note:** the `agent-browser` CLI was not installed; it was run via `npx -y agent-browser@0.32.4`, which pulled a Chromium build into the Playwright cache. Nothing was added to the repo or to `package.json`.
+
+## Earlier change (2026-07-23) — 13.34 security checks run live: 9/9 passed
+
+- ✅ **The locale write path holds under a real `country_manager` session.** A throwaway MY manager was created via the service role, driven through the anon key, and deleted afterwards; the profile row cascaded and `audit_log` was identical before and after (22 → 22).
+- **What the run proves:** `set_my_locale('en')` succeeds and persists · `set_my_locale('xx')` and `(null)` raise `22023` and write nothing · `update profiles set role='hq_admin' where user_id = auth.uid()` leaves `role` untouched · a direct `update … set locale` is equally a no-op, so the RPC really is the only write path · the manager reads 0 other profiles and 0 `audit_log` rows · **anon** gets `42501 permission denied for function set_my_locale`.
+- ⚠️ **Method note worth keeping:** PostgREST reports a missing UPDATE policy as **0 rows with no error**, not a `42501`. A test that only asserts `error !== null` would have *failed* here while the system was secure — and one that asserts "no error" would have *passed* on a real escalation. Every assertion re-reads the row through the service role instead.
+- The 13B design decision is now empirically confirmed: **no self-update policy on `profiles`** + a column-scoped `security definer` RPC closes the column-level escalation that RLS cannot express.
+- ~~**Still open in Phase 13:** 13.33 and 13.35.~~ **Both closed** — see the entry above.
+
+## Earlier change (2026-07-23) — first live run: RSC boundary fix + VPN orphan deleted
 
 - 🟢 **The app boots and is reachable again** — confirmed in-browser. This was the first time Phase 13 had been driven live at all; every entry below said "not yet driven live", and the run surfaced a real defect immediately.
 - 🚫→✅ **"Functions cannot be passed directly to Client Components."** `app/layout.tsx` passed the *resolved dictionary* into the client `I18nProvider`, but interpolating entries are **functions** (`country.title(name)`, `audit.showFields(n)`, `forms.pages.editSiteTitle(name)`) and a function cannot be serialized across the RSC boundary. `I18nProvider` now takes the **locale string** and resolves the dictionary client-side, so only a string is in the payload.
@@ -19,7 +113,7 @@
 - **`InviteForm` rendered raw `v.*` keys** — a genuine 13.29 defect: it showed `errors.*.message` without `validationMessage()`, so its four validation messages would have read `v.fullName` / `v.email`. Fixed; a sweep confirmed no other form was missing the call.
 - **The orphaned VPN form is gone** — `app/(app)/network/vpn/` (page + `VpnForm`) and the empty `app/api/vpn-links/` directory deleted; `/network/vpn/new` no longer exists in the route types. VPN link **reads** are untouched as designed (table, RLS/audit policies, site-detail panel, country stat, verify allowlist). `vpnLinkSchema` now has no caller — harmless, but a candidate for the next dead-code sweep. There is now **no English UI left in the app**.
 - Verified: `npm run build` ✅ · `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **58 passed**, 4 RLS skipped.
-- **Still open in Phase 13:** 13.33 (the rest of the smoke test — actually switching to 繁中, CJK glyph check, a validation message in Chinese, the no-cookie second-browser case) and 13.34 (security checks).
+- **Still open in Phase 13:** 13.33 (the rest of the smoke test — actually switching to 繁中, CJK glyph check, a validation message in Chinese, the no-cookie second-browser case). *(13.34 has since been run — see the entry above.)*
 
 ## Earlier change (2026-07-23) — Phase 13: 13F forms, validation & API complete (13.28–13.31)
 
@@ -262,6 +356,7 @@
 | 10 | Cross-cutting concerns | 🚧 Ongoing | Secrets guard, verify, formatters in place; money/currency display, 50-row caps, 403/not-found sweep pending. |
 | 11 | Testing & QA | 🚧 Partial | Unit + secrets/format/validation green; RLS integration + audit-immutability tests pending live env. |
 | 12 | Deployment readiness | ◻ Todo | Docker image build, staging/prod projects, CI, pen-test pending. |
+| 13 | i18n — EN / 繁體中文 switch | ✅ **Done** | All 35 subtasks. Live smoke (13.33) + security checks (13.34) both passed 2026-07-23. |
 
 Legend: ✅ done · 🚧 partial/in-progress · ◻ scaffold/todo
 

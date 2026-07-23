@@ -6,7 +6,6 @@ import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
-import { VerifyButton } from "@/components/ui/VerifyButton";
 import { isStale, formatDate } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
 
@@ -95,7 +94,6 @@ export default async function NetworkPage() {
                             {t.common.edit}
                           </Button>
                         </Link>
-                        <VerifyButton table="network_devices" id={d.id} />
                       </div>
                     </Td>
                   </Tr>

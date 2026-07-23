@@ -140,7 +140,7 @@ export const en = {
     panelRecorders: "Recorders",
     panelCameras: "Cameras",
     panelDue: "Due within 90 days",
-    siteCount: (n: number) => `${n} site(s)`,
+    siteCount: (n: number) => `${n} ${n === 1 ? "site" : "sites"}`,
     openModule: "Open module →",
     showing: (shown: number, total: number) => `Showing ${shown} of ${total} — `,
     deviceDataUnavailable: "Device data temporarily unavailable.",
@@ -169,7 +169,6 @@ export const en = {
     newAction: "+ New",
     noneYet: "No sites registered yet.",
     addFirst: "Add the first site",
-    view: "View →",
   },
 
   site: {
@@ -229,10 +228,6 @@ export const en = {
     subtitle: "Recorders, cameras, and retention.",
     newRecorder: "New recorder",
     newCamera: "New camera",
-    kpiRecorders: "Recorders",
-    kpiCamerasActive: "Cameras active",
-    kpiFaultyOffline: "Faulty / offline",
-    kpiBelowRetention: "Below retention",
     panelRecorders: "Recorders",
     panelCameras: "Cameras",
     noRecorders: "No recorders recorded yet.",

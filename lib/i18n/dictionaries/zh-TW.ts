@@ -154,7 +154,6 @@ export const zhTW: Dictionary = {
     newAction: "+ 新增",
     noneYet: "尚未登錄任何據點。",
     addFirst: "新增第一個據點",
-    view: "查看 →",
   },
 
   site: {
@@ -214,10 +213,6 @@ export const zhTW: Dictionary = {
     subtitle: "錄影主機、攝影機與影像保存天數。",
     newRecorder: "新增錄影主機",
     newCamera: "新增攝影機",
-    kpiRecorders: "錄影主機",
-    kpiCamerasActive: "運作中攝影機",
-    kpiFaultyOffline: "故障／離線",
-    kpiBelowRetention: "保存天數不足",
     panelRecorders: "錄影主機",
     panelCameras: "攝影機",
     noRecorders: "尚未登錄任何錄影主機。",

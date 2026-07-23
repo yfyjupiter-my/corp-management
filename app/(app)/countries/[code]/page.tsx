@@ -13,7 +13,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { isBelowRetention } from "@/lib/utils/cctv";
-import { isStale, formatDate, daysUntil } from "@/lib/utils/format";
+import { isStale, formatDate, daysUntil, orDash } from "@/lib/utils/format";
 import type { CameraStatus } from "@/lib/constants/enums";
 import { getDictionary } from "@/lib/i18n/server";
 
@@ -473,7 +473,7 @@ export default async function CountryPage({
       {/* ---------------------------------------------------------------- */}
       <ModuleHead title={t.nav.sites} linkLabel={t.country.openModule} />
       <Panel>
-        <PanelHeader title={failed.sites ? "—" : t.country.siteCount(siteRows.length)} />
+        <PanelHeader title={`${t.nav.sites} · ${failed.sites ? "—" : siteRows.length}`} />
         {failed.sites ? (
           <PanelEmpty>{t.country.siteDataUnavailable}</PanelEmpty>
         ) : siteRows.length === 0 ? (
@@ -490,10 +490,10 @@ export default async function CountryPage({
                     <Link href={`/sites/${s.id}`} className="font-medium hover:text-accent">
                       {s.name}
                     </Link>
-                    <div className="text-fg-subtle text-[11.5px]">{s.address ?? "—"}</div>
+                    <div className="text-fg-subtle text-[11.5px]">{orDash(s.address)}</div>
                   </Td>
                   <Td>
-                    <div>{s.contact_name ?? "—"}</div>
+                    <div>{orDash(s.contact_name)}</div>
                     <div className="text-fg-subtle text-[11.5px] font-mono">
                       {s.contact_phone ?? ""}
                     </div>
