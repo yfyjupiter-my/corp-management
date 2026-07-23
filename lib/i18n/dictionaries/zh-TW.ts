@@ -13,6 +13,8 @@ export const zhTW: Dictionary = {
     saving: "儲存中…",
     cancel: "取消",
     edit: "編輯",
+    delete: "刪除",
+    deleting: "刪除中…",
     new: "新增",
     viewAll: "查看全部",
     back: "返回",
@@ -154,6 +156,9 @@ export const zhTW: Dictionary = {
     newAction: "+ 新增",
     noneYet: "尚未登錄任何據點。",
     addFirst: "新增第一個據點",
+    deleteConfirm: (name: string) =>
+      `確定永久刪除「${name}」？其 ISP 線路、網路設備、IP 網段、VLAN、VPN 連線、` +
+      `錄影主機與攝影機將一併刪除，且無法復原。若只是想隱藏，請改用封存。`,
   },
 
   site: {
@@ -206,6 +211,9 @@ export const zhTW: Dictionary = {
     panelCircuits: "ISP 線路",
     noDevices: "尚未登錄任何網路設備。",
     noCircuits: "尚未登錄任何 ISP 線路。",
+    deleteConfirm: (name: string) => `確定永久刪除設備「${name}」？此操作無法復原。`,
+    deleteCircuitConfirm: (name: string) =>
+      `確定永久刪除 ISP 線路「${name}」？此操作無法復原。`,
   },
 
   cctv: {
@@ -217,6 +225,9 @@ export const zhTW: Dictionary = {
     panelCameras: "攝影機",
     noRecorders: "尚未登錄任何錄影主機。",
     noCameras: "尚未登錄任何攝影機。",
+    deleteRecorderConfirm: (name: string) =>
+      `確定永久刪除錄影主機「${name}」？其所有攝影機將一併刪除，且無法復原。`,
+    deleteCameraConfirm: (name: string) => `確定永久刪除攝影機「${name}」？此操作無法復原。`,
     daysShort: (n: number) => `${n} 天`,
   },
 
@@ -464,12 +475,14 @@ export const zhTW: Dictionary = {
       editSiteSubtitle: "更新據點資料。",
       newDeviceTitle: "新增設備",
       newDeviceSubtitle: "登錄路由器、防火牆、交換器或無線基地台。",
-      editDeviceTitle: "編輯設備",
+      editDeviceTitle: (name: string) => `編輯 · ${name}`,
       editDeviceSubtitle: "更新設備資料。",
       newFirewallTitle: "新增防火牆",
       newFirewallSubtitle: "登錄周邊防火牆：型號、管理位址、韌體與支援日期。",
       newCircuitTitle: "新增 ISP 線路",
       newCircuitSubtitle: "登錄光纖、寬頻或 LTE 線路及其合約資料。",
+      editCircuitTitle: (name: string) => `編輯 · ${name}`,
+      editCircuitSubtitle: "更新線路與合約資料。",
       newCameraTitle: "新增攝影機",
       newCameraSubtitle: "在錄影主機底下登錄攝影機。",
       editCameraTitle: "編輯攝影機",
@@ -542,12 +555,15 @@ export const zhTW: Dictionary = {
     tooManyRequests: "請求過於頻繁，請稍後再試。",
     conflict: "這筆記錄在您開啟後已被其他人修改。請重新載入以取得最新版本，再重新套用您的變更。",
     inviteFailed: "無法寄出邀請，請再試一次。",
+    deleteFailed: "無法刪除這筆記錄，請再試一次。",
     invalidSiteId: "據點 ID 不正確",
     invalidDeviceId: "設備 ID 不正確",
+    invalidCircuitId: "線路 ID 不正確",
     invalidRecorderId: "錄影主機 ID 不正確",
     invalidCameraId: "攝影機 ID 不正確",
     siteNotFound: "找不到該據點。",
     deviceNotFound: "找不到該設備。",
+    circuitNotFound: "找不到該線路。",
     recorderNotFound: "找不到該錄影主機。",
     cameraNotFound: "找不到該攝影機。",
     db: {

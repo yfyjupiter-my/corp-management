@@ -94,3 +94,51 @@ export async function PATCH(
     return NextResponse.json({ error: t.errors.serverError }, { status: 500 });
   }
 }
+
+/**
+ * Hard-delete a single CCTV recorder. RLS decides which rows the caller may
+ * touch, and the delete is filtered by id alone — a row outside the caller's
+ * country matches nothing, so a cross-country probe is indistinguishable from a
+ * missing row (both 404).
+ *
+ * ⚠️ `cctv_cameras.recorder_id` is `on delete cascade` (0001_init.sql), so every
+ * camera on this recorder goes with it. The confirm dialog says so; the audit
+ * trigger records each cascaded row separately.
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const t = await getDictionary();
+  try {
+    const { id } = await params;
+    if (!z.string().uuid().safeParse(id).success) {
+      return NextResponse.json({ error: t.errors.invalidRecorderId }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: t.errors.unauthorized }, { status: 401 });
+
+    // SEC-5: cap writes per user (shares the write budget, namespaced by action).
+    const rl = writeLimiter.check(`delete:cctv_recorders:${user.id}`);
+    if (!rl.ok) return rateLimitResponse(rl, t);
+
+    const { data: deleted, error } = await supabase
+      .from("cctv_recorders")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) return dbErrorResponse(error, `DELETE /recorders/${id}`, t);
+    if ((deleted?.length ?? 0) === 0) {
+      return NextResponse.json({ error: t.errors.recorderNotFound }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[route-error] DELETE /recorders/[id]:", err);
+    return NextResponse.json({ error: t.errors.serverError }, { status: 500 });
+  }
+}

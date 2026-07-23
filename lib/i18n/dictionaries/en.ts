@@ -18,6 +18,8 @@ export const en = {
     saving: "Saving…",
     cancel: "Cancel",
     edit: "Edit",
+    delete: "Delete",
+    deleting: "Deleting…",
     new: "New",
     viewAll: "View all",
     back: "Back",
@@ -169,6 +171,15 @@ export const en = {
     newAction: "+ New",
     noneYet: "No sites registered yet.",
     addFirst: "Add the first site",
+    /**
+     * Row delete confirmation. Names the cascade on purpose — every child FK is
+     * `on delete cascade`, so this removes far more than the site row itself,
+     * and unlike Archive it cannot be undone.
+     */
+    deleteConfirm: (name: string) =>
+      `Delete “${name}” permanently? Its ISP circuits, network devices, IP schemes, ` +
+      `VLANs, VPN links, CCTV recorders and cameras are deleted with it. ` +
+      `This cannot be undone — use Archive instead if you only want it hidden.`,
   },
 
   site: {
@@ -221,6 +232,10 @@ export const en = {
     panelCircuits: "ISP circuits",
     noDevices: "No network devices recorded yet.",
     noCircuits: "No ISP circuits recorded yet.",
+    deleteConfirm: (name: string) =>
+      `Delete device “${name}” permanently? This cannot be undone.`,
+    deleteCircuitConfirm: (name: string) =>
+      `Delete ISP circuit “${name}” permanently? This cannot be undone.`,
   },
 
   cctv: {
@@ -232,6 +247,12 @@ export const en = {
     panelCameras: "Cameras",
     noRecorders: "No recorders recorded yet.",
     noCameras: "No cameras recorded yet.",
+    /** Cameras cascade with the recorder (`cctv_cameras.recorder_id`). */
+    deleteRecorderConfirm: (name: string) =>
+      `Delete recorder “${name}” permanently? Every camera on it is deleted too. ` +
+      `This cannot be undone.`,
+    deleteCameraConfirm: (name: string) =>
+      `Delete camera “${name}” permanently? This cannot be undone.`,
     /** Retention in days, rendered in a table cell. */
     daysShort: (n: number) => `${n}d`,
   },
@@ -491,7 +512,7 @@ export const en = {
       editSiteSubtitle: "Update site details.",
       newDeviceTitle: "New device",
       newDeviceSubtitle: "Register a router, firewall, switch, or access point.",
-      editDeviceTitle: "Edit device",
+      editDeviceTitle: (name: string) => `Edit · ${name}`,
       editDeviceSubtitle: "Update device details.",
       newFirewallTitle: "New Firewall",
       newFirewallSubtitle:
@@ -499,6 +520,8 @@ export const en = {
       newCircuitTitle: "New ISP circuit",
       newCircuitSubtitle:
         "Register a fiber, broadband, or LTE circuit and its contract details.",
+      editCircuitTitle: (name: string) => `Edit · ${name}`,
+      editCircuitSubtitle: "Update circuit and contract details.",
       newCameraTitle: "New camera",
       newCameraSubtitle: "Register a camera against a recorder.",
       editCameraTitle: "Edit camera",
@@ -589,12 +612,15 @@ export const en = {
       "This record was changed by someone else since you opened it. Reload to see " +
       "the latest version, then re-apply your changes.",
     inviteFailed: "Could not send the invite. Please try again.",
+    deleteFailed: "Could not delete this record. Please try again.",
     invalidSiteId: "Invalid site id",
     invalidDeviceId: "Invalid device id",
+    invalidCircuitId: "Invalid circuit id",
     invalidRecorderId: "Invalid recorder id",
     invalidCameraId: "Invalid camera id",
     siteNotFound: "Site not found.",
     deviceNotFound: "Device not found.",
+    circuitNotFound: "Circuit not found.",
     recorderNotFound: "Recorder not found.",
     cameraNotFound: "Camera not found.",
     /** Safe messages keyed by Postgres SQLSTATE (`lib/api/db-error.ts`). */

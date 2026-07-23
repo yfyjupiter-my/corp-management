@@ -142,7 +142,7 @@ Notes:
 
 ---
 
-### Hard Contraints
+### Hard Constraints
 
 - Ignore themes.html, mockup.html, wireframe.html during process scaffold，breakdown task, implementing issue, audit check / QA check. 
 - Do not modify themes.html, mockup.html, wireframe.html during process scaffold，breakdown task, implementing issue, audit check / QA check. 

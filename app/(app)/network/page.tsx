@@ -5,6 +5,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { isStale, formatDate } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
@@ -94,6 +95,12 @@ export default async function NetworkPage() {
                             {t.common.edit}
                           </Button>
                         </Link>
+                        <DeleteButton
+                          endpoint={`/api/devices/${d.id}`}
+                          confirm={t.network.deleteConfirm(
+                            d.hostname ?? `${d.brand} ${d.model}`,
+                          )}
+                        />
                       </div>
                     </Td>
                   </Tr>
@@ -116,6 +123,7 @@ export default async function NetworkPage() {
                   t.columns.bandwidth,
                   t.columns.type,
                   t.columns.contractEnd,
+                  "",
                 ]}
               />
               <tbody>
@@ -128,6 +136,21 @@ export default async function NetworkPage() {
                       {t.enums.circuitType[c.type]}
                     </Td>
                     <Td mono>{formatDate(c.contract_end)}</Td>
+                    <Td>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/network/circuits/${c.id}/edit`}>
+                          <Button sm variant="ghost">
+                            {t.common.edit}
+                          </Button>
+                        </Link>
+                        <DeleteButton
+                          endpoint={`/api/circuits/${c.id}`}
+                          confirm={t.network.deleteCircuitConfirm(
+                            c.circuit_id ? `${c.provider} · ${c.circuit_id}` : c.provider,
+                          )}
+                        />
+                      </div>
+                    </Td>
                   </Tr>
                 ))}
               </tbody>

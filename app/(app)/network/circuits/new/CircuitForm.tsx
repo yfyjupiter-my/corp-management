@@ -25,18 +25,27 @@ const formSchema = ispCircuitSchema.omit({ static_ips: true });
 type CircuitFormInput = Omit<IspCircuitInput, "static_ips">;
 
 /**
- * ISP circuit create form (React Hook Form + Zod). Mutations go to the
- * `/api/circuits` Route Handler; the shared Zod schema also runs the secrets
- * guard on save. RLS scopes which sites the caller may attach a circuit to.
+ * Client form (React Hook Form + Zod) for creating OR editing an ISP circuit.
+ * Create → `POST /api/circuits`; edit → `PATCH /api/circuits/[id]` carrying the
+ * last-read `updated_at` for BUS-6 optimistic concurrency (409 on a concurrent
+ * change). The Zod schema shared with the server also runs the secrets guard.
+ * RLS scopes which sites the caller may attach a circuit to.
  */
 export function CircuitForm({
   sites,
+  circuit,
   eyebrow,
   title,
   subtitle,
   panelClassName,
 }: {
   sites: Site[];
+  /** Edit mode: the page maps DB nulls away and passes `updated_at` for BUS-6. */
+  circuit?: CircuitFormInput & {
+    id: string;
+    updated_at?: string;
+    static_ips?: string[];
+  };
   /** Page heading is rendered here so Cancel/Save can sit on the title line. */
   eyebrow?: string;
   title: string;
@@ -45,8 +54,10 @@ export function CircuitForm({
 }) {
   const router = useRouter();
   const t = useT();
+  const isEdit = Boolean(circuit);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [staticIps, setStaticIps] = useState("");
+  // text[] lives outside RHF (see `formSchema`), so seed it from the row here.
+  const [staticIps, setStaticIps] = useState((circuit?.static_ips ?? []).join("\n"));
   // Zod messages are dictionary keys (13.29) - resolve them for display.
   const vm = (message?: string) => validationMessage(t, message);
 
@@ -57,7 +68,7 @@ export function CircuitForm({
     formState: { errors, isSubmitting },
   } = useForm<CircuitFormInput>({
     resolver: zodResolver(formSchema),
-    defaultValues: { type: "fiber" },
+    defaultValues: circuit ?? { type: "fiber" },
   });
 
   async function onSubmit(values: CircuitFormInput) {
@@ -68,10 +79,16 @@ export function CircuitForm({
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const res = await fetch("/api/circuits", {
-      method: "POST",
+    const res = await fetch(isEdit ? `/api/circuits/${circuit!.id}` : "/api/circuits", {
+      method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...values, static_ips: ips.length ? ips : undefined }),
+      body: JSON.stringify({
+        ...values,
+        // On edit always send the array, empty included — the PATCH is partial,
+        // so an omitted key would leave a cleared box's old IPs in the row.
+        static_ips: isEdit ? ips : ips.length ? ips : undefined,
+        ...(isEdit ? { expected_updated_at: circuit!.updated_at } : {}),
+      }),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -97,7 +114,7 @@ export function CircuitForm({
               {t.common.cancel}
             </Button>
             <Button type="submit" sm disabled={isSubmitting}>
-              {isSubmitting ? t.common.saving : t.common.save}
+              {isSubmitting ? t.common.saving : isEdit ? t.common.saveChanges : t.common.save}
             </Button>
           </>
         }

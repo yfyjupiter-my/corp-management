@@ -6,6 +6,7 @@ import { dbErrorResponse } from "@/lib/api/db-error";
 import { classifyGuardedUpdate } from "@/lib/api/optimistic";
 import { getDictionary } from "@/lib/i18n/server";
 import { validationMessage } from "@/lib/i18n/validation";
+import { writeLimiter, rateLimitResponse } from "@/lib/api/rate-limit";
 import type { Database } from "@/lib/types/database";
 
 /**
@@ -91,6 +92,57 @@ export async function PATCH(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[route-error] PATCH /sites/[id]:", err);
+    return NextResponse.json({ error: t.errors.serverError }, { status: 500 });
+  }
+}
+
+/**
+ * Hard-delete a single site. RLS decides which rows the caller may touch, and
+ * the delete is filtered by id alone — a row outside the caller's country
+ * matches nothing, so a cross-country probe is indistinguishable from a missing
+ * row (both 404).
+ *
+ * ⚠️ This is NOT the archive path. Every child FK in 0001_init.sql is
+ * `on delete cascade`, so deleting a site also deletes its ISP circuits, network
+ * devices, IP schemes, VLANs, VPN links, CCTV recorders and (via the recorder)
+ * cameras. The PATCH handler's `archived` toggle remains the reversible option;
+ * this one is not undoable, which is why the caller confirms first and the
+ * confirm text names the cascade. The audit trigger records every removed row.
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const t = await getDictionary();
+  try {
+    const { id } = await params;
+    if (!z.string().uuid().safeParse(id).success) {
+      return NextResponse.json({ error: t.errors.invalidSiteId }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: t.errors.unauthorized }, { status: 401 });
+
+    // SEC-5: cap writes per user (shares the write budget, namespaced by action).
+    const rl = writeLimiter.check(`delete:sites:${user.id}`);
+    if (!rl.ok) return rateLimitResponse(rl, t);
+
+    const { data: deleted, error } = await supabase
+      .from("sites")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) return dbErrorResponse(error, `DELETE /sites/${id}`, t);
+    if ((deleted?.length ?? 0) === 0) {
+      return NextResponse.json({ error: t.errors.siteNotFound }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[route-error] DELETE /sites/[id]:", err);
     return NextResponse.json({ error: t.errors.serverError }, { status: 500 });
   }
 }

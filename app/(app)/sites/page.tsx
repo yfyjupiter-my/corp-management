@@ -6,6 +6,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { isStale, formatDate, orDash } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
  * one short site would draw visibly narrower columns than one with a long
  * address. Fixed widths keep the stacked panels reading as a single registry.
  */
-const SITE_COL_WIDTHS = ["34%", "22%", "16%", "16%", "12%"];
+const SITE_COL_WIDTHS = ["30%", "20%", "15%", "15%", "20%"];
 
 /**
  * Site registry grouped by country with per-country counts (PRD Story 1).
@@ -126,6 +127,10 @@ export default async function SitesPage() {
                                 {t.common.edit}
                               </Button>
                             </Link>
+                            <DeleteButton
+                              endpoint={`/api/sites/${s.id}`}
+                              confirm={t.sites.deleteConfirm(s.name)}
+                            />
                           </div>
                         </Td>
                       </Tr>

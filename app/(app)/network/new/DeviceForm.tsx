@@ -20,27 +20,6 @@ interface Site {
 }
 
 /**
- * Existing row for edit mode — the RLS-scoped Supabase select shape (nullable
- * columns) plus the id and last-read `updated_at` used for the BUS-6 guard.
- */
-export interface DeviceEditValues {
-  id: string;
-  updated_at: string;
-  site_id: string;
-  device_type: DeviceType;
-  brand: string | null;
-  model: string | null;
-  hostname: string | null;
-  mgmt_ip: string | null;
-  firmware: string | null;
-  serial: string | null;
-  install_date: string | null;
-  warranty_end: string | null;
-  credential_ref: string | null;
-  notes: string | null;
-}
-
-/**
  * Client form (React Hook Form + Zod) for creating OR editing a network device.
  * Create → `POST /api/devices`; edit → `PATCH /api/devices/[id]` carrying the
  * last-read `updated_at` for BUS-6 optimistic concurrency (409 on a concurrent
@@ -56,7 +35,8 @@ export function DeviceForm({
   panelClassName,
 }: {
   sites: Site[];
-  device?: DeviceEditValues;
+  /** Edit mode: the page maps DB nulls away and passes `updated_at` for BUS-6. */
+  device?: NetworkDeviceInput & { id: string; updated_at?: string };
   /**
    * Pins `device_type` for a type-specific entry point (e.g. New Firewall). The
    * select renders read-only and the value is submitted from a hidden input.
@@ -82,20 +62,7 @@ export function DeviceForm({
   } = useForm<NetworkDeviceInput>({
     resolver: zodResolver(networkDeviceSchema),
     defaultValues: device
-      ? {
-          site_id: device.site_id,
-          device_type: fixedType ?? device.device_type ?? "router",
-          brand: device.brand ?? undefined,
-          model: device.model ?? undefined,
-          hostname: device.hostname ?? undefined,
-          mgmt_ip: device.mgmt_ip ?? undefined,
-          firmware: device.firmware ?? undefined,
-          serial: device.serial ?? undefined,
-          install_date: device.install_date ?? undefined,
-          warranty_end: device.warranty_end ?? undefined,
-          credential_ref: device.credential_ref ?? undefined,
-          notes: device.notes ?? undefined,
-        }
+      ? { ...device, device_type: fixedType ?? device.device_type }
       : { device_type: fixedType ?? "router" },
   });
 

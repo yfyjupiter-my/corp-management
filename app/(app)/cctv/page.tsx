@@ -5,6 +5,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { DEFAULT_MIN_RETENTION_DAYS } from "@/lib/constants/countries";
 import { isBelowRetention } from "@/lib/utils/cctv";
@@ -106,6 +107,10 @@ export default async function CctvPage() {
                               {t.common.edit}
                             </Button>
                           </Link>
+                          <DeleteButton
+                            endpoint={`/api/recorders/${r.id}`}
+                            confirm={t.cctv.deleteRecorderConfirm(`${r.brand} ${r.model}`)}
+                          />
                         </div>
                       </Td>
                     </Tr>
@@ -153,6 +158,10 @@ export default async function CctvPage() {
                             {t.common.edit}
                           </Button>
                         </Link>
+                        <DeleteButton
+                          endpoint={`/api/cameras/${c.id}`}
+                          confirm={t.cctv.deleteCameraConfirm(c.label)}
+                        />
                       </div>
                     </Td>
                   </Tr>
