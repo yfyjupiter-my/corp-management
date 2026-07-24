@@ -1,0 +1,71 @@
+name: CI
+
+# TASKS 12.3 — typecheck / lint / build / unit tests on every PR, plus the RLS
+# integration suite when the TEST_* secrets are configured. Migrations are NOT
+# applied on PRs (that would mutate the shared project); see the `migrations`
+# job below, which is gated to manual dispatch / the staging branch.
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: typecheck · lint · build · tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      # A production build needs the two public env vars present at build time.
+      # These are non-secret (they ship to the browser); dummy values are fine
+      # for a build that never talks to the DB.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key-for-build
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # The RLS integration tests (tests/rls*.ts) auto-skip when these are
+      # unset, so this step is safe before the secrets are added — it simply
+      # runs the unit suite. Add the secrets in repo settings to light them up.
+      - name: Tests
+        run: npm test
+        env:
+          TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          TEST_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+          TEST_HQ_EMAIL: ${{ secrets.TEST_HQ_EMAIL }}
+          TEST_HQ_PASSWORD: ${{ secrets.TEST_HQ_PASSWORD }}
+          TEST_MY_MANAGER_EMAIL: ${{ secrets.TEST_MY_MANAGER_EMAIL }}
+          TEST_MY_MANAGER_PASSWORD: ${{ secrets.TEST_MY_MANAGER_PASSWORD }}
+
+  migrations:
+    name: apply migrations (staging)
+    # Never runs on a PR. Only a push to `staging` or a manual dispatch, so a
+    # migration is a deliberate act, not a side effect of opening a PR.
+    if: github.ref == 'refs/heads/staging' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Push migrations to the staging project
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}

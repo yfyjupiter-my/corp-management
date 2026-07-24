@@ -120,17 +120,17 @@
 ## Phase 11 — Testing & QA
 
 - [~] **11.1** RLS integration tests with two seeded users (1 `hq_admin`, 1 `country_manager` MY) asserting cross-country returns empty/denied (`tests/rls.test.ts`).
-- [ ] **11.2** Extend RLS tests to child tables (circuits, devices, ip/vlan, vpn, recorders, cameras, maintenance) + `audit_log` (HQ-only read).
-- [ ] **11.3** Audit-log immutability test: caller cannot update/delete `audit_log`.
+- [~] **11.2** Extend RLS tests to child tables (2026-07-24) — **coded, awaiting a live run.** `tests/rls-integration.test.ts` covers circuits, devices, ip/vlan, vpn, recorders and cameras. Self-seeds a `__RLS11_…` VN fixture as HQ (one row per table) so "MY manager sees none of these" is paired with an HQ read proving the row exists — real isolation, not an empty table. Auto-skips without the `TEST_*` env (see `LIVE-ENV.md`). *(maintenance_logs was descoped 2026-07-22, so no test.)*
+- [~] **11.3** Audit-log immutability test (2026-07-24) — **coded, awaiting a live run**, in the same file. Both HQ and MY manager attempt `update` + `delete` on an `audit_log` row; each assertion **re-reads through HQ** to confirm the row is unchanged, because a missing UPDATE/DELETE policy makes PostgREST return 0 rows and *no error* (the 13.34 gotcha) — "no error" alone would prove nothing.
 - [x] **11.4** Zod/secrets-guard unit tests — `tests/secrets.test.ts` (7), `tests/validation.test.ts` (13), `tests/format.test.ts` (13); 33 passed on 2026-07-16.
-- [ ] **11.5** Search RLS test: `country_manager` search never returns other-country rows.
+- [~] **11.5** Search RLS test (2026-07-24) — **coded, awaiting a live run**, in `rls-integration.test.ts`. HQ `search_registry(TAG)` finds the VN fixture site; MY manager `search_registry(TAG)` returns 0 rows. Proves `search_registry` really is `security invoker` (RLS-scoped) and not leaking across countries.
 - [x] **11.6** QA audits filed + reconciled — `SEC-AUDIT.md`, `CODE-AUDIT.md`, `BUS-AUDIT.md`, `ROB-AUDIT.md` (Security, Code Quality, Business Logic, Robustness). Remediations verified against code 2026-07-16. Runtime and Compliance/a11y audits not yet run.
 
 ## Phase 12 — Deployment readiness
 
 - [ ] **12.1** `docker build` produces a runnable standalone image; container starts on `PORT=3000` as non-root.
 - [ ] **12.2** Staging + production Supabase projects (SEA/Singapore region); migrations promoted via CI.
-- [ ] **12.3** CI applies migrations (Supabase CLI) + runs RLS/unit tests on PR.
+- [~] **12.3** CI (2026-07-24) — **`.github/workflows/ci.yml` written, awaiting repo secrets.** `checks` job runs typecheck/lint/build/unit on every PR with no secrets; the RLS suite lights up when the six `TEST_*` secrets are added (it auto-skips otherwise, so the workflow is safe now). Migrations are applied by a **separate `migrations` job gated to `staging` / manual dispatch** — deliberately *not* on PRs, which would mutate the shared project. Secrets needed listed in `LIVE-ENV.md` §12.3.
 - [ ] **12.4** Pre-launch manual pen-test of API routes for cross-country access (finalize risk mitigation).
 
 ## Phase 13 — Internationalization: EN / 繁體中文 switch

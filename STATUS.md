@@ -2,11 +2,24 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-24 (Phase 10 closed — 10.2 / 10.5 / 10.6 / 10.7) |
+| **Last updated** | 2026-07-24 (Phase 11/12 test code written — awaiting live env) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
-| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · unit tests **69 passed**, 4 RLS integration skipped (need live Supabase env) |
+| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · unit tests **69 passed**, **20 RLS integration skipped** (need live Supabase env) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
+
+## Latest change (2026-07-24) — Phase 11/12 test scaffolding written; live-env runbook
+
+Wrote the code for everything in Phases 11 & 12 that *can* be written without a live database, and a runbook (`LIVE-ENV.md`) for the parts that can't. Decision on record: the RLS suite runs against the **existing linked project**, self-seeding a disposable fixture rather than needing a permanent cross-country seed.
+
+- **`tests/rls-integration.test.ts`** (new) — 11.2 (child-table isolation), 11.3 (audit immutability), 11.5 (search scoping) in one file sharing a single VN fixture. `beforeAll` has HQ create a `__RLS11_…` VN site + one row in every child table; `afterAll` cascade-deletes it and sweeps orphans. **16 tests, auto-skip without the `TEST_*` env** (same contract as the existing `rls.test.ts`). Two design points worth keeping:
+  - Every "manager sees none" assertion is **paired with an HQ read of the same id** — otherwise, against a project with no VN data, the test passes vacuously.
+  - The immutability checks **re-read through HQ** after each blocked update/delete. A missing UPDATE/DELETE policy makes PostgREST return 0 rows and *no error* (the 13.34 gotcha), so "no error" proves nothing on its own.
+  - ⚠️ Running it adds ~a dozen immutable `audit_log` rows to the linked project (fixture insert/delete). Unavoidable — the audit log has no delete policy. Point `TEST_*` at a throwaway project if that matters; no code change.
+- **`.github/workflows/ci.yml`** (new, 12.3) — `checks` job (typecheck/lint/build/unit) on every PR, **no secrets required**; the RLS suite runs when the six `TEST_*` secrets are set. Migrations apply in a **separate job gated to `staging`/manual dispatch**, never on a PR — auto-pushing migrations to the shared project on every PR would be destructive.
+- **`LIVE-ENV.md`** (new) — the checklist answering "what do Phases 11 & 12 need from a live env": the six `TEST_*` vars + two pre-created test users for Phase 11; two SEA-region Supabase projects + Auth/SMTP config + CI secrets for Phase 12; and the 12.4 pen-test scope.
+- **Still genuinely blocked on infra** (nothing more to code): running the RLS suite, standing up staging/prod projects (12.2), adding CI secrets, the Docker image build (12.1), and the pen-test (12.4).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **69 passed, 20 skipped** (16 new + 4 existing RLS).
 
 ## Latest change (2026-07-24) — **Phase 10 is complete**: row caps, money, and access handling
 
