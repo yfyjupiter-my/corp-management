@@ -110,7 +110,7 @@
 ## Phase 10 — Cross-cutting concerns
 
 - [~] **10.1** Secrets guard: `containsPossibleSecret(text)` util used in Zod `.refine()` on `notes`/`credential_ref`/free-text (`lib/utils/secrets.ts`).
-- [ ] **10.2** Apply secrets guard across all mutation schemas (network, cctv, site).
+- [x] **10.2** Secrets guard applied across all mutation schemas (2026-07-24). Every **prose** free-text field now runs it: `notes` everywhere (already did), `address`/`contact_name`/`location_desc` (already did), plus **`cctv_recorders.location`** and **`vlans.purpose`**, which were the two uncovered ones. **Deliberately not guarded** — `serial`, `hostname`, `brand`, `model`, `firmware`, `circuit_id`, `bandwidth`, `resolution`, phone fields: these are *identifiers*, not prose, and `looksLikeHighEntropyToken()` fires on any 20+ char run mixing case and digits, which is exactly what a device serial looks like. Guarding them would reject legitimate hardware data.
 - [x] **10.3** Verify action route `POST /api/verify` + reusable `components/ui/VerifyButton.tsx` — wired into site detail, the network device list (4.3), **and the CCTV recorders + cameras lists** (5.1).
 - [~] **10.4** Formatters/utils: `formatDate`, `isStale`, money+currency, `cn` (`lib/utils/*`).
 - [ ] **10.5** Money display uses per-site `currency` (MYR/VND/THB/IDR); numeric(12,2) formatting.
@@ -203,7 +203,6 @@ Same two-line pattern each: `const t = await getDictionary();`, then replace lit
   - **Second browser, no cookie → Chinese from `profiles.locale`.** A fresh session started with 0 locale cookies and an English login page; after sign-in the middleware (13.11) seeded `locale=zh-TW` and the dashboard came up Chinese. This is the one path that proves the cookie → `profiles.locale` → `en` precedence.
   - **Round trip back to EN** clean — `lang="en"`, cookie `locale=en`, dashboard English.
   - ⚠️ **`audit_log` grew 22 → 24** — the insert and the delete of the one test site. Immutable by design, so those two rows were **left in place** rather than tampered with. No other residue: temp user deleted (profile cascaded), site count back to 4.
-- [x] **13.35** `STATUS.md` updated and the Phase 13 boxes ticked (2026-07-23).
 - [x] **13.34** Security checks (CLAUDE.md top priority) — **run live 2026-07-23 against the linked project, 9/9 passed.** A throwaway `country_manager` (MY) was created via the service role, driven through the anon key, and deleted afterwards (profile row cascaded; `audit_log` count identical before and after). Every assertion was re-read through the service role, so an RLS no-op (0 rows, **no error**) could not pass as success:
   1. `set_my_locale('en')` succeeds and persists.
   2. `set_my_locale('xx')` raises `22023 invalid locale: xx` and writes nothing; `set_my_locale(null)` likewise.
@@ -212,7 +211,7 @@ Same two-line pattern each: `const t = await getDictionary();`, then replace lit
   5. The manager reads **0** other profile rows and **0** `audit_log` rows.
   6. `anon` calling `set_my_locale` → `42501 permission denied for function set_my_locale` (the `revoke`/`grant` pair holds).
   7. No `audit_log` rows written by any of the above (`profiles` carries no audit trigger — confirmed against the trigger loop in `0003_audit.sql`, which covers 9 inventory tables only).
-- [ ] **13.35** Update `STATUS.md` and tick the Phase 13 boxes.
+- [x] **13.35** `STATUS.md` updated and the Phase 13 boxes ticked (2026-07-23). *(This item appeared twice — the duplicate was removed 2026-07-24.)*
 
 **Explicit decisions (reversible):** dates stay `en-GB` and money `en-US` in both locales — they render as data in mono columns, and localizing would touch ~40 call sites for little gain. The switch also appears on the auth pages (13.17), not only the Topbar as literally asked.
 

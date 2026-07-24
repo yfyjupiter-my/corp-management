@@ -55,7 +55,7 @@ export const vlanSchema = z.object({
   vlan_id: z.coerce.number().int().min(1).max(4094), // 802.1Q range
   name: optionalString(80),
   subnet: ipString.optional().or(z.literal("").transform(() => undefined)),
-  purpose: optionalString(200),
+  purpose: optionalSafeText(200),
 });
 export type VlanInput = z.infer<typeof vlanSchema>;
 

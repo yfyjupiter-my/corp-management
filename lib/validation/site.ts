@@ -7,7 +7,9 @@ export const siteSchema = z.object({
   country_code: z.enum(COUNTRY_CODES),
   name: z.string().trim().min(1, V.siteName).max(120),
   address: optionalSafeText(500),
-  timezone: z.string().min(1), // defaulted per country on create
+  // Defaulted per country on create. The `.max` is not cosmetic: this was the
+  // only string field in any schema with no upper bound.
+  timezone: z.string().min(1).max(64),
   currency: z.string().length(3),
   contact_name: optionalSafeText(120),
   contact_phone: optionalString(40),

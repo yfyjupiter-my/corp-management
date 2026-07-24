@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { optionalString, optionalSafeText } from "@/lib/validation/common";
 import { siteSchema } from "@/lib/validation/site";
 import { vlanSchema } from "@/lib/validation/network";
+import { recorderSchema, cameraSchema } from "@/lib/validation/cctv";
 import { inviteUserSchema } from "@/lib/validation/user";
 
 describe("optionalString", () => {
@@ -65,6 +66,63 @@ describe("vlanSchema", () => {
   it("rejects a vlan_id outside 1..4094", () => {
     expect(vlanSchema.safeParse({ site_id: base.site_id, vlan_id: 5000 }).success).toBe(false);
     expect(vlanSchema.safeParse({ site_id: base.site_id, vlan_id: 0 }).success).toBe(false);
+  });
+});
+
+describe("cctv schemas: empty optionals become undefined, not \"\"", () => {
+  const recorder = { site_id: "11111111-1111-1111-1111-111111111111" };
+  const camera = {
+    recorder_id: "11111111-1111-1111-1111-111111111111",
+    label: "Front door",
+    camera_type: "dome",
+    status: "active",
+  };
+
+  it("normalises every blank recorder string to undefined", () => {
+    const parsed = recorderSchema.parse({
+      ...recorder,
+      brand: "",
+      model: "",
+      firmware: "",
+      mgmt_ip: "",
+      location: "",
+      notes: "",
+    });
+    for (const k of ["brand", "model", "firmware", "mgmt_ip", "location", "notes"] as const) {
+      expect(parsed[k], k).toBeUndefined();
+    }
+  });
+
+  it("normalises a blank camera resolution to undefined", () => {
+    expect(cameraSchema.parse({ ...camera, resolution: "" }).resolution).toBeUndefined();
+  });
+
+  it("runs the secrets guard on the recorder location", () => {
+    expect(
+      recorderSchema.safeParse({ ...recorder, location: "rack 3, pwd=hunter2" }).success,
+    ).toBe(false);
+  });
+});
+
+describe("secrets guard reaches the remaining free-text fields", () => {
+  it("blocks a secret in a vlan purpose", () => {
+    expect(
+      vlanSchema.safeParse({
+        site_id: "11111111-1111-1111-1111-111111111111",
+        vlan_id: 100,
+        purpose: "guest wifi, password: hunter2",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("still allows an ordinary vlan purpose", () => {
+    expect(
+      vlanSchema.safeParse({
+        site_id: "11111111-1111-1111-1111-111111111111",
+        vlan_id: 100,
+        purpose: "Guest wifi",
+      }).success,
+    ).toBe(true);
   });
 });
 

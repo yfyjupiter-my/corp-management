@@ -2,11 +2,22 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-23 (Phase 13F + first live run) |
+| **Last updated** | 2026-07-24 (Phase 10.2 — secrets guard) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
-| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · unit tests **49 passed**, 4 RLS integration skipped (need live Supabase env) |
+| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · unit tests **66 passed**, 4 RLS integration skipped (need live Supabase env) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
+
+## Latest change (2026-07-24) — 10.2 secrets guard, and the empty-string bug's root cause
+
+- **10.2 closed.** The guard already ran on every `notes`, plus `address`/`contact_name`/`location_desc`/`credential_ref`. The two genuinely uncovered **prose** fields now run it too: **`cctv_recorders.location`** (160) and **`vlans.purpose`** (200).
+- ⚠️ **Not a blanket application, on purpose.** `serial`, `hostname`, `brand`, `model`, `firmware`, `circuit_id`, `bandwidth`, `resolution` and the phone fields are **identifiers, not prose**, and `looksLikeHighEntropyToken()` fires on any 20+ character run mixing lower/upper/digit — which is precisely the shape of a device serial (`FGT60FTK20001234…`). Guarding them would reject legitimate hardware data. The rule the code now follows: **guard prose, not identifiers.**
+- 🐛 **Found the root cause of the empty-string display bug** that needed `orDash()` on 2026-07-23. Five fields in `lib/validation/cctv.ts` — recorder `brand`/`model`/`firmware`/`location` and camera `resolution` — used `.optional().or(z.literal("").transform())` on an **unconstrained** `z.string()`. `common.ts` documents exactly why that fails: an unconstrained string *accepts* `""`, so the first branch of the union wins and the empty value is written as `""` instead of NULL. Switched to `optionalString`/`optionalSafeText`, whose trailing `.transform` runs unconditionally. `mgmt_ip` keeps the idiom correctly — `ipString` has a regex, so `""` is rejected by the first branch and falls through as intended.
+  - ⚠️ **This fixes new writes only.** Rows already holding `""` are untouched; `orDash()` still carries the display side. A backfill (`update … set brand = null where brand = ''`) would clean them up but has not been run.
+- 🐛 **`sites.timezone` was the only unbounded string in any schema** — `z.string().min(1)` with no `.max()`. Now capped at 64.
+- 5 new tests (all blank recorder strings → `undefined`, blank camera resolution, the guard on recorder location, and the vlan-purpose guard accept/reject pair). Suite **66 passed** (was 61), 4 RLS skipped.
+- Also removed a **duplicate `13.35` checkbox** in `TASKS.md` (it was listed twice, once ticked and once not).
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · tests **66 passed**. ⚠️ **Not driven live** — no recorder or VLAN has been saved through the changed schemas against the database.
 
 ## Latest change (2026-07-23) — ISP circuits get an edit form (and a row action)
 
