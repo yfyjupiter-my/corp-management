@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { RecorderForm } from "../../new/RecorderForm";
 import { getDictionary } from "@/lib/i18n/server";
@@ -16,6 +17,11 @@ export default async function EditRecorderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // 10.7: guard before the query. Without this a non-uuid path segment reaches
+  // Postgres and fails the uuid cast (22P02) — a server error where the user
+  // should simply get a 404. `PATCH /api/recorders/[id]` already did this.
+  if (!z.string().uuid().safeParse(id).success) notFound();
+
   const t = await getDictionary();
   const supabase = await createClient();
 

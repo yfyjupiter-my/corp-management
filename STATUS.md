@@ -2,11 +2,32 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-24 (Phase 10.2 — secrets guard) |
+| **Last updated** | 2026-07-24 (Phase 10 closed — 10.2 / 10.5 / 10.6 / 10.7) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
-| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · unit tests **66 passed**, 4 RLS integration skipped (need live Supabase env) |
+| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · unit tests **69 passed**, 4 RLS integration skipped (need live Supabase env) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
+
+## Latest change (2026-07-24) — **Phase 10 is complete**: row caps, money, and access handling
+
+Three items closed in one pass. Each one turned up a real defect underneath the task as written.
+
+**10.6 — every table read is now bounded.** New `lib/constants/limits.ts`. ⚠️ **Deliberately not a blanket 50**, because the queries fail differently under truncation:
+- `LIST_PAGE_SIZE` (50) — rendered lists. Truncation is visible to the reader.
+- `AGGREGATE_CAP` (1000) — rows **counted or filtered**, not rendered (dashboard KPIs, renewals windows, sidebar counts). A 50-cap here would report "12 devices" when there are 400 — *silently wrong, worse than the unbounded fetch it replaces*. Dashboard and renewals `console.warn` via `isTruncated()` when a cap is genuinely hit.
+- `OPTIONS_CAP` (500) — `<select>` option lists. A truncated site picker makes a site **unfileable**.
+- Newly capped: dashboard ×5, renewals ×3, users, site-detail ×5 child panels, site-network ×2, app layout, and 11 option lists across 9 form pages. Three reads left uncapped **on purpose** and commented in place: `country_settings` ×2 (bounded by the 4-value country enum) and the audit actor lookup (`.in()` over one 50-row page). `search_registry` was already `limit 100` in SQL.
+
+**10.5 — money.** The per-site part was already right: `formatMoney(c.monthly_cost, site.currency)` on the site-detail circuits table is the app's **only** money render. 🐛 The formatting was not — `maximumFractionDigits: 2` with no minimum let Intl's per-currency convention through, and **VND/IDR default to zero fraction digits**, so the column came out ragged: `₫1,200` on one row, `₫1,200.5` on the next (a one-decimal money value). Now pinned to **exactly two digits for every currency**, mirroring `numeric(12,2)`. ⚠️ This knowingly overrides currency convention for VND/IDR — the alternative rounds a stored `1200.50` to `₫1,201`, and a registry must not misreport a figure someone reconciles against a contract.
+
+**10.7 — access handling.** Audited all 8 dynamic pages and all 13 API routes.
+- 🐛 `cctv/recorders/[id]/edit` and `cctv/cameras/[id]/edit` had `notFound()` on a missing row but **no uuid guard before the query** — a non-uuid path segment reached Postgres and failed the uuid cast (`22P02`), a server error where a 404 was wanted. Exactly the defect fixed for the network device edit page on 2026-07-23; the `[id]` API routes already guarded correctly.
+- 🐛 **`/countries/[code]` now scopes by role.** RLS already stopped the leak, but a country manager typing `/countries/TH` got a fully-drawn **empty** Thailand dashboard — which reads as "Thailand has no assets", not "not your country". Now `hq_admin` → any country, anyone else → their own or `notFound()`, mirroring the Sidebar and `/sites`.
+- Cross-country **record** access was already correct everywhere: RLS returns 0 rows → `notFound()`, indistinguishable from a missing id, so a probe cannot confirm a record exists.
+
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **69 passed** (was 61 at the start of the day), 4 RLS skipped.
+- ⚠️ **None of Phase 10 has been driven live.** Worth a real check: `/countries/TH` as a MY manager (should 404), a bad uuid on a CCTV edit URL (should 404), and the money column on a VND site.
+- **Next up:** Phase 11 (11.2 RLS tests on child tables, 11.3 audit immutability, 11.5 search RLS) and Phase 12 (deployment). Both need a live Supabase env.
 
 ## Latest change (2026-07-24) — 10.2 secrets guard, and the empty-string bug's root cause
 

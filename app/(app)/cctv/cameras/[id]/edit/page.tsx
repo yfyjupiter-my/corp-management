@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { recorderLabel } from "@/lib/utils/cctv";
 import { CameraForm } from "../../new/CameraForm";
@@ -17,6 +18,9 @@ export default async function EditCameraPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // 10.7: guard before the query — see the recorder edit page for why.
+  if (!z.string().uuid().safeParse(id).success) notFound();
+
   const t = await getDictionary();
   const supabase = await createClient();
 

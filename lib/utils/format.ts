@@ -1,6 +1,21 @@
 import { COUNTRIES, type CountryCode } from "@/lib/constants/countries";
 
-/** Format a monthly cost with its per-site currency (finalize.md — Money). */
+/**
+ * Format a monthly cost with its per-site currency (finalize.md — Money).
+ *
+ * Always **exactly two** fraction digits, mirroring the `numeric(12,2)` columns
+ * these values come from (TASKS 10.5). Two deliberate consequences:
+ *
+ *  - It overrides Intl's per-currency convention, which gives VND and IDR zero
+ *    fraction digits. That convention would round a stored `1200.50` to
+ *    `₫1,201` — a registry must not misreport a figure someone will reconcile
+ *    against a contract.
+ *  - It fixes ragged columns. The old `maximumFractionDigits: 2` with no
+ *    minimum produced `₫1,200` on one row and `₫1,200.5` on the next, the
+ *    latter being a one-decimal money value that reads as a rendering bug.
+ *
+ * MYR and THB are unaffected either way — their convention is already 2.
+ */
 export function formatMoney(
   amount: number | null | undefined,
   currency: string,
@@ -10,6 +25,7 @@ export function formatMoney(
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {

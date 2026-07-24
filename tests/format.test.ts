@@ -25,6 +25,27 @@ describe("formatMoney", () => {
   it("falls back gracefully on an invalid currency code", () => {
     expect(formatMoney(50, "NOTREAL")).toBe("50.00 NOTREAL");
   });
+
+  /**
+   * 10.5: all four office currencies render with exactly two fraction digits,
+   * matching the `numeric(12,2)` column. Intl's own convention gives VND/IDR
+   * zero digits, which would round a stored 1200.50 to 1201.
+   */
+  it("uses two fraction digits for every office currency", () => {
+    for (const c of ["MYR", "THB", "VND", "IDR"] as const) {
+      expect(formatMoney(1200, c), c).toMatch(/1,200\.00/);
+      expect(formatMoney(1200.5, c), c).toMatch(/1,200\.50/);
+    }
+  });
+
+  it("never renders a ragged one-decimal amount", () => {
+    // The old `maximumFractionDigits` with no minimum produced "₫1,200.5".
+    expect(formatMoney(1200.5, "VND")).not.toMatch(/\.5$/);
+  });
+
+  it("rounds to the cent rather than truncating", () => {
+    expect(formatMoney(1200.567, "MYR")).toMatch(/1,200\.57/);
+  });
 });
 
 describe("formatDate", () => {
