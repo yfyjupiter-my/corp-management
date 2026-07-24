@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { RecorderForm } from "../../new/RecorderForm";
 import { getDictionary } from "@/lib/i18n/server";
+import { OPTIONS_CAP } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function EditRecorderPage({
       )
       .eq("id", id)
       .maybeSingle(),
-    supabase.from("sites").select("id, name, country_code").is("archived_at", null).order("name"),
+    supabase.from("sites").select("id, name, country_code").is("archived_at", null).order("name").limit(OPTIONS_CAP),
   ]);
 
   if (!recorder) notFound();

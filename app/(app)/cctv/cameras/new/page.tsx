@@ -5,6 +5,7 @@ import { Panel, PanelEmpty } from "@/components/ui/Panel";
 import { recorderLabel } from "@/lib/utils/cctv";
 import { CameraForm } from "./CameraForm";
 import { getDictionary } from "@/lib/i18n/server";
+import { OPTIONS_CAP } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,8 @@ export default async function NewCameraPage() {
   const t = await getDictionary();
   const supabase = await createClient();
   const [{ data: recorders }, { data: sites }] = await Promise.all([
-    supabase.from("cctv_recorders").select("id, site_id, brand, model, location").order("location"),
-    supabase.from("sites").select("id, name, country_code").order("name"),
+    supabase.from("cctv_recorders").select("id, site_id, brand, model, location").order("location").limit(OPTIONS_CAP),
+    supabase.from("sites").select("id, name, country_code").order("name").limit(OPTIONS_CAP),
   ]);
 
   const options = (recorders ?? []).map((r) => ({

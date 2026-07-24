@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { recorderLabel } from "@/lib/utils/cctv";
 import { CameraForm } from "../../new/CameraForm";
 import { getDictionary } from "@/lib/i18n/server";
+import { OPTIONS_CAP } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +28,8 @@ export default async function EditCameraPage({
       )
       .eq("id", id)
       .maybeSingle(),
-    supabase.from("cctv_recorders").select("id, site_id, brand, model, location").order("location"),
-    supabase.from("sites").select("id, name, country_code").order("name"),
+    supabase.from("cctv_recorders").select("id, site_id, brand, model, location").order("location").limit(OPTIONS_CAP),
+    supabase.from("sites").select("id, name, country_code").order("name").limit(OPTIONS_CAP),
   ]);
 
   if (!camera) notFound();

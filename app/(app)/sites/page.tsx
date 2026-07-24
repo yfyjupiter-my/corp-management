@@ -10,6 +10,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { isStale, formatDate, orDash } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth";
+import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function SitesPage() {
     )
     .is("archived_at", null)
     .order("name")
-    .limit(50);
+    .limit(LIST_PAGE_SIZE);
   const rows = sites ?? [];
 
   /*

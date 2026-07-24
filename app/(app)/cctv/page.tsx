@@ -11,6 +11,7 @@ import { DEFAULT_MIN_RETENTION_DAYS } from "@/lib/constants/countries";
 import { isBelowRetention } from "@/lib/utils/cctv";
 import type { CameraStatus } from "@/lib/constants/enums";
 import { getDictionary } from "@/lib/i18n/server";
+import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +31,14 @@ export default async function CctvPage() {
       .from("cctv_recorders")
       .select("id, brand, model, channels, retention_days, location, last_verified_at, sites(country_code)")
       .order("brand")
-      .limit(50),
+      .limit(LIST_PAGE_SIZE),
     supabase
       .from("cctv_cameras")
       .select("id, label, camera_type, resolution, outdoor, status, last_verified_at")
       .order("label")
-      .limit(50),
+      .limit(LIST_PAGE_SIZE),
     // 5.5: per-country retention minimums; fall back to the company default (30).
+    // No cap: bounded by the 4-value country_code enum.
     supabase.from("country_settings").select("country_code, min_retention_days"),
   ]);
 

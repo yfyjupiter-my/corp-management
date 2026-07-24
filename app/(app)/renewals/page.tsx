@@ -5,6 +5,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { COUNTRY_LIST, isCountryCode } from "@/lib/constants/countries";
+import { AGGREGATE_CAP, isTruncated } from "@/lib/constants/limits";
 import { daysUntil, formatDate } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
 
@@ -42,16 +43,30 @@ export default async function RenewalsPage({
   const isHq = user?.role === "hq_admin";
 
   const supabase = await createClient();
+  // 10.6: the window filter runs in JS over these rows, so a LIST_PAGE_SIZE cap
+  // could drop a renewal that is actually due — the row that matters might be
+  // the 51st. AGGREGATE_CAP is a runaway guard, not a page size.
   const [sites, circuits, devices] = await Promise.all([
-    supabase.from("sites").select("id, country_code"),
-    supabase.from("isp_circuits").select("provider, circuit_id, contract_end, site_id"),
-    supabase.from("network_devices").select("hostname, model, warranty_end, site_id"),
+    supabase.from("sites").select("id, country_code").limit(AGGREGATE_CAP),
+    supabase
+      .from("isp_circuits")
+      .select("provider, circuit_id, contract_end, site_id")
+      .limit(AGGREGATE_CAP),
+    supabase
+      .from("network_devices")
+      .select("hostname, model, warranty_end, site_id")
+      .limit(AGGREGATE_CAP),
   ]);
 
   // ROB-5: a resolved-with-.error query shouldn't masquerade as "nothing due".
   const failed = !!sites.error || !!circuits.error || !!devices.error;
   for (const [name, res] of Object.entries({ sites, circuits, devices })) {
     if (res.error) console.error(`[renewals] ${name} query failed:`, res.error);
+    if (isTruncated(res.data, AGGREGATE_CAP)) {
+      console.warn(
+        `[renewals] ${name} hit AGGREGATE_CAP (${AGGREGATE_CAP}) — a due renewal may be missing.`,
+      );
+    }
   }
 
   const countryBySite = new Map((sites.data ?? []).map((s) => [s.id, s.country_code]));

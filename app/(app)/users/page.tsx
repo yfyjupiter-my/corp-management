@@ -6,6 +6,7 @@ import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
 import { Chip } from "@/components/ui/Chip";
 import { InviteForm } from "./InviteForm";
+import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,8 @@ export default async function UsersPage() {
   const { data: profiles } = await supabase
     .from("profiles")
     .select("user_id, full_name, role, country_code, created_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(LIST_PAGE_SIZE);
 
   return (
     <>

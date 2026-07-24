@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { IpSchemeForm } from "./IpSchemeForm";
 import { VlanForm } from "./VlanForm";
 import { getDictionary } from "@/lib/i18n/server";
+import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,8 @@ export default async function SiteNetworkPage({
   if (!site) notFound();
 
   const [ipSchemes, vlans] = await Promise.all([
-    supabase.from("ip_schemes").select("id, subnet, gateway, dns, dhcp_range, notes").eq("site_id", id).order("subnet"),
-    supabase.from("vlans").select("id, vlan_id, name, subnet, purpose").eq("site_id", id).order("vlan_id"),
+    supabase.from("ip_schemes").select("id, subnet, gateway, dns, dhcp_range, notes").eq("site_id", id).order("subnet").limit(LIST_PAGE_SIZE),
+    supabase.from("vlans").select("id, vlan_id, name, subnet, purpose").eq("site_id", id).order("vlan_id").limit(LIST_PAGE_SIZE),
   ]);
 
   const ipRows = ipSchemes.data ?? [];

@@ -11,6 +11,7 @@ import {
   DEFAULT_MIN_RETENTION_DAYS,
   DEFAULT_REVIEW_CYCLE_MONTHS,
 } from "@/lib/constants/countries";
+import { AGGREGATE_CAP, isTruncated } from "@/lib/constants/limits";
 import { daysUntil, formatDate, isStale } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
 
@@ -26,14 +27,27 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
+  // 10.6: these five feed KPI counts, not a rendered list, so they carry the
+  // high AGGREGATE_CAP rather than LIST_PAGE_SIZE — a 50-row cap here would
+  // silently understate every number on the page. `country_settings` is bounded
+  // by the 4-country enum and needs no cap.
   const [sites, devices, cameras, recorders, circuits, settings] = await Promise.all([
-    supabase.from("sites").select("id, country_code, last_verified_at").is("archived_at", null),
-    supabase.from("network_devices").select("id, site_id, last_verified_at"),
-    supabase.from("cctv_cameras").select("id, status, recorder_id, last_verified_at"),
+    supabase
+      .from("sites")
+      .select("id, country_code, last_verified_at")
+      .is("archived_at", null)
+      .limit(AGGREGATE_CAP),
+    supabase.from("network_devices").select("id, site_id, last_verified_at").limit(AGGREGATE_CAP),
+    supabase
+      .from("cctv_cameras")
+      .select("id, status, recorder_id, last_verified_at")
+      .limit(AGGREGATE_CAP),
     supabase
       .from("cctv_recorders")
-      .select("id, retention_days, site_id, last_verified_at"),
-    supabase.from("isp_circuits").select("id, contract_end, provider, site_id"),
+      .select("id, retention_days, site_id, last_verified_at")
+      .limit(AGGREGATE_CAP),
+    supabase.from("isp_circuits").select("id, contract_end, provider, site_id").limit(AGGREGATE_CAP),
+    // No cap: bounded by the 4-value country_code enum.
     supabase
       .from("country_settings")
       .select("country_code, min_retention_days, review_cycle_months"),
@@ -53,6 +67,13 @@ export default async function DashboardPage() {
   };
   for (const [name, res] of Object.entries({ sites, devices, cameras, recorders, circuits, settings })) {
     if (res.error) console.error(`[dashboard] ${name} query failed:`, res.error);
+    // Hitting the cap means the KPIs below understate reality. Loud, because
+    // the page gives the reader no other clue that a number is short.
+    if (isTruncated(res.data, AGGREGATE_CAP)) {
+      console.warn(
+        `[dashboard] ${name} hit AGGREGATE_CAP (${AGGREGATE_CAP}) — KPI counts are understated.`,
+      );
+    }
   }
 
   const siteRows = sites.data ?? [];

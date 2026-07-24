@@ -11,6 +11,7 @@ import { CredentialRef } from "@/components/ui/CredentialRef";
 import { ArchiveButton } from "../ArchiveButton";
 import { isStale, formatDate, formatMoney } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
+import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +33,13 @@ export default async function SiteDetailPage({
   const { data: site } = await supabase.from("sites").select("*").eq("id", id).single();
   if (!site) notFound();
 
+  // 10.6: five rendered child panels — LIST_PAGE_SIZE each.
   const [circuits, devices, ipSchemes, vpnLinks, recorders] = await Promise.all([
-    supabase.from("isp_circuits").select("id, provider, circuit_id, type, contract_end, monthly_cost").eq("site_id", id).order("provider"),
-    supabase.from("network_devices").select("id, device_type, brand, model, hostname, mgmt_ip, credential_ref").eq("site_id", id).order("hostname"),
-    supabase.from("ip_schemes").select("id, subnet, gateway, dns").eq("site_id", id).order("subnet"),
-    supabase.from("vpn_links").select("id, peer, tunnel_type, status").eq("site_id", id).order("peer"),
-    supabase.from("cctv_recorders").select("id, brand, model, channels, retention_days, location").eq("site_id", id).order("location"),
+    supabase.from("isp_circuits").select("id, provider, circuit_id, type, contract_end, monthly_cost").eq("site_id", id).order("provider").limit(LIST_PAGE_SIZE),
+    supabase.from("network_devices").select("id, device_type, brand, model, hostname, mgmt_ip, credential_ref").eq("site_id", id).order("hostname").limit(LIST_PAGE_SIZE),
+    supabase.from("ip_schemes").select("id, subnet, gateway, dns").eq("site_id", id).order("subnet").limit(LIST_PAGE_SIZE),
+    supabase.from("vpn_links").select("id, peer, tunnel_type, status").eq("site_id", id).order("peer").limit(LIST_PAGE_SIZE),
+    supabase.from("cctv_recorders").select("id, brand, model, channels, retention_days, location").eq("site_id", id).order("location").limit(LIST_PAGE_SIZE),
   ]);
 
   return (

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { RecorderForm } from "./RecorderForm";
 import { getDictionary } from "@/lib/i18n/server";
+import { OPTIONS_CAP } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ export default async function NewRecorderPage() {
     .from("sites")
     .select("id, name, country_code")
     .is("archived_at", null)
-    .order("name");
+    .order("name")
+    .limit(OPTIONS_CAP);
 
   return (
     <RecorderForm

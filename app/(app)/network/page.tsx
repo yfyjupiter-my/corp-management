@@ -9,6 +9,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { isStale, formatDate } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
+import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +23,12 @@ export default async function NetworkPage() {
       .from("network_devices")
       .select("id, device_type, brand, model, hostname, mgmt_ip, warranty_end, last_verified_at")
       .order("hostname")
-      .limit(50),
+      .limit(LIST_PAGE_SIZE),
     supabase
       .from("isp_circuits")
       .select("id, provider, circuit_id, bandwidth, type, contract_end, last_verified_at")
       .order("provider")
-      .limit(50),
+      .limit(LIST_PAGE_SIZE),
   ]);
 
   const deviceRows = devices.data ?? [];

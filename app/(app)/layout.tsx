@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { COUNTRY_CODES } from "@/lib/constants/countries";
+import { AGGREGATE_CAP } from "@/lib/constants/limits";
 
 /**
  * Authenticated app shell (DESIGN.md §4): fixed navy rail + fluid main.
@@ -31,7 +32,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: sites } = await supabase
     .from("sites")
     .select("country_code")
-    .is("archived_at", null);
+    .is("archived_at", null)
+    .limit(AGGREGATE_CAP); // counts, not a list — see lib/constants/limits.ts
   for (const row of sites ?? []) {
     siteCounts[row.country_code] = (siteCounts[row.country_code] ?? 0) + 1;
   }

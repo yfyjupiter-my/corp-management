@@ -16,13 +16,14 @@ import { isBelowRetention } from "@/lib/utils/cctv";
 import { isStale, formatDate, daysUntil, orDash } from "@/lib/utils/format";
 import type { CameraStatus } from "@/lib/constants/enums";
 import { getDictionary } from "@/lib/i18n/server";
+import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
 
 /** Rows shown inline per module table before deferring to the module page. */
 const PREVIEW_ROWS = 8;
 /** 10.6: hard cap on any single fetch. */
-const FETCH_CAP = 50;
+const FETCH_CAP = LIST_PAGE_SIZE;
 
 const cameraTone: Record<CameraStatus, "ok" | "danger" | "warn"> = {
   active: "ok",

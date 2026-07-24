@@ -114,7 +114,7 @@
 - [x] **10.3** Verify action route `POST /api/verify` + reusable `components/ui/VerifyButton.tsx` — wired into site detail, the network device list (4.3), **and the CCTV recorders + cameras lists** (5.1).
 - [~] **10.4** Formatters/utils: `formatDate`, `isStale`, money+currency, `cn` (`lib/utils/*`).
 - [ ] **10.5** Money display uses per-site `currency` (MYR/VND/THB/IDR); numeric(12,2) formatting.
-- [ ] **10.6** List views cap at 50 rows everywhere (guard against unbounded fetch).
+- [x] **10.6** Every table read is now bounded (2026-07-24). **Not a blanket 50** — `lib/constants/limits.ts` defines three caps, because the queries fail differently when truncated: `LIST_PAGE_SIZE` (50) for rendered lists; `AGGREGATE_CAP` (1000) for rows that are *counted or filtered* rather than rendered (dashboard KPIs, renewals windows, sidebar counts) — a 50-cap there would silently report "12 devices" when there are 400; `OPTIONS_CAP` (500) for `<select>` option lists — a truncated site picker makes a site unfileable. Newly capped: dashboard ×5, renewals ×3, users, site-detail ×5 child panels, site-network ×2, app layout, and 11 option lists across 9 form pages. Dashboard/renewals `console.warn` via `isTruncated()` when a cap is actually hit. **Three reads deliberately left uncapped** (commented in place): `country_settings` ×2 (bounded by the 4-value country enum) and the audit actor lookup (`.in()` over one 50-row page). `search_registry` was already `limit 100` in SQL.
 - [ ] **10.7** 403/empty + `not-found` handling on unauthorized/cross-country access.
 
 ## Phase 11 — Testing & QA

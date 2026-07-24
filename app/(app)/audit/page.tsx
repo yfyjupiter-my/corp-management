@@ -45,6 +45,8 @@ export default async function AuditPage({
   if (error) console.error("[audit] query failed:", error);
 
   // Resolve actor UUIDs to names for the rows on this page (best-effort).
+  // 10.6: needs no `.limit` — `actorIds` is the distinct set of actors on one
+  // 50-row page, so the `.in()` is already bounded by PER_PAGE.
   const actorIds = [...new Set((entries ?? []).map((e) => e.actor).filter(Boolean))];
   const actorNames = new Map<string, string>();
   if (actorIds.length > 0) {
