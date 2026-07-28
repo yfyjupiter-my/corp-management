@@ -2,13 +2,29 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-24 (Phase 11/12 test code written — awaiting live env) |
+| **Last updated** | 2026-07-28 (Phase 10 driven live — 3/3 checks passed) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · unit tests **69 passed**, **20 RLS integration skipped** (need live Supabase env) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-24) — Phase 11/12 test scaffolding written; live-env runbook
+## Latest change (2026-07-28) — **Phase 10 driven live: 3/3 checks passed**
+
+The three checks Phase 10 left outstanding ("none of Phase 10 has been driven live") were run against the linked Supabase project in a real browser. **All three passed; no defect found in the Phase 10 work.** Run as a throwaway `country_manager` seeded via the service role, deleted afterwards.
+
+- ✅ **10.7 cross-country dashboard** — `/countries/TH` as a **MY** manager returns **HTTP 404 + "Page not found"**, not the empty Thailand dashboard that used to read as "Thailand has no assets". Control passed too: `/countries/MY` renders the full dashboard for the same user, and the sidebar lists Malaysia only.
+- ✅ **10.7 uuid guards** — a non-uuid path segment 404s on **all seven** dynamic edit routes, not just the two CCTV ones the task named: `cctv/recorders`, `cctv/cameras`, `network`, `sites`, `network/circuits`, tried with `not-a-uuid`, `123` and `%20`. A **well-formed but nonexistent** uuid returns the *same* 404, so the two cases stay indistinguishable to a prober. **No `22P02` / `invalid input syntax` / 500 reached the server log** — the guard really is running before the query.
+- ✅ **10.5 money** — a VND site with circuits at `1200.50`, `1200` and `999999.99` renders **`₫1,200.50` · `₫1,200.00` · `₫999,999.99`** — exactly two decimals, no ragged column. The 10.5 fix is confirmed in the place it mattered: pre-fix, those first two rows rendered `₫1,200.5` and `₫1,200`. Swept the same rows through **IDR** (the other zero-fraction currency), **MYR**, **THB** and **USD** — all two decimals.
+  - ℹ️ Cosmetic, **not** a Phase 10 defect: Intl under `en-US` gives VND and USD a symbol (`₫`, `$`) but renders MYR/THB/IDR as the ISO code (`MYR 1,200.50`). Consistent, just not the local symbol. Say the word if you want `currencyDisplay: "narrowSymbol"`.
+
+🐛 **One real bug found — but in the dev environment, not the app.** The login page silently refused to hydrate: `_next/static/chunks/app/(auth)/layout.js` and `.../login/page.js` both **404'd**, so "Sign in" fell through to a native form GET (`/login?`) with **no console error at all**. Two things worth keeping:
+  - The tell was **not** in the console — it was the network log plus the fact that no DOM node carried a `__reactFiber$` key. A filled controlled input *keeping* its value proves nothing when the page never hydrated.
+  - Cause was a **stale `.next` cache**, the same failure mode recorded on 2026-07-23 (`PageNotFoundError: /search`) and after the `/api/verify` deletion. `rm -rf .next` fixed it. ⚠️ Note the trap: `.next` was deleted **while the old dev server was still running** — `TaskStop` killed the npm wrapper but not the `next dev` child, which kept port 3000 and then threw `ENOENT … app/(auth)/login/page.js` on every request while the new server quietly moved to **3002**. Kill the node process, not just the wrapper.
+
+- ⚠️ **Residue: `audit_log` grew 35 → 47** (+12) from the fixture's inserts and deletes. Immutable by design, so those rows were left in place. Everything else cleaned up: fixture site + its 3 circuits deleted (FK cascade), throwaway user deleted (profile cascaded). Verified after teardown — 5 sites, 1 circuit, 1 profile, **0** `__P10` rows.
+- **No source changed** — this run touched `STATUS.md` / `TASKS.md` only. Verification, not a code change, so the build-health line above still stands from 2026-07-24.
+
+## Earlier change (2026-07-24) — Phase 11/12 test scaffolding written; live-env runbook
 
 Wrote the code for everything in Phases 11 & 12 that *can* be written without a live database, and a runbook (`LIVE-ENV.md`) for the parts that can't. Decision on record: the RLS suite runs against the **existing linked project**, self-seeding a disposable fixture rather than needing a permanent cross-country seed.
 
@@ -39,7 +55,7 @@ Three items closed in one pass. Each one turned up a real defect underneath the 
 - Cross-country **record** access was already correct everywhere: RLS returns 0 rows → `notFound()`, indistinguishable from a missing id, so a probe cannot confirm a record exists.
 
 - Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **69 passed** (was 61 at the start of the day), 4 RLS skipped.
-- ⚠️ **None of Phase 10 has been driven live.** Worth a real check: `/countries/TH` as a MY manager (should 404), a bad uuid on a CCTV edit URL (should 404), and the money column on a VND site.
+- ~~⚠️ **None of Phase 10 has been driven live.** Worth a real check: `/countries/TH` as a MY manager (should 404), a bad uuid on a CCTV edit URL (should 404), and the money column on a VND site.~~ **All three run 2026-07-28 — 3/3 passed, see the top entry.**
 - **Next up:** Phase 11 (11.2 RLS tests on child tables, 11.3 audit immutability, 11.5 search RLS) and Phase 12 (deployment). Both need a live Supabase env.
 
 ## Latest change (2026-07-24) — 10.2 secrets guard, and the empty-string bug's root cause
