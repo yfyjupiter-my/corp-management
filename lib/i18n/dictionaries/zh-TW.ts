@@ -40,7 +40,6 @@ export const zhTW: Dictionary = {
     cctv: "監視系統",
     renewals: "續約",
     users: "使用者",
-    audit: "稽核紀錄",
   },
 
   countries: {
@@ -241,28 +240,6 @@ export const zhTW: Dictionary = {
     expired: "已過期",
     colCountry: "國家",
     unnamedDevice: "設備",
-  },
-
-  audit: {
-    title: "稽核紀錄",
-    subtitle: "所有新增、修改與刪除紀錄 — 不可竄改，最新的排在最前。",
-    unavailableTitle: "無法取得稽核紀錄",
-    unavailable: "稽核紀錄暫時無法使用，請稍後再試。",
-    noActivityTitle: "沒有紀錄",
-    noActivity: "尚無任何活動紀錄。",
-    entryCount: (n: number) => `${n} 筆紀錄`,
-    colWhen: "時間",
-    colAction: "動作",
-    colTable: "資料表",
-    colRecord: "紀錄",
-    colActor: "操作者",
-    colChanges: "異動內容",
-    systemActor: "系統",
-    pageOf: (page: number, total: number) => `第 ${page} 頁，共 ${total} 頁`,
-    newer: "← 較新",
-    older: "較舊 →",
-    showFields: (n: number) => `顯示 ${n} 個欄位`,
-    hideFields: (n: number) => `隱藏 ${n} 個欄位`,
   },
 
   users: {
@@ -525,11 +502,6 @@ export const zhTW: Dictionary = {
       up: "連線中",
       down: "中斷",
       unknown: "未知",
-    },
-    auditAction: {
-      insert: "新增",
-      update: "修改",
-      delete: "刪除",
     },
   },
 

@@ -55,13 +55,6 @@ export const UsersIcon = ({ size = 17, className }: IconProps) => (
   </svg>
 );
 
-export const AuditIcon = ({ size = 17, className }: IconProps) => (
-  <svg {...svg(size, className)}>
-    <path d="M4 4h16v16H4z" />
-    <path d="M8 9h8M8 13h5" />
-  </svg>
-);
-
 export const SitesIcon = ({ size = 17, className }: IconProps) => (
   <svg {...svg(size, className)}>
     <path d="M3 21h18" />

@@ -14,7 +14,6 @@ import {
   CctvIcon,
   RenewalsIcon,
   UsersIcon,
-  AuditIcon,
 } from "./icons";
 
 interface SidebarProps {
@@ -96,9 +95,6 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
       <Group label={t.nav.groupAdministration} />
       <NavItem href="/users" active={pathname.startsWith("/users")} icon={<UsersIcon />}>
         {t.nav.users}
-      </NavItem>
-      <NavItem href="/audit" active={pathname.startsWith("/audit")} icon={<AuditIcon />}>
-        {t.nav.audit}
       </NavItem>
 
       {/* Footer: current user (clickable — opens dropdown with logout) */}

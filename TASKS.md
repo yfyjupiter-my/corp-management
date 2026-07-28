@@ -113,8 +113,8 @@
 - [x] **9.1** Users page + `InviteForm` — HQ-admin-only (redirect-gated), profiles list (name/role/country/added) + invite panel. — `users/page.tsx`, `users/InviteForm.tsx`. ⚠️ **Superseded by 14.3:** `InviteForm` deleted, redirect gate removed, Role/Country columns dropped.
 - [x] **9.2** `POST /api/invite` using `createAdminClient` (service role, server-only) — assigns `role` + `country_code`, invite email + profile insert with auth-user rollback on failure. — `api/invite/route.ts`. ⚠️ **Route deleted by 14.3** → `POST /api/users`. The service-role client, the rollback and the BUS-2 audit write all carried over.
 - [x] **9.3** Invite route enforces HQ-admin-only (`actor?.role !== "hq_admin"` → 403) + `inviteUserSchema.safeParse` validation; writes an explicit `audit_log` entry for the acting admin (BUS-2). — `api/invite/route.ts`. ⚠️ **Superseded by 14.3:** the check is now `if (!actor) → 403`. The BUS-2 audit write stays.
-- [x] **9.4** Audit log page (`audit/page.tsx`) — HQ-admin-only, redirect-gated. ⚠️ **Gate removed by 14.4** — readable by any authenticated user.
-- [x] **9.5** Audit view: HQ-admin-only, immutable list of actor/action/table/record/**diff**/time, **paginated** (50/page, `?page=N`, exact count + Newer/Older links). Diff rendered via expandable `DiffCell` (changed-field names inline, raw JSON on expand); actor UUIDs resolved to profile names on the visible page; `.error` guard degrades to "temporarily unavailable". — `audit/page.tsx`, `audit/DiffCell.tsx`. ⚠️ No longer HQ-only; **still immutable** (select-only policy, unchanged by 14.1).
+- [x] ~~**9.4** Audit log page (`audit/page.tsx`) — HQ-admin-only, redirect-gated.~~ — **page deleted 2026-07-28 (15.1).** Gate had already been removed by 14.4; the whole page is now gone.
+- [x] **9.5** Audit view: HQ-admin-only, immutable list of actor/action/table/record/**diff**/time, **paginated** (50/page, `?page=N`, exact count + Newer/Older links). Diff rendered via expandable `DiffCell` (changed-field names inline, raw JSON on expand); actor UUIDs resolved to profile names on the visible page; `.error` guard degrades to "temporarily unavailable". — `audit/page.tsx`, `audit/DiffCell.tsx`. ⚠️ **Both files deleted 2026-07-28 (15.1)** — there is no audit view in the app any more. The `audit_log` table, its `SECURITY DEFINER` trigger and its immutability are **untouched**; the log still fills, it is just no longer readable through the UI.
 - [x] ~~**9.6** UI hides actions a user can't perform~~ — **void as of 14.4.** There are no per-role actions left to hide: the Administration group, the Countries nav and every module render identically for everyone. Original: sidebar hid Administration for non-HQ, both admin pages redirected non-HQ, Countries nav was scoped to the manager's country.
 
 ## Phase 10 — Cross-cutting concerns
@@ -266,6 +266,14 @@ Same two-line pattern each: `const t = await getDictionary();`, then replace lit
   - ⚠️ **Still not clicked through in a browser** — a second user signing in, seeing four countries, and creating a third from the Users page. Everything below the UI is proven.
   - ✅ **Unrelated finding, since closed:** `tkgoh228@gmail.com` was an **orphaned auth user** (no `profiles` row) that could authenticate but landed on `/no-access`. Pre-existing, not caused by this change. **Deleted 2026-07-28** after confirming it held nothing (0 profiles, 0 `created_by` rows, 0 `audit_log` rows as actor; no FK to cascade). Verified after: 1 auth user, 1 profile, **0 orphans in both directions**. ℹ️ It was missed for so long because earlier checks only looked for orphan *profiles*, never the reverse — check both directions.
 - Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`, shared chunk unchanged at 102 kB, `/api/invite` gone and `/api/users` present) · tests **75 passed / 30 skipped** without env, **105 passed / 0 skipped** live.
+
+---
+
+## Phase 15 — Administration trim (2026-07-28)
+
+- [x] **15.1** **Audit log removed from the Administration module.** Deleted `app/(app)/audit/page.tsx` + `audit/DiffCell.tsx` and the `/audit` sidebar item; `AuditIcon` dropped from `components/layout/icons.tsx` (zero callers left). Administration is now **Users only**. Dictionary: `nav.audit`, the whole `audit` namespace (21 keys) and `enums.auditAction` removed from **both** locales — key parity test still green.
+  - ✅ **Nothing was changed in the database.** `audit_log`, the `SECURITY DEFINER` trigger from `0003_audit.sql`, the select-only RLS policy and the explicit BUS-2 write in `POST /api/users` are all untouched — the log keeps recording every insert/update/delete and stays immutable. **Only the UI to read it is gone**; a reader now needs the Supabase dashboard or a direct query. Reinstating means restoring two files, not a migration.
+  - ⚠️ **12.4 note:** the pen-test item "`audit_log` still cannot be written or altered through PostgREST" is unaffected — it tests the API/RLS boundary, not the page.
 
 ---
 

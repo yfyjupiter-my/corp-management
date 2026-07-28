@@ -22,7 +22,7 @@ const I18nContext = createContext<I18nValue | null>(null);
  * `t.common.save`, identical shape to `getDictionary()`.
  *
  * The prop is the **locale string, not the dictionary**: interpolating entries
- * are functions (`country.title(name)`, `audit.showFields(n)`), and a function
+ * are functions (`country.title(name)`, `sites.deleteConfirm(name)`), and a function
  * cannot cross the RSC boundary — passing the resolved object from the server
  * layout throws "Functions cannot be passed directly to Client Components" at
  * runtime. Resolving it here keeps only a string in the payload. The cost is

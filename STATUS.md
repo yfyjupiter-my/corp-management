@@ -2,11 +2,38 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-28 (**Phase 14: roles removed** — invite replaced by direct user creation, all users CRUD everything. Migration `0006` **applied and verified live**; **Phase 12 is all that remains**) |
+| **Last updated** | 2026-07-28 (**Audit log page removed** from Administration — UI only, the DB audit trail is untouched. Before that: **Phase 14: roles removed**. **Phase 12 is all that remains**) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **105 passed / 0 skipped** against the live project · **75 passed / 30 skipped** without `TEST_*` |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
+
+---
+
+## Latest change (2026-07-28) — Audit log removed from the Administration module
+
+The **Administration group is now Users only**. Deleted `app/(app)/audit/page.tsx` and
+`audit/DiffCell.tsx`, the `/audit` sidebar item, and `AuditIcon` (zero callers left).
+
+- ✅ **Nothing in the database changed.** `audit_log`, the `SECURITY DEFINER` trigger in
+  `0003_audit.sql`, its select-only RLS policy and the explicit BUS-2 audit write in
+  `POST /api/users` are all untouched. **The log still records every insert/update/delete and is
+  still immutable** — only the in-app way to *read* it is gone. Anyone who needs it now goes to the
+  Supabase dashboard or queries directly. Reinstating is two files, not a migration.
+- **Dictionary trimmed in both locales, parity kept:** `nav.audit`, the whole `audit` namespace
+  (21 keys incl. the `showFields`/`hideFields` functions) and `enums.auditAction` — all had the
+  deleted page as their only caller. `tests/i18n.test.ts` still green, which is the check that a
+  one-sided removal would have failed.
+- ⚠️ **This removes the only visibility anyone had into who changed what.** With roles gone (Phase
+  14) every user can already CRUD all four countries and mint accounts, so the audit view was the
+  one thing that made those actions attributable in-app. The trail itself survives; noticing an
+  unexpected change now takes a deliberate look at the DB, not a page visit. Say the word if it
+  should come back as a read-only page.
+- ℹ️ **12.4 unaffected** — the pen-test item "`audit_log` cannot be written or altered through
+  PostgREST" tests the API/RLS boundary, not the page.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`;
+  **`/audit` gone from the route list**, shared chunk unchanged at 102 kB) · tests **75 passed /
+  30 skipped** (unchanged — no test covered the page).
 
 ---
 

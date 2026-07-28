@@ -46,7 +46,6 @@ export const en = {
     cctv: "CCTV",
     renewals: "Renewals",
     users: "Users",
-    audit: "Audit log",
   },
 
   /**
@@ -266,29 +265,6 @@ export const en = {
     expired: "Expired",
     colCountry: "Country",
     unnamedDevice: "device",
-  },
-
-  audit: {
-    title: "Audit log",
-    subtitle: "Every create, update, and delete — immutable, most recent first.",
-    unavailableTitle: "Audit log unavailable",
-    unavailable: "The audit log is temporarily unavailable. Please try again.",
-    noActivityTitle: "No activity",
-    noActivity: "No activity recorded yet.",
-    entryCount: (n: number) => `${n} entr${n === 1 ? "y" : "ies"}`,
-    colWhen: "When",
-    colAction: "Action",
-    colTable: "Table",
-    colRecord: "Record",
-    colActor: "Actor",
-    colChanges: "Changes",
-    systemActor: "system",
-    pageOf: (page: number, total: number) => `Page ${page} of ${total}`,
-    newer: "← Newer",
-    older: "Older →",
-    /** DiffCell toggle, e.g. "Show 3 fields". */
-    showFields: (n: number) => `Show ${n} field${n === 1 ? "" : "s"}`,
-    hideFields: (n: number) => `Hide ${n} field${n === 1 ? "" : "s"}`,
   },
 
   users: {
@@ -574,12 +550,6 @@ export const en = {
       up: "Up",
       down: "Down",
       unknown: "Unknown",
-    },
-    /** `lower(tg_op)` from the audit trigger (0003_audit.sql). */
-    auditAction: {
-      insert: "Insert",
-      update: "Update",
-      delete: "Delete",
     },
   },
 
