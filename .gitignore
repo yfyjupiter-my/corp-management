@@ -23,6 +23,9 @@ yarn-error.log*
 # env
 .env
 .env*.local
+# Test-user credentials for the RLS suite (LIVE-ENV.md). Real passwords for a
+# real project — never commit. Neither pattern above catches this name.
+.env.test
 
 # supabase
 /supabase/.branches

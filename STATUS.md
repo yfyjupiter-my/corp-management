@@ -2,13 +2,25 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-28 (Phase 10 live checks passed; Dockerfile blocker found + fixed, 12.1 still unrun) |
+| **Last updated** | 2026-07-28 (**Phase 11 complete** — RLS suite run live, 89/89) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
-| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · unit tests **69 passed**, **20 RLS integration skipped** (need live Supabase env) |
+| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **89 passed / 0 skipped** with `.env.test` loaded (**69 passed, 20 skipped** without it — the suite still self-skips, so CI stays green with no secrets) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-28) — 12.1: **`docker build` could not have succeeded**; blocker fixed, build still unrun
+## Latest change (2026-07-28) — **Phase 11 is complete**: the RLS suite runs live, 89/89 passing
+
+The 20 RLS tests written on 2026-07-24 had never been executed. They now run against the linked Supabase project and **all pass** — **11.1, 11.2, 11.3 and 11.5 are closed**, and with 11.4/11.6 already done, **Phase 11 is finished**.
+
+- **Two persistent test users created** via the service role, as `LIVE-ENV.md` specifies: `rls-test-hq@corp-management.test` (`hq_admin`, no country) and `rls-test-my@corp-management.test` (`country_manager`, MY). Unlike the Phase 10 throwaways these are **meant to persist** — CI reuses the same credentials. The seeding script upserts the `profiles` row, so re-running repairs a drifted role/country rather than failing.
+- **`.env.test` holds the six `TEST_*` values** — and 🐛 **`.gitignore` did not cover it.** `LIVE-ENV.md` calls the file "git-ignored", but the patterns were only `.env` and `.env*.local`, neither of which matches `.env.test`; the file holds two **real passwords for the real project**, so it was one `git add -A` from being committed. `.gitignore` now lists it explicitly, verified with `git check-ignore`.
+- **The results are not vacuous** — worth stating, because a cross-country test against a project with no foreign rows passes trivially. The audit trail proves the suite did real work: **8 inserts at 02:34:38** (sites, circuits, devices, ip_schemes, vlans, vpn_links, recorders, cameras) and **8 cascade deletes at 02:34:39**, matching the `audit_log` delta of **47 → 63**. The suite's own design backs this up: every "manager sees none" assertion is paired with an HQ read of the same id.
+- **Teardown verified clean**: 0 leftover `__RLS11_` fixtures, sites back to the original 5, all child-table counts back to baseline.
+- ⚠️ **Residue, unavoidable:** +16 immutable `audit_log` rows per run (the audit log has no delete policy). Every future CI run adds another ~16. If that becomes noise, point `TEST_*` at a throwaway project — no code change, just different env values.
+- ⚠️ **`rls-test-hq` is a real `hq_admin` on the real project**, with its password in a local file. Fine for the linked dev project; when 12.2 stands up production, that account should exist on **staging only**.
+- Verified: tests **89 passed, 0 skipped** with the env; still **69 passed, 20 skipped** without it, so `.github/workflows/ci.yml` stays green before the secrets are added.
+
+## Earlier change (2026-07-28) — 12.1: **`docker build` could not have succeeded**; blocker fixed, build still unrun
 
 🚫 **Docker is not installed in this environment** (same as the 2026-07-23 note about `supabase db reset`), so `docker build` was **not run** and **12.1 stays open**. Instead every assumption the `Dockerfile` makes was verified against a real local `npm run build`, which turned up a blocking defect:
 
