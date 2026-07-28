@@ -2,9 +2,9 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-28 (**RLS test users removed** from the linked project; Phase 11 stays closed on its live run; **Phase 12 is all that remains**) |
+| **Last updated** | 2026-07-28 (Supabase **env guard** added; RLS test users removed; Phase 11 stays closed on its live run; **Phase 12 is all that remains**) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
-| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **69 passed / 20 skipped** — the RLS suite self-skips now that `.env.test` is gone (it passed **89/89** on 2026-07-28 while the test users existed) |
+| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **72 passed / 20 skipped** — the RLS suite self-skips now that `.env.test` is gone (it passed **89/89** on 2026-07-28 while the test users existed) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
@@ -37,7 +37,18 @@ Phase 12 is the **only phase with unstarted work**, and **all of it is infrastru
 
 ---
 
-## Latest change (2026-07-28) — **RLS test users removed** from the linked project
+## Latest change (2026-07-28) — Supabase env guard: a missing key now names itself
+
+A browser-console `{"message":"No API key found in request"}` on the login page cost a debugging session. That message is what Supabase returns when a request arrives with **no `apikey` header at all** — and it names neither the app nor the variable. New **`lib/supabase/env.ts`** (`supabaseUrl()` / `supabaseAnonKey()`) throws `NEXT_PUBLIC_SUPABASE_ANON_KEY is not set …` instead.
+
+- **The `!` was the bug.** All four factories read `process.env.NEXT_PUBLIC_SUPABASE_*!`. The non-null assertion is erased at compile time, so a missing value sailed through to `createBrowserClient(undefined, undefined)`, threw nothing, and surfaced only as Supabase's opaque reply. Now guarded in `client.ts`, `server.ts` and `middleware.ts`; `admin.ts` (which already guarded its service-role key — the pattern this follows) picked up the URL guard too.
+- ⚠️ **The refactor's real risk was breaking the inlining, and it was checked, not assumed.** `NEXT_PUBLIC_*` are substituted **textually at build time**, so moving the reads behind a helper could have silently left them `undefined` in the browser. Verified both ways: the dev chunk still carries the key, and a clean `npm run build` inlines it into exactly the **3** client chunks whose pages use the browser client (`login`, `forgot-password`, `reset-password`). The helper's doc comment records why the reads must stay full literal `process.env.NEXT_PUBLIC_X` expressions.
+- **Corollary worth keeping:** in the browser a throw here means the **build** had no value — setting the variable on the running server cannot repair it, only a rebuild can. Same failure mode the `Dockerfile` already documents for its build args.
+- **`tests/supabase-env.test.ts`** (new, 3 tests) — value passes through; unset throws naming the variable; **empty string counts as unset**, since an empty var and a missing one both send no header.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`, shared chunk unchanged at 102 kB) · tests **72 passed** (was 69), 20 RLS skipped.
+- ℹ️ **Dev-environment trap re-confirmed twice today:** `next start` is unsupported under `output: "standalone"` and reads its manifests once at boot, so a rebuild under a running server leaves it serving chunk names that no longer exist (`ChunkLoadError`). Two servers against one `.next` do the same to each other. One server at a time; restart after any build.
+
+## Earlier change (2026-07-28) — **RLS test users removed** from the linked project
 
 Both accounts created for the Phase 11 run were deleted via the service role, closing the standing warning that a test `hq_admin` with a file-stored password was live on the real project.
 
