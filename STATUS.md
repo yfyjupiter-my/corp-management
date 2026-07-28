@@ -2,11 +2,40 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-28 (**Phase 11 complete** — RLS suite run live, 89/89) |
+| **Last updated** | 2026-07-28 (**Phase 11 complete** — RLS suite run live, 89/89; **Phase 12 is all that remains**, see the summary below) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **89 passed / 0 skipped** with `.env.test` loaded (**69 passed, 20 skipped** without it — the suite still self-skips, so CI stays green with no secrets) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
+
+---
+
+## Phase 12 — deployment readiness: the only phase still open
+
+Phase 12 is the **only phase with unstarted work**, and **all of it is infrastructure** — each item below is blocked on something only you can provision, not on code. `LIVE-ENV.md` holds the operational detail; this is the standing summary.
+
+> Five `[~]` (scaffolded / partial) items survive outside Phase 12 and are **not** tracked here. Four are bookkeeping — **5.4** is descoped-with-strikethrough, and **7.1** / **10.1** / **10.4** were each superseded by later subtasks that finished the work (10.2, 10.5, 10.6). The one with real substance left is **7.3**: the search page works, but its **`<500ms` on a <10k-row dataset budget has never been measured**. Worth folding into 12.4, since that is the first time there will be a realistic dataset to measure against.
+
+| # | Item | State | Blocked on |
+|---|---|---|---|
+| **12.1** | Docker image | 🚫 **never built** | A machine with Docker |
+| **12.2** | Staging + prod Supabase | 🚫 not started | Two SEA-region projects |
+| **12.3** | CI on PR | ⚠️ written, dormant | Six repo secrets |
+| **12.4** | Pen-test | 🚫 not started | A live staging deploy |
+
+**12.1 — the build has never run.** Docker is not installed in this environment. The Dockerfile was audited against a real local `npm run build` on 2026-07-28 and one blocker was fixed (`COPY … /app/public` against a `public/` that did not exist — now held open by `public/.gitkeep`). Confirmed present for the runner stage: `.next/standalone/server.js`, `.next/static`, `output: "standalone"`. ⚠️ **Still entirely unproven:** that the image builds end to end, that BusyBox accepts `addgroup/adduser --system --gid`, that the container boots on `PORT=3000`, and that it runs as non-root. Remember the build args — omitting `NEXT_PUBLIC_*` yields a *successful* build and a broken image.
+
+**12.2 — nothing exists yet.** Two projects (SEA/Singapore), then per project: `supabase link` + `db push` (migrations `0001`–`0005`), `seed.sql` on **staging only**, signups disabled, SMTP + redirect URLs, and the first `hq_admin` invited via the service role. ⚠️ When staging exists, the `rls-test-*` users should move there — `rls-test-hq` is currently a real `hq_admin` on the linked dev project.
+
+**12.3 — the cheapest thing left, and the credentials already exist.** `.github/workflows/ci.yml` is written and safe to run today: the `checks` job (typecheck → lint → build → tests) needs no secrets, and the RLS suite auto-skips without them. Adding the six `TEST_*` values — already sitting in your git-ignored `.env.test` — lights up all 20 RLS tests on every PR. The `migrations` job additionally needs `SUPABASE_ACCESS_TOKEN`, `SUPABASE_STAGING_PROJECT_REF`, `SUPABASE_STAGING_DB_PASSWORD`; it is gated to the `staging` branch / manual dispatch and never runs on a PR.
+
+> ⚠️ **CI cannot have run yet — the workflow does not exist on any branch that triggers it.** `ci.yml` fires on `pull_request` and on pushes to `main` / `staging`; but the file is **absent from `origin/main`**, there is **no `staging` branch**, and all work has been direct pushes to `cctv-camera-site-field` with no PR (branch is **15 commits ahead of main**). So the workflow is **unvalidated in practice**, not merely missing secrets — its first real execution will be whenever this branch reaches `main`. *(Checked structurally via git; `gh` is not installed here, so the run history itself was not queried.)*
+>
+> ℹ️ Note for 12.1: the CI `Build` step deliberately uses **dummy** `NEXT_PUBLIC_*` values. That proves the build compiles; it does **not** produce a deployable artifact, for exactly the inlining reason recorded in the Dockerfile.
+
+**12.4 — pen-test**, once staging is up: both roles against every API route and `[id]` PATCH/DELETE, confirming a `country_manager` can neither read nor write another country's data. Largely a live re-run of the 13.34 checks extended to the mutation routes. The 2026-07-28 Phase 10 run already covers the *page* side of this (cross-country dashboard 404s, uuid guards, no `22P02` leakage).
+
+---
 
 ## Latest change (2026-07-28) — **Phase 11 is complete**: the RLS suite runs live, 89/89 passing
 
