@@ -264,7 +264,7 @@ Same two-line pattern each: `const t = await getDictionary();`, then replace lit
   - **The blocker is genuinely cleared** — a `profiles` insert with no `role` now succeeds, which is the exact write `POST /api/users` performs and would have failed against the old `not null` column.
   - **Teardown clean:** probe user deleted (0 orphan profiles), sites back to 5, 0 fixture rows left. ⚠️ **Residue: `audit_log` 64 → 99** (+35), immutable by design.
   - ⚠️ **Still not clicked through in a browser** — a second user signing in, seeing four countries, and creating a third from the Users page. Everything below the UI is proven.
-  - 🐛 **Unrelated finding:** `tkgoh228@gmail.com` is an **orphaned auth user** (no `profiles` row) — it can authenticate but lands on `/no-access`. Pre-existing, not caused by this change. Delete it or give it a profile.
+  - ✅ **Unrelated finding, since closed:** `tkgoh228@gmail.com` was an **orphaned auth user** (no `profiles` row) that could authenticate but landed on `/no-access`. Pre-existing, not caused by this change. **Deleted 2026-07-28** after confirming it held nothing (0 profiles, 0 `created_by` rows, 0 `audit_log` rows as actor; no FK to cascade). Verified after: 1 auth user, 1 profile, **0 orphans in both directions**. ℹ️ It was missed for so long because earlier checks only looked for orphan *profiles*, never the reverse — check both directions.
 - Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`, shared chunk unchanged at 102 kB, `/api/invite` gone and `/api/users` present) · tests **75 passed / 30 skipped** without env, **105 passed / 0 skipped** live.
 
 ---

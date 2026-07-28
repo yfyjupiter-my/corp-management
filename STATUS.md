@@ -34,11 +34,20 @@ skipped** (the RLS suites had never run against this schema before).
 
 - ⚠️ **Residue: `audit_log` grew 64 → 99** (+35) from the probe's and the suites' inserts/deletes.
   Immutable by design (no delete policy), so those rows stay. Every future RLS run adds ~16 more.
-- 🐛 **Unrelated finding worth knowing: there is an orphaned auth user.** `tkgoh228@gmail.com`
-  (`3797a32f…`) exists in `auth.users` with **no `profiles` row**, so it can authenticate but lands
-  on `/no-access`. Pre-existing, not caused by this change — STATUS's earlier "0 orphans" note was
-  about orphan *profiles* (rows without an auth user), which is a different direction. Delete it or
-  give it a profile; it is currently a dead-end account.
+- ✅ **CLOSED — the orphaned auth user was deleted (2026-07-28).** `tkgoh228@gmail.com`
+  (`3797a32f…`) existed in `auth.users` with **no `profiles` row**, so it could authenticate but
+  landed on `/no-access`. Pre-existing, not caused by this change. Deleted via the service role after
+  confirming it held nothing: **0 profile rows, 0 inventory rows authored (`created_by`), 0
+  `audit_log` rows as `actor`** — and no FK to cascade, since `created_by`/`actor` are plain `uuid`
+  columns (only `profiles.user_id` references `auth.users`). Verified after: **1 auth user, 1 profile,
+  matched**, and **0 orphans in *both* directions**. `sites` (5) and `audit_log` (99) unchanged.
+  - ℹ️ **Why it was missed before:** the earlier "0 orphans" checks only looked for orphan *profiles*
+    (a `profiles` row with no auth user). This was the opposite direction — an auth user with no
+    profile — which nothing had ever checked. Worth checking both ways from now on.
+  - ⚠️ **It was a real Gmail address**, created 03:28 and signed in once 23 seconds later — almost
+    certainly a half-finished onboarding via the dashboard's "Add user" without the `profiles`
+    insert. Deletion was confirmed as the intent over granting it a profile. If that person does need
+    access, creating them is now a one-step job from the Users page.
 - ⚠️ **Not yet driven in a browser.** The DB-level contract is proven; the in-app flow (a second user
   signing in, seeing all four countries, and creating a third from the Users page) has not been
   clicked through. That is all that is left of 14.6.
