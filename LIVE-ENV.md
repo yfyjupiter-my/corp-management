@@ -5,9 +5,12 @@
 > against the **existing linked project**, and the tests self-seed a disposable VN fixture rather
 > than relying on a permanent cross-country seed.
 >
-> ✅ **Phase 11 is DONE as of 2026-07-28.** The two test users below exist on the linked project and
-> the suite passes **89/89, 0 skipped**. Credentials live in **`.env.test`** (git-ignored — the
-> pattern had to be *added* to `.gitignore`; `.env` / `.env*.local` do not match `.env.test`).
+> ✅ **Phase 11 is DONE as of 2026-07-28** — the suite was run live against the linked project and
+> passed **89/89, 0 skipped**.
+> ⚠️ **The two test users have since been deleted** (2026-07-28), together with `.env.test`. The
+> linked project now has exactly one auth user: the real `hq_admin`. The suite therefore
+> **auto-skips again** (69 passed / 20 skipped) and will do so until the users are re-created per
+> the prerequisites below. `.gitignore` still lists `.env.test`, so re-creating the file is safe.
 > What remains in this file is Phase 12, which still needs infrastructure.
 
 ---
@@ -30,10 +33,11 @@ Everything is one env contract. Set these six and both suites run; leave them un
 2. **Two test users exist** with the roles above. Create them the way the smokes did — via the service
    role — then put their credentials in the env. They must have a `profiles` row with the right `role`
    / `country_code`, not just an auth user.
-   ✅ **Done on the linked project (2026-07-28):** `rls-test-hq@corp-management.test` (`hq_admin`) and
-   `rls-test-my@corp-management.test` (`country_manager` / MY). ⚠️ The HQ one is a **real `hq_admin`
-   on the real project** with its password in a local file — acceptable for the linked dev project,
-   but when 12.2 stands up production it should exist on **staging only**.
+   ⚠️ **Not currently satisfied.** `rls-test-hq@corp-management.test` (`hq_admin`) and
+   `rls-test-my@corp-management.test` (`country_manager` / MY) were created on 2026-07-28, the suite
+   was run, and **both were deleted the same day** (profiles cascaded; 0 orphans). The reason to
+   recreate them **on staging, not here**: the HQ account is a real `hq_admin` on the real project
+   and its password has to sit in a local file for the tests to sign in. Do this as part of 12.2.
 3. **Auth "allow new users to sign up" stays off** (already set, 2.7) — the test users are invited, not self-signed.
 
 ### What runs, and the residue
@@ -60,6 +64,11 @@ npx vitest run tests/rls-integration.test.ts   # just the new suite
 inserts across every child table and 8 cascade deletes, and teardown left **0** `__RLS11_` rows.
 **Phase 11 is closed.** ⚠️ Each run adds ~16 immutable audit rows; point `TEST_*` at a throwaway
 project if that ever becomes noise.
+
+⚠️ **Since 2026-07-28 the suite skips again** — the two users and `.env.test` were removed, so the
+`TEST_*` env is unset. `npm test` gives **69 passed / 20 skipped**. Recreate the users (step 2 above)
+and the file to run it. The `audit_log` rows that run produced are immutable and stay; their actor
+ids now point at deleted auth users.
 
 Loading the env for a local run (Vitest does not read `.env.test` on its own in this setup):
 

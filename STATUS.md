@@ -2,9 +2,9 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-28 (**Phase 11 complete** — RLS suite run live, 89/89; **Phase 12 is all that remains**, see the summary below) |
+| **Last updated** | 2026-07-28 (**RLS test users removed** from the linked project; Phase 11 stays closed on its live run; **Phase 12 is all that remains**) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
-| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **89 passed / 0 skipped** with `.env.test` loaded (**69 passed, 20 skipped** without it — the suite still self-skips, so CI stays green with no secrets) |
+| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · tests **69 passed / 20 skipped** — the RLS suite self-skips now that `.env.test` is gone (it passed **89/89** on 2026-07-28 while the test users existed) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
@@ -25,9 +25,9 @@ Phase 12 is the **only phase with unstarted work**, and **all of it is infrastru
 
 **12.1 — the build has never run.** Docker is not installed in this environment. The Dockerfile was audited against a real local `npm run build` on 2026-07-28 and one blocker was fixed (`COPY … /app/public` against a `public/` that did not exist — now held open by `public/.gitkeep`). Confirmed present for the runner stage: `.next/standalone/server.js`, `.next/static`, `output: "standalone"`. ⚠️ **Still entirely unproven:** that the image builds end to end, that BusyBox accepts `addgroup/adduser --system --gid`, that the container boots on `PORT=3000`, and that it runs as non-root. Remember the build args — omitting `NEXT_PUBLIC_*` yields a *successful* build and a broken image.
 
-**12.2 — nothing exists yet.** Two projects (SEA/Singapore), then per project: `supabase link` + `db push` (migrations `0001`–`0005`), `seed.sql` on **staging only**, signups disabled, SMTP + redirect URLs, and the first `hq_admin` invited via the service role. ⚠️ When staging exists, the `rls-test-*` users should move there — `rls-test-hq` is currently a real `hq_admin` on the linked dev project.
+**12.2 — nothing exists yet.** Two projects (SEA/Singapore), then per project: `supabase link` + `db push` (migrations `0001`–`0005`), `seed.sql` on **staging only**, signups disabled, SMTP + redirect URLs, and the first `hq_admin` invited via the service role. **Now also carries the `rls-test-*` users:** they were deleted from the linked dev project on 2026-07-28 and should be recreated **on staging**, which is where a test `hq_admin` with a file-stored password belongs.
 
-**12.3 — the cheapest thing left, and the credentials already exist.** `.github/workflows/ci.yml` is written and safe to run today: the `checks` job (typecheck → lint → build → tests) needs no secrets, and the RLS suite auto-skips without them. Adding the six `TEST_*` values — already sitting in your git-ignored `.env.test` — lights up all 20 RLS tests on every PR. The `migrations` job additionally needs `SUPABASE_ACCESS_TOKEN`, `SUPABASE_STAGING_PROJECT_REF`, `SUPABASE_STAGING_DB_PASSWORD`; it is gated to the `staging` branch / manual dispatch and never runs on a PR.
+**12.3 — still the cheapest thing left, but the credentials no longer exist.** `.github/workflows/ci.yml` is written and safe to run today: the `checks` job (typecheck → lint → build → tests) needs no secrets, and the RLS suite auto-skips without them. ⚠️ **The six `TEST_*` values are gone** — `.env.test` was deleted with the test users, so lighting up the 20 RLS tests on PRs now depends on 12.2 first (recreate the users on staging, then add the secrets). The `migrations` job additionally needs `SUPABASE_ACCESS_TOKEN`, `SUPABASE_STAGING_PROJECT_REF`, `SUPABASE_STAGING_DB_PASSWORD`; it is gated to the `staging` branch / manual dispatch and never runs on a PR.
 
 > ⚠️ **CI cannot have run yet — the workflow does not exist on any branch that triggers it.** `ci.yml` fires on `pull_request` and on pushes to `main` / `staging`; but the file is **absent from `origin/main`**, there is **no `staging` branch**, and all work has been direct pushes to `cctv-camera-site-field` with no PR (branch is **15 commits ahead of main**). So the workflow is **unvalidated in practice**, not merely missing secrets — its first real execution will be whenever this branch reaches `main`. *(Checked structurally via git; `gh` is not installed here, so the run history itself was not queried.)*
 >
@@ -37,7 +37,18 @@ Phase 12 is the **only phase with unstarted work**, and **all of it is infrastru
 
 ---
 
-## Latest change (2026-07-28) — **Phase 11 is complete**: the RLS suite runs live, 89/89 passing
+## Latest change (2026-07-28) — **RLS test users removed** from the linked project
+
+Both accounts created for the Phase 11 run were deleted via the service role, closing the standing warning that a test `hq_admin` with a file-stored password was live on the real project.
+
+- **Deleted:** `rls-test-hq@corp-management.test` (`hq_admin`) and `rls-test-my@corp-management.test` (`country_manager` / MY). Verified after: **1 auth user, 1 profile** (the real `chris.goh@` `hq_admin`), **0 orphan profiles** — the `profiles` FK cascade did its job, so no manual cleanup was needed.
+- **`.env.test` deleted too.** It held nothing but the passwords for those two accounts. `.gitignore` keeps its entry, so recreating the file later is still safe.
+- ⚠️ **The RLS suite auto-skips again — this is the intended trade, not a regression.** `npm test` is back to **69 passed / 20 skipped**. Phase 11 stays closed on the strength of the 2026-07-28 live run (audit-trail evidence below); re-running it means recreating both users first, per `LIVE-ENV.md` §11.
+- ⚠️ **Knock-on for 12.3:** the six `TEST_*` secrets can no longer be copied out of a local file, so enabling the RLS job in CI is now downstream of 12.2 (recreate the users on **staging**). `LIVE-ENV.md` and `TASKS.md` 11.1 updated to match.
+- ℹ️ **The audit rows from that run stay.** `audit_log` has no delete policy by design, so its ~16 rows keep actor ids pointing at now-deleted auth users. Harmless, but worth knowing before anyone reads the log and wonders who those users were.
+- **No source changed** — docs only. Build health above verified: tests **69 passed, 20 skipped**.
+
+## Earlier change (2026-07-28) — **Phase 11 is complete**: the RLS suite runs live, 89/89 passing
 
 The 20 RLS tests written on 2026-07-24 had never been executed. They now run against the linked Supabase project and **all pass** — **11.1, 11.2, 11.3 and 11.5 are closed**, and with 11.4/11.6 already done, **Phase 11 is finished**.
 
