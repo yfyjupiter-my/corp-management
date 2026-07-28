@@ -2,13 +2,24 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-28 (Phase 10 driven live — 3/3 checks passed) |
+| **Last updated** | 2026-07-28 (Phase 10 live checks passed; Dockerfile blocker found + fixed, 12.1 still unrun) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ · unit tests **69 passed**, **20 RLS integration skipped** (need live Supabase env) |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
 
-## Latest change (2026-07-28) — **Phase 10 driven live: 3/3 checks passed**
+## Latest change (2026-07-28) — 12.1: **`docker build` could not have succeeded**; blocker fixed, build still unrun
+
+🚫 **Docker is not installed in this environment** (same as the 2026-07-23 note about `supabase db reset`), so `docker build` was **not run** and **12.1 stays open**. Instead every assumption the `Dockerfile` makes was verified against a real local `npm run build`, which turned up a blocking defect:
+
+- 🐛 **`COPY --from=builder /app/public ./public` would have failed the build.** There is no `public/` directory — nothing tracked in git, nothing on disk — and Docker fails a `COPY` whose source does not exist. Next does not create it, so this was never going to work; the line is inherited from the standard Next.js template, which assumes `create-next-app`'s `public/`. Fixed by adding **`public/.gitkeep`** (with the reason in the file) rather than dropping the `COPY`, so real static assets can be added later without re-learning this.
+- ⚠️ **A missing build arg produces a silently broken image, not a failed build.** Confirmed empirically: the Supabase URL from `.env.local` is **inlined into the client chunks** (found in 3 `page-*.js` files). Every route is dynamic (`ƒ`) and each read is a deferred `process.env.X!`, so a build with **no** `--build-arg` still *succeeds* — and ships a browser-side Supabase client wired to `undefined`. **Runtime env cannot repair it; it needs a rebuild.** The `Dockerfile` comment now says so explicitly, because "provide them in CI" understated the failure mode.
+- ✅ **Everything else the runner stage copies is real**, checked against a clean `rm -rf .next && npm run build`: `.next/standalone/server.js` exists (so `CMD ["node","server.js"]` is right), `.next/static` exists, and `output: "standalone"` is correctly enabled in `next.config.ts` (gated off under `VERCEL`).
+- ✅ `.dockerignore` already excludes `node_modules`, `.next` and `.env*.local` — so the stale-`.next` trap below cannot ride into an image.
+- **Still unverified, and only Docker can settle it:** that the image actually builds end-to-end, that `addgroup/adduser --system --gid` behave on BusyBox, that the container boots on `PORT=3000`, and that it runs as non-root.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **69 passed**, 20 RLS skipped.
+
+## Earlier change (2026-07-28) — **Phase 10 driven live: 3/3 checks passed**
 
 The three checks Phase 10 left outstanding ("none of Phase 10 has been driven live") were run against the linked Supabase project in a real browser. **All three passed; no defect found in the Phase 10 work.** Run as a throwaway `country_manager` seeded via the service role, deleted afterwards.
 

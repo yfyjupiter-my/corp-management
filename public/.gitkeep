@@ -1,0 +1,7 @@
+# This directory is intentionally kept.
+#
+# The Dockerfile runs `COPY --from=builder /app/public ./public`, and Docker
+# fails the build when a COPY source does not exist. The app currently ships no
+# static assets, so without this placeholder `public/` would not exist and
+# `docker build` would fail at that line. Next.js also serves anything put here
+# at the site root, so drop real static assets in alongside it.
