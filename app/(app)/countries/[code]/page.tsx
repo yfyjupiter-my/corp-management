@@ -17,7 +17,6 @@ import { isStale, formatDate, daysUntil, orDash } from "@/lib/utils/format";
 import type { CameraStatus } from "@/lib/constants/enums";
 import { getDictionary } from "@/lib/i18n/server";
 import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
-import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -46,14 +45,9 @@ export default async function CountryPage({
   const { code } = await params;
   if (!isCountryCode(code)) notFound();
 
-  // 10.7: scope by role, mirroring the Sidebar and `/sites`. RLS already stops
-  // the data leaking, but without this a country manager who types
-  // `/countries/TH` gets a fully-drawn *empty* Thailand dashboard, which reads
-  // as "Thailand has no assets" rather than "not your country". 404 is the
-  // honest answer, and it matches how a cross-country record id behaves.
-  const user = await getCurrentUser();
-  if (user?.role !== "hq_admin" && user?.countryCode !== code) notFound();
-
+  // 10.7's role check is gone with the roles (0006_drop_roles.sql): every
+  // authenticated user may open any country dashboard. The `isCountryCode`
+  // guard above is still what keeps an unknown code from reaching the queries.
   const t = await getDictionary();
   const countryName = t.countries[code];
   const supabase = await createClient();

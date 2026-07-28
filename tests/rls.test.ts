@@ -1,28 +1,32 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * RLS isolation tests (finalize.md — Testing).
+ * RLS access-model tests.
  *
- * Seeds two users — one hq_admin, one Malaysia country_manager — and asserts the
- * country manager can never read or write another country's rows, via the DB
- * (not just the UI). Requires a local Supabase (`supabase start`) and these env
- * vars for two pre-created test users:
+ * ⚠️ **This file used to assert cross-country isolation.** It no longer does,
+ * because 0006_drop_roles.sql removed the role system: RLS is now only an
+ * AUTHENTICATION boundary. What is left to verify is exactly that —
+ *
+ *   1. a signed-in user reads and writes **every** country, and
+ *   2. the **anon** key still reads and writes **nothing**.
+ *
+ * (2) is the assertion that actually earns its keep now. Deny-by-default is the
+ * only remaining guarantee, and it rests entirely on `auth.uid() is not null`
+ * inside every policy — a single mis-written policy would open the whole
+ * registry to the public anon key, which ships in the browser bundle.
+ *
+ * Requires a live Supabase project and these env vars for one test user
+ * (skipped automatically when absent, so `npm test` stays green without a DB):
  *
  *   TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY
- *   TEST_HQ_EMAIL, TEST_HQ_PASSWORD
- *   TEST_MY_MANAGER_EMAIL, TEST_MY_MANAGER_PASSWORD
- *
- * These are integration tests; skipped automatically when env is absent so the
- * default `npm test` stays green in CI without a database.
+ *   TEST_USER_EMAIL, TEST_USER_PASSWORD
  */
 const url = process.env.TEST_SUPABASE_URL;
 const anon = process.env.TEST_SUPABASE_ANON_KEY;
-const hasEnv =
-  !!url &&
-  !!anon &&
-  !!process.env.TEST_HQ_EMAIL &&
-  !!process.env.TEST_MY_MANAGER_EMAIL;
+const hasEnv = !!url && !!anon && !!process.env.TEST_USER_EMAIL;
+
+const TAG = `__RLS_ACCESS_${Date.now()}`;
 
 async function signedInClient(email: string, password: string): Promise<SupabaseClient> {
   const client = createClient(url!, anon!, {
@@ -33,48 +37,97 @@ async function signedInClient(email: string, password: string): Promise<Supabase
   return client;
 }
 
-describe.skipIf(!hasEnv)("RLS cross-country isolation", () => {
-  let hq: SupabaseClient;
-  let myManager: SupabaseClient;
+function anonClient(): SupabaseClient {
+  return createClient(url!, anon!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+describe.skipIf(!hasEnv)("RLS access model (flat: authenticated = full CRUD)", () => {
+  let user: SupabaseClient;
+  let guest: SupabaseClient;
 
   beforeAll(async () => {
-    hq = await signedInClient(
-      process.env.TEST_HQ_EMAIL!,
-      process.env.TEST_HQ_PASSWORD!,
+    user = await signedInClient(
+      process.env.TEST_USER_EMAIL!,
+      process.env.TEST_USER_PASSWORD!,
     );
-    myManager = await signedInClient(
-      process.env.TEST_MY_MANAGER_EMAIL!,
-      process.env.TEST_MY_MANAGER_PASSWORD!,
-    );
+    guest = anonClient();
   });
 
-  it("HQ admin can read sites in every country", async () => {
-    const { data, error } = await hq.from("sites").select("country_code");
+  afterAll(async () => {
+    // Sweep this run's fixtures plus any orphans from an interrupted run.
+    if (user) await user.from("sites").delete().like("name", "__RLS\\_ACCESS\\_%");
+  });
+
+  it("an authenticated user can read sites", async () => {
+    const { error } = await user.from("sites").select("country_code");
     expect(error).toBeNull();
-    const countries = new Set((data ?? []).map((r) => r.country_code));
-    expect(countries.size).toBeGreaterThan(0);
   });
 
-  it("MY manager only sees Malaysia sites", async () => {
-    const { data, error } = await myManager.from("sites").select("country_code");
+  // The inverse of the old "MY manager cannot insert a VN site" test: a user
+  // with no country of their own may now write into any of the four.
+  it("an authenticated user can create a site in every country", async () => {
+    for (const country of ["VN", "TH", "ID", "MY"] as const) {
+      const { data, error } = await user
+        .from("sites")
+        .insert({
+          country_code: country,
+          name: `${TAG} ${country}`,
+          timezone: "Asia/Singapore",
+          currency: "USD",
+        })
+        .select("id, country_code")
+        .single();
+      expect(error, `insert into ${country}`).toBeNull();
+      expect(data?.country_code).toBe(country);
+    }
+  });
+
+  it("an authenticated user can read the audit log", async () => {
+    const { error } = await user.from("audit_log").select("id").limit(1);
     expect(error).toBeNull();
-    expect((data ?? []).every((r) => r.country_code === "MY")).toBe(true);
   });
 
-  it("MY manager cannot insert a site in another country", async () => {
-    const { error } = await myManager.from("sites").insert({
-      country_code: "VN",
-      name: "Illegal Hanoi site",
-      timezone: "Asia/Ho_Chi_Minh",
-      currency: "VND",
+  // ── deny-by-default: the anon key is the only boundary left ────────────────
+  describe("anon is denied", () => {
+    const tables = [
+      "profiles",
+      "sites",
+      "isp_circuits",
+      "network_devices",
+      "ip_schemes",
+      "vlans",
+      "vpn_links",
+      "cctv_recorders",
+      "cctv_cameras",
+      "maintenance_logs",
+      "audit_log",
+      "country_settings",
+    ];
+
+    for (const table of tables) {
+      it(`anon reads no rows from ${table}`, async () => {
+        const { data, error } = await guest.from(table).select("*").limit(1);
+        // A policy that never matches yields 0 rows and no error; an outright
+        // denial yields an error. Either is a pass — rows are not.
+        expect(error ? true : (data ?? []).length === 0).toBe(true);
+      });
+    }
+
+    it("anon cannot insert a site", async () => {
+      const { error } = await guest.from("sites").insert({
+        country_code: "VN",
+        name: `${TAG} anon`,
+        timezone: "Asia/Ho_Chi_Minh",
+        currency: "VND",
+      });
+      expect(error).not.toBeNull();
     });
-    // Blocked by the WITH CHECK clause → RLS violation.
-    expect(error).not.toBeNull();
-  });
 
-  it("MY manager cannot read the audit log", async () => {
-    const { data, error } = await myManager.from("audit_log").select("id");
-    // No select policy for non-HQ → empty result (or error), never rows.
-    expect(error ? true : (data ?? []).length === 0).toBe(true);
+    it("anon search returns nothing", async () => {
+      const { data, error } = await guest.rpc("search_registry", { q: TAG });
+      expect(error ? true : (data ?? []).length === 0).toBe(true);
+    });
   });
 });

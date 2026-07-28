@@ -7,6 +7,13 @@
 | **Date** | 2026-07-07 |
 | **Status legend** | `[ ]` todo · `[~]` scaffolded / partial · `[x]` done |
 
+> 🔴 **2026-07-28 — Phase 14 removed the role system.** `0006_drop_roles.sql` drops
+> `hq_admin` / `country_manager`, so **every authenticated user has full CRUD on all four
+> countries**, including the audit log and user creation. Items below that describe role-based
+> behaviour (2.4, 2.7, 9.1–9.6, 10.7, 11.1–11.5, 12.4, 13.34) stay ticked as a record of what was
+> built, but each carries a ⚠️ amendment where the role removal superseded it. **Phase 14 is the
+> current contract; read it before trusting an authorization claim anywhere above it.**
+>
 > Update the checkboxes as work completes. Ignore `wireframe.html`, `themes.html`, `mockup.html`.
 > Definition of done for any data-facing task: shared Zod validation runs, RLS scopes the query, and the change is visible in the relevant list/dashboard.
 >
@@ -43,8 +50,8 @@
 
 - [x] **2.1** Supabase clients: `createBrowserClient`, `createServerClient` (cookie/JWT → RLS), `createAdminClient` (service role, invite route only). — verified 2026-07-16: `lib/supabase/{client,server,admin}.ts`; admin server-only with missing-key guard + BUS-3 note.
 - [x] **2.2** Middleware refreshes session + gates `/app/**` (`middleware.ts`, `lib/supabase/middleware.ts`). — verified: auth-only gate (RLS is authz), recovery-route allowlist.
-- [x] **2.3** RLS helper fns `current_role_is_hq()`, `current_country()` — `SECURITY DEFINER`, `stable`, read `profiles` by `auth.uid()`. — verified `0002:9–24` (+ `set search_path = public`).
-- [x] **2.4** RLS policies (deny-by-default, RLS enabled on every table): `sites` by country; child tables scoped via parent `site_id`; `cctv_cameras` via recorder→site; `audit_log` select for `hq_admin` only, no insert/update/delete policies (`0002_rls.sql`). — verified: RLS on all 12 tables; audit has select-only policy.
+- [x] ~~**2.3** RLS helper fns `current_role_is_hq()`, `current_country()`~~ — **both dropped by 14.1.**  Original: `current_role_is_hq()`, `current_country()` — `SECURITY DEFINER`, `stable`, read `profiles` by `auth.uid()`. — verified `0002:9–24` (+ `set search_path = public`).
+- [x] **2.4** RLS policies (deny-by-default, RLS enabled on every table): `sites` by country; child tables scoped via parent `site_id`; `cctv_cameras` via recorder→site; `audit_log` select for `hq_admin` only, no insert/update/delete policies (`0002_rls.sql`). — verified: RLS on all 12 tables; audit has select-only policy. ⚠️ **Superseded by 14.1** (`0006_drop_roles.sql`): all of these policies were dropped and replaced with `auth.uid() is not null`. RLS is still enabled on all 12 tables and `audit_log` is still select-only, but the country scoping is gone.
 - [x] **2.5** Audit: `SECURITY DEFINER` trigger writing `actor/action/table_name/record_id/diff(jsonb)` on insert/update/delete (`0003_audit.sql`). — verified: changed-keys-only diff on UPDATE, applied to 9 tables.
 - [x] **2.6** Login flow end-to-end: `(auth)/login` form → `auth/callback` → redirect to dashboard; invalid creds handled. — verified: `LoginForm` (`signInWithPassword`, error surfaced, `redirectedFrom`), `auth/callback/route.ts` (code exchange, `safeInternalPath`). Confirmed live in 0.7b.
 - [x] **2.7** Invite-only confirmed: public signup disabled in Supabase Auth settings (document in `README.md`). — confirmed 2026-07-16: "Allow new users to sign up" turned off in the hosted dashboard; README documents the toggle + redirect URL setup.
@@ -98,14 +105,17 @@
 - [x] **8.2** Query `isp_circuits.contract_end` + `network_devices.warranty_end` within 30/60/90 window, sorted asc, filterable by country. Country resolved through parent site (circuit/device → `site_id` → `country_code`); RLS-scoped queries + ROB-5 `.error` guard degrades to a "temporarily unavailable" state. — `renewals/page.tsx`
 - [x] **8.3** Window selector + country filter UI wired. Window pills (30/60/90) and country pills (HQ sees All + 4 codes; a country manager sees only their own) both preserve the other filter via `withCountry()`; a Country column added to the table. — `renewals/page.tsx`
 
-## Phase 9 — Roles, audit view & user management (Story 4) — ✅ done
+## Phase 9 — Roles, audit view & user management (Story 4) — ✅ done, then largely superseded by Phase 14
 
-- [x] **9.1** Users page + `InviteForm` — HQ-admin-only (redirect-gated), profiles list (name/role/country/added) + invite panel. — `users/page.tsx`, `users/InviteForm.tsx`
-- [x] **9.2** `POST /api/invite` using `createAdminClient` (service role, server-only) — assigns `role` + `country_code`, invite email + profile insert with auth-user rollback on failure. — `api/invite/route.ts`
-- [x] **9.3** Invite route enforces HQ-admin-only (`actor?.role !== "hq_admin"` → 403) + `inviteUserSchema.safeParse` validation; writes an explicit `audit_log` entry for the acting admin (BUS-2). — `api/invite/route.ts`
-- [x] **9.4** Audit log page (`audit/page.tsx`) — HQ-admin-only, redirect-gated.
-- [x] **9.5** Audit view: HQ-admin-only, immutable list of actor/action/table/record/**diff**/time, **paginated** (50/page, `?page=N`, exact count + Newer/Older links). Diff rendered via expandable `DiffCell` (changed-field names inline, raw JSON on expand); actor UUIDs resolved to profile names on the visible page; `.error` guard degrades to "temporarily unavailable". — `audit/page.tsx`, `audit/DiffCell.tsx`
-- [x] **9.6** UI hides actions a user can't perform (never relied on for security — RLS is source of truth): sidebar hides the Administration group (Users/Audit) for non-HQ (`Sidebar.tsx` `isHq`); both admin pages redirect non-HQ to `/dashboard`; Countries nav scoped to the manager's own country. Country managers' create/edit/verify/archive stay visible (RLS permits within their country).
+> ⚠️ **Read Phase 14 first.** Every "HQ-admin-only" gate below was removed on 2026-07-28, and the
+> invite flow was replaced by direct user creation. The items stay as a record of what was built.
+
+- [x] **9.1** Users page + `InviteForm` — HQ-admin-only (redirect-gated), profiles list (name/role/country/added) + invite panel. — `users/page.tsx`, `users/InviteForm.tsx`. ⚠️ **Superseded by 14.3:** `InviteForm` deleted, redirect gate removed, Role/Country columns dropped.
+- [x] **9.2** `POST /api/invite` using `createAdminClient` (service role, server-only) — assigns `role` + `country_code`, invite email + profile insert with auth-user rollback on failure. — `api/invite/route.ts`. ⚠️ **Route deleted by 14.3** → `POST /api/users`. The service-role client, the rollback and the BUS-2 audit write all carried over.
+- [x] **9.3** Invite route enforces HQ-admin-only (`actor?.role !== "hq_admin"` → 403) + `inviteUserSchema.safeParse` validation; writes an explicit `audit_log` entry for the acting admin (BUS-2). — `api/invite/route.ts`. ⚠️ **Superseded by 14.3:** the check is now `if (!actor) → 403`. The BUS-2 audit write stays.
+- [x] **9.4** Audit log page (`audit/page.tsx`) — HQ-admin-only, redirect-gated. ⚠️ **Gate removed by 14.4** — readable by any authenticated user.
+- [x] **9.5** Audit view: HQ-admin-only, immutable list of actor/action/table/record/**diff**/time, **paginated** (50/page, `?page=N`, exact count + Newer/Older links). Diff rendered via expandable `DiffCell` (changed-field names inline, raw JSON on expand); actor UUIDs resolved to profile names on the visible page; `.error` guard degrades to "temporarily unavailable". — `audit/page.tsx`, `audit/DiffCell.tsx`. ⚠️ No longer HQ-only; **still immutable** (select-only policy, unchanged by 14.1).
+- [x] ~~**9.6** UI hides actions a user can't perform~~ — **void as of 14.4.** There are no per-role actions left to hide: the Administration group, the Countries nav and every module render identically for everyone. Original: sidebar hid Administration for non-HQ, both admin pages redirected non-HQ, Countries nav was scoped to the manager's country.
 
 ## Phase 10 — Cross-cutting concerns
 
@@ -119,6 +129,14 @@
 
 ## Phase 11 — Testing & QA
 
+> 🔴 **11.1 / 11.2 / 11.3 / 11.5 were rewritten by 14.5 and must be re-run.** They asserted
+> cross-country isolation, which `0006_drop_roles.sql` removed. The 2026-07-28 live pass (89/89)
+> validated assertions that no longer exist, so it is **not** evidence for the current suites. The
+> new contract: a signed-in user CRUDs every country, `audit_log` stays immutable, and **`anon`
+> reads nothing from any of the 12 tables** — that last block is now the only security boundary RLS
+> enforces. Env shrank from six `TEST_*` vars to four. Boxes below stay ticked for the *code*; the
+> **live run is outstanding** and tracked in 14.6.
+
 - [x] **11.1** RLS integration tests with two seeded users (1 `hq_admin`, 1 `country_manager` MY) asserting cross-country returns empty/denied (`tests/rls.test.ts`). **Run live 2026-07-28 — 4/4 passed.** ⚠️ **The two users (`rls-test-hq@` / `rls-test-my@corp-management.test`) were deleted from the linked project on 2026-07-28, along with `.env.test`** — the suite is back to auto-skipping. The task stays closed on the strength of that run; re-running it (locally or in CI) means re-creating both users first, per `LIVE-ENV.md` §11.
 - [x] **11.2** Extend RLS tests to child tables (2026-07-24; **run live 2026-07-28 — passed**). `tests/rls-integration.test.ts` covers circuits, devices, ip/vlan, vpn, recorders and cameras. Self-seeds a `__RLS11_…` VN fixture as HQ (one row per table) so "MY manager sees none of these" is paired with an HQ read proving the row exists — real isolation, not an empty table. Auto-skips without the `TEST_*` env (see `LIVE-ENV.md`). *(maintenance_logs was descoped 2026-07-22, so no test.)*
 - [x] **11.3** Audit-log immutability test (2026-07-24; **run live 2026-07-28 — passed**), in the same file. Both HQ and MY manager attempt `update` + `delete` on an `audit_log` row; each assertion **re-reads through HQ** to confirm the row is unchanged, because a missing UPDATE/DELETE policy makes PostgREST return 0 rows and *no error* (the 13.34 gotcha) — "no error" alone would prove nothing.
@@ -131,7 +149,7 @@
 - [ ] **12.1** `docker build` produces a runnable standalone image; container starts on `PORT=3000` as non-root. **Still open — Docker is not installed in this environment, so the build has never been run.** Attempted 2026-07-28; instead the Dockerfile's assumptions were checked against a real local `npm run build`, which found a blocker: 🐛 `COPY --from=builder /app/public ./public` would have **failed the build**, because no `public/` directory exists (Docker fails a `COPY` with a missing source, and Next never creates one). Fixed with **`public/.gitkeep`**. ⚠️ Also documented in the Dockerfile: omitting the `NEXT_PUBLIC_*` **build args does not fail the build** — the values are inlined into the client bundle (verified: the URL appears in 3 `page-*.js` chunks), every route is dynamic, so the build succeeds and ships an image whose browser-side Supabase client is `undefined`, unfixable without a rebuild. Verified present for the runner stage: `.next/standalone/server.js`, `.next/static`, `output: "standalone"`. **Left to prove under Docker:** the build itself, BusyBox `addgroup/adduser --system --gid`, boot on `PORT=3000`, and non-root.
 - [ ] **12.2** Staging + production Supabase projects (SEA/Singapore region); migrations promoted via CI.
 - [~] **12.3** CI (2026-07-24) — **`.github/workflows/ci.yml` written, awaiting repo secrets.** `checks` job runs typecheck/lint/build/unit on every PR with no secrets; the RLS suite lights up when the six `TEST_*` secrets are added (it auto-skips otherwise, so the workflow is safe now). Migrations are applied by a **separate `migrations` job gated to `staging` / manual dispatch** — deliberately *not* on PRs, which would mutate the shared project. Secrets needed listed in `LIVE-ENV.md` §12.3.
-- [ ] **12.4** Pre-launch manual pen-test of API routes for cross-country access (finalize risk mitigation).
+- [ ] **12.4** Pre-launch manual pen-test of API routes. 🔴 **Rescoped by Phase 14** — "can a `country_manager` reach another country's data" is void, since cross-country access is now intended. What must be proved instead: (a) every route rejects an unauthenticated request and a forged bearer token; (b) `POST /api/users` needs a session and its rate limit holds — every user can mint accounts now, so the throttle is the only bound on the auth table; (c) `audit_log` still cannot be written or altered through PostgREST, re-reading each attempt because a missing policy returns 0 rows and *no error*; (d) `anon` reads 0 rows from all 12 tables, live. Full scope in `LIVE-ENV.md` §12.4.
 
 ## Phase 13 — Internationalization: EN / 繁體中文 switch
 
@@ -213,7 +231,41 @@ Same two-line pattern each: `const t = await getDictionary();`, then replace lit
   7. No `audit_log` rows written by any of the above (`profiles` carries no audit trigger — confirmed against the trigger loop in `0003_audit.sql`, which covers 9 inventory tables only).
 - [x] **13.35** `STATUS.md` updated and the Phase 13 boxes ticked (2026-07-23). *(This item appeared twice — the duplicate was removed 2026-07-24.)*
 
+> ⚠️ **13.34 assertion 4 is reversed by 14.1.** "A direct `update profiles set locale = …` is a
+> no-op, so `set_my_locale()` is the only write path" no longer holds: `profiles` now has an
+> authenticated write policy. The escalation that made the RPC necessary is also gone — there is no
+> `role` column to escalate into. The RPC still works and is still what the app calls.
+
 **Explicit decisions (reversible):** dates stay `en-GB` and money `en-US` in both locales — they render as data in mono columns, and localizing would touch ~40 call sites for little gain. The switch also appears on the auth pages (13.17), not only the Topbar as literally asked.
+
+---
+
+## Phase 14 — Remove roles: direct user creation, flat CRUD (2026-07-28)
+
+> **Request:** remove "invite a user" from the Users & roles module; an admin creates a user directly
+> with no role/permission to assign; **all users can CRUD**.
+>
+> 🔴 **Security consequence, stated plainly and accepted:** cross-country isolation is gone. Every
+> authenticated user reads and writes all four countries' data, reads the audit log, and can create
+> further users. RLS stays enabled on all 12 tables but now only distinguishes *signed in* from
+> *anon* — it is an authentication boundary, not an authorization one. This runs against the PRD's
+> country-scoping story; it was requested, re-confirmed, and implemented as asked.
+
+- [x] **14.1** `supabase/migrations/0006_drop_roles.sql` — drop all 25 role-dependent policies; drop `current_role_is_hq()`, `current_country()` and `can_access_maintenance_target()`; recreate flat `auth.uid() is not null` select/write policies on the 11 mutable tables; `audit_log` gets a select-only policy and **stays immutable** (no insert/update/delete policy — writes still arrive via the `SECURITY DEFINER` trigger in 0003). Then `alter table profiles drop column role, country_code` and `drop type user_role`. `site_country(uuid)` kept (role-free). **`sites.country_code` untouched** — that is data (where a site is), not authorization; only the *profile's* country went away. ✅ **Applied to the linked project 2026-07-28** (`supabase db push`) and verified — see 14.6.
+- [x] **14.2** TypeScript schema/auth surface — `USER_ROLES`/`UserRole` removed from `lib/constants/enums.ts`; `CurrentUser` narrowed to `{ id, email, fullName, locale }` and `isHqAdmin()` deleted (`lib/auth.ts`); `profiles` Row/Insert trimmed in `lib/types/database.ts`.
+- [x] **14.3** Invite → direct create. **Deleted** `app/api/invite/route.ts` and `users/InviteForm.tsx`. **New** `app/api/users/route.ts` (`admin.auth.admin.createUser({ email_confirm: true })` — no invite mail, so **no SMTP dependency**) and `users/CreateUserForm.tsx` (name / email / password; no role or country picker). `inviteUserSchema` → `createUserSchema` (`email`, `full_name`, `password` 8–72). Carried over from 9.2/9.3 unchanged: the service-role client, the auth-user rollback on a failed profile insert, and the BUS-2 explicit audit write. `inviteLimiter` → `createUserLimiter`, and its rationale changed: it used to bound email sending, now it bounds account creation by *any* user.
+  - ⚠️ **72-char password cap is deliberate** — bcrypt truncates past 72 bytes, so a longer value would have its tail silently ignored and the user could not reproduce it from what they typed.
+- [x] **14.4** UI de-roling — `Sidebar` shows all four countries and the Administration group to everyone; `Topbar` **lost its role pill entirely** (and with it its `user` prop) since it had nothing left to report; `UserMenu` shows the email in place of the role line. Role branches removed from `dashboard`, `sites`, `renewals`, `countries/[code]` (its 10.7 `notFound()` on a foreign country is gone) and `audit` (redirect gate removed). Dictionary: `nav.users` "Users & roles" → "Users", `users` namespace rebuilt around create-not-invite, and 8 dead keys dropped from **both** locales (`topbar.hqAdmin`/`manager`/`allCountries`, `dashboard.subtitleCountry`, `validation.countryRequired`/`countryForbidden`, `errors.inviteFailed`); new `validation.passwordMin` + `errors.createUserFailed`.
+- [x] **14.5** Tests rewritten to the new contract. `validation.test.ts`: the role/country coherence block → 6 `createUserSchema` tests, including one asserting Zod **strips** a `role`/`country_code` sent by a stale client. `rls.test.ts`: cross-country isolation → a signed-in user creating a site in **all four** countries, plus a **12-table `anon` denial sweep** — with roles gone, deny-by-default for the anon key (which ships in the browser bundle) is the only boundary left, so that sweep is the schema's security regression test. `rls-integration.test.ts`: child-table isolation → child-table CRUD through both parent paths, audit immutability retained (still re-reading after each blocked write, per the 13.34 gotcha). CI secrets six → four (`TEST_USER_EMAIL`/`_PASSWORD` replace the HQ/manager pair).
+- [x] **14.6** ✅ **Applied and verified live 2026-07-28.** `supabase db push` applied `0006` to the linked project (`0001`–`0005` were already there). Verified rather than assumed — 22 schema/boundary assertions plus **tests 105 passed / 0 skipped**, which is the first time the RLS suites have run against this schema, closing the 11.1/11.2/11.3/11.5 re-run.
+  - **Schema:** `profiles` is now `user_id, full_name, created_at, locale`; the one existing row survived the drop with its `locale`; `current_role_is_hq()` / `current_country()` are gone; **`sites.country_code` intact** across all 5 sites (MY/TH/VN/ID).
+  - **The boundary that matters:** `anon` reads **0 rows from all 12 tables**, cannot insert a site (`new row violates row-level security policy`), and gets nothing from `search_registry`.
+  - **Flat CRUD confirmed:** a throwaway user with no role and no country created a site in **all four** countries and read `audit_log`; its attempt to update an audit row was a **no-op with the row re-read unchanged**, so immutability survived intact.
+  - **The blocker is genuinely cleared** — a `profiles` insert with no `role` now succeeds, which is the exact write `POST /api/users` performs and would have failed against the old `not null` column.
+  - **Teardown clean:** probe user deleted (0 orphan profiles), sites back to 5, 0 fixture rows left. ⚠️ **Residue: `audit_log` 64 → 99** (+35), immutable by design.
+  - ⚠️ **Still not clicked through in a browser** — a second user signing in, seeing four countries, and creating a third from the Users page. Everything below the UI is proven.
+  - 🐛 **Unrelated finding:** `tkgoh228@gmail.com` is an **orphaned auth user** (no `profiles` row) — it can authenticate but lands on `/no-access`. Pre-existing, not caused by this change. Delete it or give it a profile.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`, shared chunk unchanged at 102 kB, `/api/invite` gone and `/api/users` present) · tests **75 passed / 30 skipped** without env, **105 passed / 0 skipped** live.
 
 ---
 

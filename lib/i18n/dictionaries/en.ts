@@ -45,7 +45,7 @@ export const en = {
     network: "Network",
     cctv: "CCTV",
     renewals: "Renewals",
-    users: "Users & roles",
+    users: "Users",
     audit: "Audit log",
   },
 
@@ -62,10 +62,6 @@ export const en = {
 
   topbar: {
     searchPlaceholder: "Search sites, hostnames, IPs, circuit IDs, cameras…",
-    /** Role pill / user menu. `manager` is prefixed with the country code. */
-    hqAdmin: "HQ Admin",
-    manager: "Manager",
-    allCountries: "all countries",
     language: "Language",
   },
 
@@ -98,7 +94,6 @@ export const en = {
     eyebrow: "Overview",
     title: "Registry dashboard",
     subtitleAll: "Infrastructure health across all four SEA offices.",
-    subtitleCountry: (country: string) => `Infrastructure health for ${country}.`,
     kpiActiveSites: "Active sites",
     kpiCamerasOnline: "Cameras online",
     kpiCamerasFaulty: "Cameras faulty/offline",
@@ -297,27 +292,21 @@ export const en = {
   },
 
   users: {
-    title: "Users & roles",
-    subtitle: "Invite users and assign a role and country. Public sign-up is disabled.",
+    title: "Users",
+    subtitle: "Create user accounts. Every user has the same full access. Public sign-up is disabled.",
     userCount: (n: number) => `${n} user(s)`,
     none: "No users yet.",
     colName: "Name",
-    colRole: "Role",
-    colCountry: "Country",
     colAdded: "Added",
-    roleHqAdmin: "HQ Admin",
-    roleCountryManager: "Country Manager",
-    allCountries: "ALL",
-    invitePanel: "Invite a user",
+    createPanel: "Create a user",
     fieldFullName: "Full name",
     fieldEmail: "Email",
-    fieldRole: "Role",
-    fieldCountry: "Country",
-    selectPlaceholder: "Select…",
-    sending: "Sending…",
-    sendInvite: "Send invite",
-    inviteFailed: "Failed to send invite.",
-    inviteSent: "Invite sent. The user will set their password from the email link.",
+    fieldPassword: "Password",
+    passwordHelp: "At least 8 characters. Share it with the user — they can change it via “Forgot password?”.",
+    creating: "Creating…",
+    createUser: "Create user",
+    createFailed: "Failed to create the user.",
+    created: "User created. They can sign in with this email and password now.",
   },
 
   search: {
@@ -549,8 +538,7 @@ export const en = {
     provider: "Provider is required",
     label: "Label is required",
     fullName: "Name is required",
-    countryRequired: "Country managers must be assigned a country",
-    countryForbidden: "HQ admins are not scoped to a country",
+    passwordMin: "Password must be at least 8 characters",
   },
 
   /**
@@ -611,7 +599,7 @@ export const en = {
     conflict:
       "This record was changed by someone else since you opened it. Reload to see " +
       "the latest version, then re-apply your changes.",
-    inviteFailed: "Could not send the invite. Please try again.",
+    createUserFailed: "Could not create the user. The email may already be in use.",
     deleteFailed: "Could not delete this record. Please try again.",
     invalidSiteId: "Invalid site id",
     invalidDeviceId: "Invalid device id",

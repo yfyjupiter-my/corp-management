@@ -39,7 +39,7 @@ export const zhTW: Dictionary = {
     network: "網路",
     cctv: "監視系統",
     renewals: "續約",
-    users: "使用者與角色",
+    users: "使用者",
     audit: "稽核紀錄",
   },
 
@@ -52,9 +52,6 @@ export const zhTW: Dictionary = {
 
   topbar: {
     searchPlaceholder: "搜尋據點、主機名稱、IP、線路編號、攝影機…",
-    hqAdmin: "總部管理員",
-    manager: "國家經理",
-    allCountries: "所有國家",
     language: "語言",
   },
 
@@ -86,7 +83,6 @@ export const zhTW: Dictionary = {
     eyebrow: "總覽",
     title: "資產登錄儀表板",
     subtitleAll: "四個東南亞據點的基礎設施狀態。",
-    subtitleCountry: (country: string) => `${country} 的基礎設施狀態。`,
     kpiActiveSites: "使用中據點",
     kpiCamerasOnline: "攝影機上線",
     kpiCamerasFaulty: "故障／離線攝影機",
@@ -270,27 +266,21 @@ export const zhTW: Dictionary = {
   },
 
   users: {
-    title: "使用者與角色",
-    subtitle: "邀請使用者並指派角色與國家。公開註冊已停用。",
+    title: "使用者",
+    subtitle: "建立使用者帳號。所有使用者擁有相同的完整權限。公開註冊已停用。",
     userCount: (n: number) => `${n} 位使用者`,
     none: "尚無任何使用者。",
     colName: "姓名",
-    colRole: "角色",
-    colCountry: "國家",
     colAdded: "加入日期",
-    roleHqAdmin: "總部管理員",
-    roleCountryManager: "國家經理",
-    allCountries: "全部",
-    invitePanel: "邀請使用者",
+    createPanel: "建立使用者",
     fieldFullName: "姓名",
     fieldEmail: "電子郵件",
-    fieldRole: "角色",
-    fieldCountry: "國家",
-    selectPlaceholder: "請選擇…",
-    sending: "傳送中…",
-    sendInvite: "傳送邀請",
-    inviteFailed: "邀請傳送失敗。",
-    inviteSent: "邀請已寄出，使用者將透過信中連結設定密碼。",
+    fieldPassword: "密碼",
+    passwordHelp: "至少 8 個字元。請將密碼交給使用者，他們可透過「忘記密碼？」自行更改。",
+    creating: "建立中…",
+    createUser: "建立使用者",
+    createFailed: "建立使用者失敗。",
+    created: "使用者已建立，現在即可使用此電子郵件與密碼登入。",
   },
 
   search: {
@@ -504,8 +494,7 @@ export const zhTW: Dictionary = {
     provider: "請填寫供應商",
     label: "請填寫標籤",
     fullName: "請填寫姓名",
-    countryRequired: "國家管理員必須指定一個國家",
-    countryForbidden: "總部管理員不隸屬於特定國家",
+    passwordMin: "密碼至少須 8 個字元",
   },
 
   enums: {
@@ -554,7 +543,7 @@ export const zhTW: Dictionary = {
     nothingToUpdate: "沒有可更新的內容",
     tooManyRequests: "請求過於頻繁，請稍後再試。",
     conflict: "這筆記錄在您開啟後已被其他人修改。請重新載入以取得最新版本，再重新套用您的變更。",
-    inviteFailed: "無法寄出邀請，請再試一次。",
+    createUserFailed: "無法建立使用者，此電子郵件可能已被使用。",
     deleteFailed: "無法刪除這筆記錄，請再試一次。",
     invalidSiteId: "據點 ID 不正確",
     invalidDeviceId: "設備 ID 不正確",

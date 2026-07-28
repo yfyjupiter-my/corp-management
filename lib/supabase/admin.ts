@@ -5,9 +5,10 @@ import { supabaseUrl } from "@/lib/supabase/env";
 /**
  * Admin client — SERVICE ROLE, bypasses RLS. Server-only.
  *
- * Used EXCLUSIVELY by the invite route (app/api/invite) to create auth users and
- * their profile rows. Never import this into a Client Component or expose the key
- * to the browser (it is not NEXT_PUBLIC_*).
+ * Used EXCLUSIVELY by the create-user route (app/api/users) to create auth users
+ * and their profile rows — the one operation the anon key cannot perform. Never
+ * import this into a Client Component or expose the key to the browser (it is
+ * not NEXT_PUBLIC_*).
  *
  * BUS-3: because this client runs as the service role, `auth.uid()` is NULL, so
  * any inventory row created through it would record `created_by = NULL` (losing

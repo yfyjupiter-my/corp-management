@@ -24,8 +24,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await getCurrentUser();
   if (!user) redirect("/no-access");
 
-  // Per-country site counts for the rail. RLS ensures a country manager only
-  // ever gets their own country's rows, so their other counts render as 0.
+  // Per-country site counts for the rail. Every user sees every country now
+  // (0006_drop_roles.sql), so these counts are the same for everyone.
   const siteCounts: Record<string, number> = Object.fromEntries(
     COUNTRY_CODES.map((c) => [c, 0]),
   );
@@ -42,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen flex bg-surface">
       <Sidebar user={user} siteCounts={siteCounts} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar user={user} />
+        <Topbar />
         <main className="p-[22px] overflow-auto flex-1 bg-bg fadein">{children}</main>
       </div>
     </div>

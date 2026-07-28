@@ -8,7 +8,6 @@
  */
 import type { CountryCode } from "@/lib/constants/countries";
 import type {
-  UserRole,
   CircuitType,
   DeviceType,
   CameraType,
@@ -49,16 +48,12 @@ export interface Database {
         Row: {
           user_id: string;
           full_name: string | null;
-          role: UserRole;
-          country_code: CountryCode | null;
           locale: Locale | null; // null = follow the app default (en)
           created_at: string;
         };
         Insert: {
           user_id: string;
           full_name?: string | null;
-          role: UserRole;
-          country_code?: CountryCode | null;
           locale?: Locale | null;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

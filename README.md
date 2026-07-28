@@ -1,9 +1,10 @@
 # Corp Management — SEA IT Infrastructure Registry
 
-Centralized, role-based registry of **network** and **CCTV** infrastructure for the company's four
-Southeast Asia offices (Vietnam, Thailand, Indonesia, Malaysia). HQ admins and country managers
-register and maintain sites, ISP circuits, network devices, IP schemes, VPN links, CCTV recorders,
-cameras, and maintenance logs — with cross-country isolation enforced by Postgres Row Level Security.
+Centralized registry of **network** and **CCTV** infrastructure for the company's four
+Southeast Asia offices (Vietnam, Thailand, Indonesia, Malaysia). Signed-in users register and
+maintain sites, ISP circuits, network devices, IP schemes, VPN links, CCTV recorders, cameras,
+and maintenance logs across all four countries. Postgres Row Level Security keeps the registry
+closed to unauthenticated callers — see **Security model** for what it does and does not enforce.
 
 > This is a **registry, not a monitoring system**. No live polling, no camera streams, no secrets in
 > the database (only references to a password-manager entry). See `prd.md` and `finalize.md`.
@@ -14,7 +15,7 @@ cameras, and maintenance logs — with cross-country isolation enforced by Postg
 |---|---|
 | Framework | Next.js 15 App Router, React Server Components, TypeScript |
 | Styling | Tailwind CSS driven by HQ Slate design tokens (`DESIGN.md`) |
-| Backend | Supabase — Postgres (RLS), Auth (email/password, invite-only), Storage (v1.1) |
+| Backend | Supabase — Postgres (RLS), Auth (email/password, no public sign-up), Storage (v1.1) |
 | Validation | Zod schemas shared between client forms and route handlers |
 | Deployment | Docker (`node:22-alpine`, `output: standalone`) behind a TLS-terminating proxy |
 
@@ -44,8 +45,8 @@ dashboard under **Project Settings → API**.
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | public | Supabase project URL (e.g. `https://xxxx.supabase.co`). Inlined into the browser bundle. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | Supabase anonymous key. Safe for the browser — RLS constrains what it can read. |
-| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | Service-role key. **Bypasses RLS** — used solely by `lib/supabase/admin.ts` in the invite route. **Never** prefix with `NEXT_PUBLIC_`. |
-| `NEXT_PUBLIC_SITE_URL` | public | Base URL for auth redirect links (invites, password reset). `http://localhost:3000` in dev. |
+| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | Service-role key. **Bypasses RLS** — used solely by `lib/supabase/admin.ts` in `POST /api/users`. **Never** prefix with `NEXT_PUBLIC_`. |
+| `NEXT_PUBLIC_SITE_URL` | public | Base URL for auth redirect links (password reset). `http://localhost:3000` in dev. |
 
 ### Seeding a hosted (cloud) project
 
@@ -79,34 +80,38 @@ select
   (select count(*) from cctv_cameras)     as cameras;
 ```
 
-### Invite-only auth (disable public sign-up)
+### Closed auth (disable public sign-up)
 
-This app has **no public sign-up flow** — users are provisioned by an HQ admin via the
-invite route. Lock the project down to match:
+This app has **no public sign-up flow** — users are provisioned by an existing user from
+the **Users** page (`POST /api/users`), which creates the account already-confirmed with a
+password the creator sets. No invite email is sent, so this path does not need SMTP.
+Lock the project down to match:
 
 1. **Authentication → Providers → Email** — turn **off** *"Allow new users to sign up"*.
    With it on, anyone could self-register and land without a `profiles` row (and thus
    no RLS scope). RLS still denies them every row, but disabling sign-up removes the
    dead-end accounts entirely.
 2. **Authentication → URL Configuration** — set the **Site URL** and add the
-   `/auth/callback` redirect URL (matches `NEXT_PUBLIC_SITE_URL`) so invite and
-   password-reset links resolve.
+   `/auth/callback` redirect URL (matches `NEXT_PUBLIC_SITE_URL`) so password-reset
+   links resolve.
 
-Create your first login via **Authentication → Users → Add user**.
+Create your first login via **Authentication → Users → Add user**, then insert its
+`profiles` row (`insert into profiles (user_id, full_name) values (…)`) — an auth user
+with no profile lands on `/no-access`. Every user after that can be created in-app.
 
 ## Project structure
 
 ```
 app/
-  (auth)/login/         Invite-only sign-in (no public sign-up)
+  (auth)/login/         Sign-in (no public sign-up)
   (app)/                Authenticated shell: rail + topbar
     dashboard/          Per-country KPI cards, health, renewals, staleness
     countries/[code]/   Country-scoped site list
     network/            ISP circuits, devices, IP schemes, VPN links
     cctv/               Recorders, cameras, maintenance logs
     renewals/           Contract & warranty expiry window (30/60/90d)
-    users/              Invite users, assign role + country (HQ admin only)
-    audit/              Immutable audit log (HQ admin only)
+    users/              Create user accounts (open to any signed-in user)
+    audit/              Immutable audit log (readable by any signed-in user)
   api/                  Route Handlers for mutations (RLS-scoped user JWT)
 components/             UI primitives + layout (Sidebar, Topbar)
 lib/
@@ -122,18 +127,29 @@ middleware.ts           Session refresh + /app gate
 
 ## Security model
 
-- **RLS is the source of truth.** `hq_admin` sees all countries; `country_manager` is scoped to
-  their `country_code`. UI hiding is convenience only — never the enforcement boundary.
+> ⚠️ **Flat access model since `0006_drop_roles.sql`.** Roles (`hq_admin` /
+> `country_manager`) were removed: **every authenticated user has full CRUD on all four
+> countries** and can read the audit log and create other users. RLS is still enabled on
+> every table, but it now draws the line at *signed in*, not at *who* — it is an
+> authentication boundary, not an authorization one.
+
+- **Deny-by-default still holds for `anon`.** Every policy is `auth.uid() is not null`,
+  so the public anon key (which ships in the browser bundle) reads and writes nothing.
+  This is now the *only* boundary RLS enforces, so treat any policy edit as security-critical.
 - **No secrets stored.** `credential_ref` is a plain reference/URL; a save-time regex guard warns on
   password-like strings (`lib/utils/secrets.ts`).
-- **Immutable audit log.** Written by `SECURITY DEFINER` Postgres triggers; readable by HQ admins,
-  no update/delete policies.
-- `SUPABASE_SERVICE_ROLE_KEY` is server-only and used solely by the invite route.
+- **Immutable audit log.** Written by `SECURITY DEFINER` Postgres triggers; readable by any
+  authenticated user, with no update/delete policies — so it cannot be altered from the app.
+- `SUPABASE_SERVICE_ROLE_KEY` is server-only and used solely by `POST /api/users`, which is
+  the one operation the anon key cannot perform (creating an auth user).
 
 ## Testing
 
-RLS policy tests seed two users (one `hq_admin`, one Malaysia `country_manager`) and assert that
-cross-country reads/writes return empty or are denied. Run with `npm test`.
+`npm test` runs the unit suite. The RLS suites (`tests/rls*.test.ts`) additionally need a
+live project and one test user — `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`,
+`TEST_USER_EMAIL`, `TEST_USER_PASSWORD` — and **auto-skip** when those are absent. They
+assert the current contract: a signed-in user can CRUD every country, the audit log is
+immutable, and `anon` gets nothing from any table.
 
 ## Reference documents
 

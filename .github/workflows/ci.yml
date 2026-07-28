@@ -43,12 +43,13 @@ jobs:
       - name: Tests
         run: npm test
         env:
+          # Four secrets, not six: the two-user (hq_admin / country_manager)
+          # split went away with the roles in 0006_drop_roles.sql. One signed-in
+          # user is all the suites need now.
           TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
           TEST_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
-          TEST_HQ_EMAIL: ${{ secrets.TEST_HQ_EMAIL }}
-          TEST_HQ_PASSWORD: ${{ secrets.TEST_HQ_PASSWORD }}
-          TEST_MY_MANAGER_EMAIL: ${{ secrets.TEST_MY_MANAGER_EMAIL }}
-          TEST_MY_MANAGER_PASSWORD: ${{ secrets.TEST_MY_MANAGER_PASSWORD }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 
   migrations:
     name: apply migrations (staging)

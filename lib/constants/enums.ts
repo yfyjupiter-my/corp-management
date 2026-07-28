@@ -2,8 +2,8 @@
  * Domain enums — mirror the Postgres check constraints / types
  * (finalize.md Part C — Enums). Keep in sync with supabase/migrations.
  */
-export const USER_ROLES = ["hq_admin", "country_manager"] as const;
-export type UserRole = (typeof USER_ROLES)[number];
+// `user_role` was dropped in 0006_drop_roles.sql — there is one flat tier of
+// authenticated user now, so there is no role enum to mirror.
 
 export const CIRCUIT_TYPES = ["fiber", "broadband", "lte"] as const;
 export type CircuitType = (typeof CIRCUIT_TYPES)[number];

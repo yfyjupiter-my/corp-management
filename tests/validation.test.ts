@@ -3,7 +3,7 @@ import { optionalString, optionalSafeText } from "@/lib/validation/common";
 import { siteSchema } from "@/lib/validation/site";
 import { vlanSchema } from "@/lib/validation/network";
 import { recorderSchema, cameraSchema } from "@/lib/validation/cctv";
-import { inviteUserSchema } from "@/lib/validation/user";
+import { createUserSchema } from "@/lib/validation/user";
 
 describe("optionalString", () => {
   it("normalises an empty string to undefined", () => {
@@ -126,33 +126,38 @@ describe("secrets guard reaches the remaining free-text fields", () => {
   });
 });
 
-describe("inviteUserSchema superRefine (role/country coherence)", () => {
-  it("requires a country for a country_manager", () => {
-    const r = inviteUserSchema.safeParse({
-      email: "m@example.com",
-      full_name: "Mgr",
-      role: "country_manager",
-    });
-    expect(r.success).toBe(false);
+describe("createUserSchema", () => {
+  const base = { email: "m@example.com", full_name: "Mgr", password: "hunter2hunter2" };
+
+  it("accepts a name, email and password", () => {
+    expect(createUserSchema.safeParse(base).success).toBe(true);
   });
 
-  it("forbids a country for an hq_admin", () => {
-    const r = inviteUserSchema.safeParse({
-      email: "a@example.com",
-      full_name: "Admin",
-      role: "hq_admin",
-      country_code: "MY",
-    });
-    expect(r.success).toBe(false);
+  it("rejects a password under 8 characters", () => {
+    expect(createUserSchema.safeParse({ ...base, password: "short7!" }).success).toBe(false);
   });
 
-  it("accepts a coherent country_manager invite", () => {
-    const r = inviteUserSchema.safeParse({
-      email: "m@example.com",
-      full_name: "Mgr",
-      role: "country_manager",
-      country_code: "MY",
-    });
+  // bcrypt truncates past 72 bytes, so a longer password would have its tail
+  // silently ignored — reject it rather than store something the user can't
+  // reproduce from what they typed.
+  it("rejects a password over 72 characters", () => {
+    expect(createUserSchema.safeParse({ ...base, password: "a".repeat(73) }).success).toBe(false);
+  });
+
+  it("rejects an invalid email", () => {
+    expect(createUserSchema.safeParse({ ...base, email: "nope" }).success).toBe(false);
+  });
+
+  it("rejects a blank name", () => {
+    expect(createUserSchema.safeParse({ ...base, full_name: "   " }).success).toBe(false);
+  });
+
+  // Roles are gone (0006_drop_roles.sql) — a stale client sending role/country
+  // must not have them silently persisted. Zod strips unknown keys by default,
+  // so the parsed output carries exactly the three known fields.
+  it("strips a role/country_code sent by a stale client", () => {
+    const r = createUserSchema.safeParse({ ...base, role: "hq_admin", country_code: "MY" });
     expect(r.success).toBe(true);
+    expect(r.success && Object.keys(r.data).sort()).toEqual(["email", "full_name", "password"]);
   });
 });

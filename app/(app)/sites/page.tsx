@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/Button";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { isStale, formatDate, orDash } from "@/lib/utils/format";
 import { getDictionary } from "@/lib/i18n/server";
-import { getCurrentUser } from "@/lib/auth";
 import { LIST_PAGE_SIZE } from "@/lib/constants/limits";
 
 export const dynamic = "force-dynamic";
@@ -24,12 +23,10 @@ const SITE_COL_WIDTHS = ["30%", "20%", "15%", "15%", "20%"];
 
 /**
  * Site registry grouped by country with per-country counts (PRD Story 1).
- * Archived sites are never listed. RLS scopes the list, so a country manager
- * only sees their own country's sites.
+ * Archived sites are never listed.
  */
 export default async function SitesPage() {
   const t = await getDictionary();
-  const user = await getCurrentUser();
   const supabase = await createClient();
   const { data: sites } = await supabase
     .from("sites")
@@ -42,19 +39,13 @@ export default async function SitesPage() {
   const rows = sites ?? [];
 
   /*
-   * Which countries get a panel. HQ sees all four so the registry reads the
-   * same shape whatever the data holds — a country with no sites yet shows an
-   * empty panel rather than vanishing, which is indistinguishable from a
-   * filtered-out or broken query. A country manager still sees only their own,
-   * mirroring the Sidebar rule; RLS remains the actual boundary, so an
-   * unexpected country here would render an empty panel, never other data.
+   * All four countries get a panel, so the registry reads the same shape
+   * whatever the data holds — a country with no sites yet shows an empty panel
+   * rather than vanishing, which is indistinguishable from a filtered-out or
+   * broken query. Roles were removed in 0006_drop_roles.sql, so there is no
+   * per-user subset any more.
    */
-  const visible =
-    user?.role === "hq_admin"
-      ? COUNTRY_LIST
-      : COUNTRY_LIST.filter((c) => c.code === user?.countryCode);
-
-  const byCountry = visible.map((c) => ({
+  const byCountry = COUNTRY_LIST.map((c) => ({
     meta: c,
     sites: rows.filter((s) => s.country_code === c.code),
   }));

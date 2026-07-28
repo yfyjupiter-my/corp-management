@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
 import { PageHead } from "@/components/ui/PageHead";
 import { Kpi } from "@/components/ui/Kpi";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
@@ -19,12 +18,10 @@ export const dynamic = "force-dynamic";
 
 /**
  * Landing dashboard (PRD Story 3 & 5). Per-country cards + a renewals-soon
- * table. All queries are RLS-scoped, so a country manager sees only their
- * country; HQ admins see all four offices.
+ * table, covering all four offices for every user.
  */
 export default async function DashboardPage() {
   const t = await getDictionary();
-  const user = await getCurrentUser();
   const supabase = await createClient();
 
   // 10.6: these five feed KPI counts, not a rendered list, so they carry the
@@ -184,21 +181,15 @@ export default async function DashboardPage() {
     });
   }
 
-  const isHq = user?.role === "hq_admin";
-  const countries = isHq
-    ? COUNTRY_LIST
-    : COUNTRY_LIST.filter((c) => c.code === user?.countryCode);
+  // Every user sees every country (0006_drop_roles.sql).
+  const countries = COUNTRY_LIST;
 
   return (
     <>
       <PageHead
         eyebrow={t.dashboard.eyebrow}
         title={t.dashboard.title}
-        subtitle={
-          isHq
-            ? t.dashboard.subtitleAll
-            : t.dashboard.subtitleCountry(user?.countryCode ?? "")
-        }
+        subtitle={t.dashboard.subtitleAll}
       />
 
       {/* KPI row */}

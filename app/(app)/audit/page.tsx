@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
@@ -14,10 +12,12 @@ const actionTone = { insert: "ok", update: "info", delete: "danger" } as const;
 const PER_PAGE = 50;
 
 /**
- * Audit log (PRD Story 4) — HQ admin only, immutable, paginated.
- * Shows actor / action / table / record / diff / time, most recent first.
- * RLS restricts SELECT to hq_admin (0002_rls.sql) and there is no insert/update/
- * delete policy, so the log cannot be altered from the app.
+ * Audit log (PRD Story 4) — immutable, paginated. Shows actor / action / table /
+ * record / diff / time, most recent first.
+ *
+ * Readable by any authenticated user since 0006_drop_roles.sql (it was HQ-admin
+ * only). It stays **immutable**: the table has a SELECT policy and no
+ * insert/update/delete policy, so the log cannot be altered from the app.
  */
 export default async function AuditPage({
   searchParams,
@@ -25,8 +25,6 @@ export default async function AuditPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const t = await getDictionary();
-  const user = await getCurrentUser();
-  if (user?.role !== "hq_admin") redirect("/dashboard");
 
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);

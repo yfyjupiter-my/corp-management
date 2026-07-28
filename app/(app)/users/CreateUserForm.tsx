@@ -4,14 +4,17 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { inviteUserSchema, type InviteUserInput } from "@/lib/validation/user";
-import { COUNTRY_LIST } from "@/lib/constants/countries";
+import { createUserSchema, type CreateUserInput } from "@/lib/validation/user";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { useT } from "@/lib/i18n/client";
 import { validationMessage } from "@/lib/i18n/validation";
 
-export function InviteForm() {
+/**
+ * Create a user directly. There is no role or country to pick — every account
+ * has the same full access (0006_drop_roles.sql).
+ */
+export function CreateUserForm() {
   const t = useT();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -22,31 +25,27 @@ export function InviteForm() {
   const {
     register,
     handleSubmit,
-    watch,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<InviteUserInput>({
-    resolver: zodResolver(inviteUserSchema),
-    defaultValues: { role: "country_manager" },
+  } = useForm<CreateUserInput>({
+    resolver: zodResolver(createUserSchema),
   });
 
-  const role = watch("role");
-
-  async function onSubmit(values: InviteUserInput) {
+  async function onSubmit(values: CreateUserInput) {
     setServerError(null);
     setDone(false);
-    const res = await fetch("/api/invite", {
+    const res = await fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setServerError(body.error ?? t.users.inviteFailed);
+      setServerError(body.error ?? t.users.createFailed);
       return;
     }
     setDone(true);
-    reset({ role: "country_manager" });
+    reset();
     router.refresh();
   }
 
@@ -58,36 +57,30 @@ export function InviteForm() {
       <Field label={t.users.fieldEmail} error={vm(errors.email?.message)}>
         <input className="field-input" type="email" {...register("email")} placeholder="user@example.com" />
       </Field>
-      <Field label={t.users.fieldRole} error={vm(errors.role?.message)}>
-        <select className="field-input" {...register("role")}>
-          <option value="country_manager">{t.users.roleCountryManager}</option>
-          <option value="hq_admin">{t.users.roleHqAdmin}</option>
-        </select>
+      <Field
+        label={t.users.fieldPassword}
+        error={vm(errors.password?.message)}
+        help={t.users.passwordHelp}
+      >
+        <input
+          className="field-input"
+          type="password"
+          autoComplete="new-password"
+          {...register("password")}
+        />
       </Field>
-      {role === "country_manager" && (
-        <Field label={t.users.fieldCountry} error={vm(errors.country_code?.message)}>
-          <select className="field-input" {...register("country_code")}>
-            <option value="">{t.users.selectPlaceholder}</option>
-            {COUNTRY_LIST.map((c) => (
-              <option key={c.code} value={c.code}>
-                {t.countries[c.code]}
-              </option>
-            ))}
-          </select>
-        </Field>
-      )}
 
       {serverError && (
         <div className="text-[12px] text-danger bg-danger-bg rounded-sm px-3 py-2">{serverError}</div>
       )}
       {done && (
         <div className="text-[12px] text-ok bg-ok-bg rounded-sm px-3 py-2">
-          {t.users.inviteSent}
+          {t.users.created}
         </div>
       )}
 
       <Button type="submit" disabled={isSubmitting} className="justify-center">
-        {isSubmitting ? t.users.sending : t.users.sendInvite}
+        {isSubmitting ? t.users.creating : t.users.createUser}
       </Button>
     </form>
   );
@@ -96,16 +89,19 @@ export function InviteForm() {
 function Field({
   label,
   error,
+  help,
   children,
 }: {
   label: string;
   error?: string;
+  help?: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-[12px] font-semibold text-fg-muted font-head">{label}</span>
       {children}
+      {help && !error && <span className="text-[11px] text-fg-subtle">{help}</span>}
       {error && <span className={cn("text-[11px] text-danger")}>{error}</span>}
     </label>
   );

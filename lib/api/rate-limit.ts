@@ -93,11 +93,12 @@ export class RateLimiter {
 
 /**
  * Shared per-process limiters. `write` covers the create + verify mutations a
- * human drives from forms (generous); `invite` is tighter because each call
- * sends an email (abuse = email bombing / user enumeration).
+ * human drives from forms (generous); `createUser` is tighter because every
+ * authenticated user can now mint accounts, so an abused session should not be
+ * able to fill the auth table (and the error shape leaks address existence).
  */
 export const writeLimiter = new RateLimiter({ limit: 60, windowMs: 60_000 });
-export const inviteLimiter = new RateLimiter({ limit: 10, windowMs: 60_000 });
+export const createUserLimiter = new RateLimiter({ limit: 10, windowMs: 60_000 });
 
 /** 429 response carrying a safe message and a `Retry-After` header. */
 export function rateLimitResponse(

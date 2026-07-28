@@ -1,34 +1,20 @@
 import { z } from "zod";
-import { COUNTRY_CODES } from "@/lib/constants/countries";
-import { USER_ROLES } from "@/lib/constants/enums";
 import { V } from "@/lib/i18n/validation";
 
 /**
- * Invite payload (HQ admin only). A country_manager must have a country; an
- * hq_admin must not (they see all countries).
+ * Create-user payload. Any authenticated user may create another user —
+ * roles were removed in 0006_drop_roles.sql, so there is nothing to assign
+ * beyond a name, a login email and an initial password.
+ *
+ * The account is created already-confirmed (no invite email), so the password
+ * is set here rather than chosen by the recipient from a mail link.
  */
-export const inviteUserSchema = z
-  .object({
-    email: z.string().email(V.email),
-    full_name: z.string().trim().min(1, V.fullName).max(120),
-    role: z.enum(USER_ROLES),
-    country_code: z.enum(COUNTRY_CODES).optional(),
-  })
-  .superRefine((val, ctx) => {
-    if (val.role === "country_manager" && !val.country_code) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["country_code"],
-        message: V.countryRequired,
-      });
-    }
-    if (val.role === "hq_admin" && val.country_code) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["country_code"],
-        message: V.countryForbidden,
-      });
-    }
-  });
+export const createUserSchema = z.object({
+  email: z.string().trim().email(V.email),
+  full_name: z.string().trim().min(1, V.fullName).max(120),
+  // Matches the reset-password form's floor. Capped because Supabase/bcrypt
+  // truncates past 72 bytes, which would silently ignore the tail.
+  password: z.string().min(8, V.passwordMin).max(72),
+});
 
-export type InviteUserInput = z.infer<typeof inviteUserSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;

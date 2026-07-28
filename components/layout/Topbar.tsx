@@ -2,12 +2,16 @@ import Link from "next/link";
 import { SearchIcon } from "./icons";
 import { LocaleSwitch } from "./LocaleSwitch";
 import { getDictionary } from "@/lib/i18n/server";
-import type { CurrentUser } from "@/lib/auth";
 
-/** Topbar — search + language switch + role pill. DESIGN.md §5.7. */
-export async function Topbar({ user }: { user: CurrentUser }) {
+/**
+ * Topbar — search + language switch. DESIGN.md §5.7.
+ *
+ * The role pill that used to sit on the right was removed with the role system
+ * (0006_drop_roles.sql): every user has the same access, so it had nothing left
+ * to report. The signed-in identity lives in the sidebar's UserMenu.
+ */
+export async function Topbar() {
   const t = await getDictionary();
-  const isHq = user.role === "hq_admin";
   return (
     <header className="flex items-center gap-3.5 px-5 py-[13px] border-b border-border bg-surface">
       <Link
@@ -22,11 +26,6 @@ export async function Topbar({ user }: { user: CurrentUser }) {
       </Link>
 
       <LocaleSwitch className="ml-auto" />
-
-      <span className="inline-flex items-center gap-[7px] text-xs font-semibold text-accent bg-accent-weak px-3 py-1.5 rounded-pill font-head">
-        <span className="w-[7px] h-[7px] rounded-full bg-accent" />
-        {isHq ? t.topbar.hqAdmin : `${user.countryCode} ${t.topbar.manager}`}
-      </span>
     </header>
   );
 }

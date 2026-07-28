@@ -27,14 +27,9 @@ interface SidebarProps {
 export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
   const pathname = usePathname();
   const t = useT();
-  const isHq = user.role === "hq_admin";
 
-  // Country managers only see their own country in the Countries group.
-  const countries = isHq
-    ? COUNTRY_LIST
-    : COUNTRY_LIST.filter((c) => c.code === user.countryCode);
-
-  // Sites badge mirrors the countries the user can actually see.
+  // Every user sees every country: roles were removed in 0006_drop_roles.sql.
+  const countries = COUNTRY_LIST;
   const siteCount = countries.reduce((n, c) => n + (siteCounts[c.code] ?? 0), 0);
 
   return (
@@ -97,17 +92,14 @@ export function Sidebar({ user, siteCounts, renewalsCount }: SidebarProps) {
         {t.nav.renewals}
       </NavItem>
 
-      {isHq && (
-        <>
-          <Group label={t.nav.groupAdministration} />
-          <NavItem href="/users" active={pathname.startsWith("/users")} icon={<UsersIcon />}>
-            {t.nav.users}
-          </NavItem>
-          <NavItem href="/audit" active={pathname.startsWith("/audit")} icon={<AuditIcon />}>
-            {t.nav.audit}
-          </NavItem>
-        </>
-      )}
+      {/* Administration is visible to everyone now — there is no admin tier. */}
+      <Group label={t.nav.groupAdministration} />
+      <NavItem href="/users" active={pathname.startsWith("/users")} icon={<UsersIcon />}>
+        {t.nav.users}
+      </NavItem>
+      <NavItem href="/audit" active={pathname.startsWith("/audit")} icon={<AuditIcon />}>
+        {t.nav.audit}
+      </NavItem>
 
       {/* Footer: current user (clickable — opens dropdown with logout) */}
       <UserMenu user={user} />

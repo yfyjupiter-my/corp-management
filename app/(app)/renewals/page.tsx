@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
@@ -39,9 +38,6 @@ export default async function RenewalsPage({
   const countryFilter = country && isCountryCode(country) ? country : undefined;
 
   const t = await getDictionary();
-  const user = await getCurrentUser();
-  const isHq = user?.role === "hq_admin";
-
   const supabase = await createClient();
   // 10.6: the window filter runs in JS over these rows, so a LIST_PAGE_SIZE cap
   // could drop a renewal that is actually due — the row that matters might be
@@ -102,10 +98,8 @@ export default async function RenewalsPage({
     : rows;
   filtered.sort((a, b) => a.days - b.days);
 
-  // HQ can slice by any country; a country manager is already RLS-scoped to one.
-  const countryTabs = isHq
-    ? COUNTRY_LIST
-    : COUNTRY_LIST.filter((c) => c.code === user?.countryCode);
+  // Everyone can slice by any country (0006_drop_roles.sql).
+  const countryTabs = COUNTRY_LIST;
   const withCountry = (params: { window?: number; country?: string | null }) => {
     const w = params.window ?? days;
     const c = params.country === undefined ? countryFilter : params.country;

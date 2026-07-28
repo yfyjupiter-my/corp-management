@@ -25,8 +25,7 @@ export const V = {
   provider: "v.provider",
   label: "v.label",
   fullName: "v.fullName",
-  countryRequired: "v.countryRequired",
-  countryForbidden: "v.countryForbidden",
+  passwordMin: "v.passwordMin",
 } as const;
 
 /** Resolves a schema message to display text; non-keys pass through unchanged. */

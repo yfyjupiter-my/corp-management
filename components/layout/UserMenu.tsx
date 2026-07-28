@@ -17,13 +17,6 @@ export function UserMenu({ user }: { user: CurrentUser }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const t = useT();
 
-  const isHq = user.role === "hq_admin";
-  // "HQ Admin · all countries" / "Manager · MY" — the country code is data, so
-  // it stays outside the dictionary.
-  const roleLine = isHq
-    ? `${t.topbar.hqAdmin} · ${t.topbar.allCountries}`
-    : `${t.topbar.manager} · ${user.countryCode}`;
-
   // Close on outside click / Escape.
   useEffect(() => {
     if (!open) return;
@@ -52,9 +45,6 @@ export function UserMenu({ user }: { user: CurrentUser }) {
             {user.email && (
               <div className="text-[11px] text-sidebar-fg/70 truncate">{user.email}</div>
             )}
-            <div className="text-[11px] text-sidebar-fg/70 truncate">
-              {roleLine}
-            </div>
           </div>
           <button
             type="button"
@@ -85,9 +75,11 @@ export function UserMenu({ user }: { user: CurrentUser }) {
           <div className="text-white text-[13px] font-semibold truncate">
             {user.fullName ?? user.email}
           </div>
-          <div className="text-[11px] text-sidebar-fg/70 truncate">
-            {roleLine}
-          </div>
+          {/* The role line used to sit here; with roles gone the email is the
+              only remaining identity detail worth surfacing in the rail. */}
+          {user.email && user.fullName && (
+            <div className="text-[11px] text-sidebar-fg/70 truncate">{user.email}</div>
+          )}
         </div>
         <ChevronUpIcon
           size={14}
