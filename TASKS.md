@@ -146,6 +146,63 @@
 
 ## Phase 12 — Deployment readiness
 
+> **2026-08-05 breakdown.** The four items below were one-liners blocked on infrastructure; each is
+> now split into subtasks that are individually startable and individually verifiable, so a partial
+> session leaves a precise resume point instead of "12.2 still not started".
+>
+> **Order is forced, not preference:** `12.2 (staging) → 12.3 (secrets) → 12.4 (pen-test)`, because
+> the pen-test needs a deployed staging and CI's RLS job needs a test user that only staging should
+> hold. **12.1 is the exception — it is independent of all three** and only needs a machine with
+> Docker, which makes it the one thing that can be done right now, alone, offline.
+>
+> **Do not create the production project until staging is green.** Production is the last step of
+> 12.2 on purpose (12.2.9): a mistake made twice costs twice, and `seed.sql` has no conflict guard.
+
+### 12.1 — Docker image (independent; needs only a machine with Docker)
+
+- [ ] **12.1.1** Confirm the toolchain: `docker --version` and `docker buildx version` respond. ⚠️ **The whole of 12.1 stops here in this environment** — Docker is not installed, which is why nothing below has ever run.
+- [ ] **12.1.2** Build **with** the three build args: `docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=… --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=… --build-arg NEXT_PUBLIC_SITE_URL=… -t corp-management:local .`. Expect all three stages (`deps` → `builder` → `runner`) to complete.
+- [ ] **12.1.3** Prove the **BusyBox** user creation worked — `addgroup/adduser --system --gid/--uid` are GNU-style flags on Alpine's BusyBox applets and are the single most likely line to fail. Check with `docker run --rm corp-management:local id` → expect `uid=1001(nextjs) gid=1001(nodejs)`, **not** `uid=0(root)`.
+- [ ] **12.1.4** Boot it: `docker run --rm -p 3000:3000 -e SUPABASE_SERVICE_ROLE_KEY=… corp-management:local`, then `curl -I localhost:3000/login` → **200**. Confirms `CMD ["node","server.js"]` resolves against the copied `.next/standalone`.
+- [ ] **12.1.5** 🔴 **Prove the inlining, which is the failure this item exists for.** Load `/login` in a browser against the container and confirm the Supabase client is real — a build with the args omitted still **succeeds** and ships a browser client wired to `undefined`. Cross-check: `docker run --rm corp-management:local grep -rl "<project-ref>.supabase.co" .next/static/chunks/app` should hit the login/forgot-password/reset-password chunks (3 files, per the 2026-07-28 measurement). **A green build is not a pass for this subtask.**
+- [ ] **12.1.6** Negative control, once: build **without** the build args and confirm it still exits 0 — this is the documented trap, and seeing it once is what stops someone "fixing" a broken deploy with runtime env. Record the image size while here.
+
+### 12.2 — Supabase projects (staging first, production last)
+
+- [ ] **12.2.1** Create the **staging** project in the **SEA / Singapore** region. Record the project ref and DB password somewhere that is not this repo.
+- [ ] **12.2.2** `supabase link --project-ref <staging-ref>` → `supabase db push`. ⚠️ Staging starts empty, so this applies **all six** migrations `0001`–`0006`, not just `0006` — unlike the linked dev project, which already had `0001`–`0005`.
+- [ ] **12.2.3** Verify the push landed the *post-Phase-14* schema, do not assume: `profiles` has exactly `user_id, full_name, created_at, locale`; `current_role_is_hq()` / `current_country()` do **not** exist; the `user_role` type is gone; RLS is enabled on all 12 tables.
+- [ ] **12.2.4** Run `seed.sql` on **staging only**. ⚠️ It has **no conflict guard** — run it exactly once; a second run duplicates rows rather than erroring usefully.
+- [ ] **12.2.5** Auth config: **disable** "allow new users to sign up" (2.7). Confirm by attempting a signup against staging and getting refused — this is the setting that makes 12.2.6 the *only* way in.
+- [ ] **12.2.6** Create the **first user** via the service role: an auth user **plus** a `profiles` row (`insert into profiles (user_id, full_name) values (…)`). ⚠️ An auth user with no profile authenticates and then lands on `/no-access` — the exact orphan shape found and closed on 2026-07-28. Verify **both directions**: 0 auth users without a profile, 0 profiles without an auth user.
+- [ ] **12.2.7** Create the **`rls-test@…` user** on staging (auth user + `profiles` row, no role/country — there is none to set) and write the four `TEST_*` values into a git-ignored `.env.test`. ⚠️ `.gitignore` covers `.env.test` explicitly since 2026-07-28 — re-confirm with `git check-ignore .env.test` before writing a password into it. 🔴 **This account is a full-access account**: with roles gone, a test user CRUDs everything and can mint further users. Staging only — never production.
+- [ ] **12.2.8** SMTP + redirect URLs on staging (2.8), then drive **"Forgot password?"** end-to-end. ℹ️ Scope shrank after Phase 14: `POST /api/users` creates already-confirmed accounts with a password the creator sets, so SMTP is **only** about password reset now — it no longer blocks provisioning.
+- [ ] **12.2.9** Repeat 12.2.1–12.2.3, 12.2.5, 12.2.6 and 12.2.8 for **production** — **omitting `seed.sql` (12.2.4) and the test user (12.2.7)**. Never seed production; never put a file-stored password on it.
+- [ ] **12.2.10** Record the per-environment app env for both: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (**server-only**), `NEXT_PUBLIC_SITE_URL`. ⚠️ The three `NEXT_PUBLIC_*` are **build-time** for any container image (12.1.5) — staging and production need **separate images**, not one image with different runtime env.
+
+### 12.3 — CI (workflow written; needs secrets, and needs to actually run once)
+
+- [ ] **12.3.1** 🔴 **Get `ci.yml` onto a branch that triggers it.** The file is **absent from `origin/main`**, there is **no `staging` branch**, and all work has been direct pushes with no PR — so the workflow has **never executed**, secrets or not. First real run is whenever this branch reaches `main`. Prove it ran, do not infer it.
+- [ ] **12.3.2** Confirm the secret-free `checks` job (typecheck → lint → build → tests) is green on that first run, with the RLS suite **auto-skipping** (expect **75 passed / 30 skipped**). ℹ️ Its `Build` step uses **dummy** `NEXT_PUBLIC_*` — that proves compilation only, and per 12.1.5 does **not** produce a deployable artifact.
+- [ ] **12.3.3** Add the **four** `TEST_*` repo secrets from 12.2.7 (was six; the HQ/manager pair collapsed into one user). Re-run and expect **105 passed / 0 skipped**.
+- [ ] **12.3.4** Add the migration-job secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_STAGING_PROJECT_REF`, `SUPABASE_STAGING_DB_PASSWORD`. ⚠️ Verify the job stays **gated to `staging` / manual dispatch and never fires on a PR** — auto-pushing migrations to a shared project from a PR is destructive.
+- [ ] **12.3.5** Exercise the migration job once via **manual dispatch** against staging, on a no-op (all six already applied) — proving the credentials and the gate before a real migration depends on them.
+- [ ] **12.3.6** ⚠️ **Budget for the audit residue.** Every CI run of the RLS suite adds ~16 immutable `audit_log` rows (no delete policy, by design). Decide now whether CI's `TEST_*` point at staging or at a throwaway project — it is an env-value change, no code.
+
+### 12.4 — Pen-test (needs a live staging deploy; rescoped by Phase 14)
+
+- [ ] **12.4.1** **Unauthenticated rejection, every route.** `/api/sites`, `/api/devices`, `/api/circuits`, `/api/recorders`, `/api/cameras`, `/api/ip-schemes`, `/api/vlans`, `/api/users`, plus every `[id]` **PATCH** and **DELETE** — with no session **and** with a forged bearer token. 🔴 This is the boundary that replaced role checks, and it is now the *whole* boundary.
+- [ ] **12.4.2** **`POST /api/users` specifically:** 403 without a session, and the `createUserLimiter` throttle (10/min) actually holds under a burst. Every signed-in user can mint accounts now, so this throttle is the only bound on the auth table.
+- [ ] **12.4.3** **`audit_log` immutability through PostgREST** as a *signed-in* user: read yes, insert/update/delete no. 🔴 **Re-read after every attempt** — a missing UPDATE/DELETE policy returns 0 rows and **no error**, so "no error" is not a pass (the 13.34 gotcha).
+- [ ] **12.4.4** **`anon` reads 0 rows from all 12 tables**, live, plus no site insert and nothing from `search_registry`. Automated in `rls.test.ts`; confirm it live too — the anon key ships in the browser bundle, so a single mis-scoped policy exposes the whole registry publicly.
+- [ ] **12.4.5** **Fold in 7.3** — measure the search page against the staging dataset (`<500ms` on <10k rows). First realistic dataset there has ever been; the budget has **never been measured**. ✅ Closes the last substantive `[~]` outside Phase 12.
+- [ ] **12.4.6** **Fold in the 14.6 residual** — click it through in a browser on staging: a second user signs in, sees all four countries, and creates a third from the Users page. Everything below the UI is proven; this path is not.
+- [ ] **12.4.7** File the results. Anything unresolved goes to `SEC-AUDIT.md` in the `Item / Verdict / Notes` format, per the QA-check convention.
+
+---
+
+### Parent items (rollups — tick only when every subtask above is ticked)
+
 - [ ] **12.1** `docker build` produces a runnable standalone image; container starts on `PORT=3000` as non-root. **Still open — Docker is not installed in this environment, so the build has never been run.** Attempted 2026-07-28; instead the Dockerfile's assumptions were checked against a real local `npm run build`, which found a blocker: 🐛 `COPY --from=builder /app/public ./public` would have **failed the build**, because no `public/` directory exists (Docker fails a `COPY` with a missing source, and Next never creates one). Fixed with **`public/.gitkeep`**. ⚠️ Also documented in the Dockerfile: omitting the `NEXT_PUBLIC_*` **build args does not fail the build** — the values are inlined into the client bundle (verified: the URL appears in 3 `page-*.js` chunks), every route is dynamic, so the build succeeds and ships an image whose browser-side Supabase client is `undefined`, unfixable without a rebuild. Verified present for the runner stage: `.next/standalone/server.js`, `.next/static`, `output: "standalone"`. **Left to prove under Docker:** the build itself, BusyBox `addgroup/adduser --system --gid`, boot on `PORT=3000`, and non-root.
 - [ ] **12.2** Staging + production Supabase projects (SEA/Singapore region); migrations promoted via CI.
 - [~] **12.3** CI (2026-07-24) — **`.github/workflows/ci.yml` written, awaiting repo secrets.** `checks` job runs typecheck/lint/build/unit on every PR with no secrets; the RLS suite lights up when the six `TEST_*` secrets are added (it auto-skips otherwise, so the workflow is safe now). Migrations are applied by a **separate `migrations` job gated to `staging` / manual dispatch** — deliberately *not* on PRs, which would mutate the shared project. Secrets needed listed in `LIVE-ENV.md` §12.3.

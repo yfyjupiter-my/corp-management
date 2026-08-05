@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-07-28 (**Audit log page removed** from Administration — UI only, the DB audit trail is untouched. Before that: **Phase 14: roles removed**. **Phase 12 is all that remains**) |
+| **Last updated** | 2026-08-05 (**Phase 12 broken down into 29 subtasks** — planning only, no code changed. Before that: audit log page removed from Administration; Phase 14 roles removed. **Phase 12 is all that remains**) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **105 passed / 0 skipped** against the live project · **75 passed / 30 skipped** without `TEST_*` |
 
@@ -10,7 +10,42 @@
 
 ---
 
-## Latest change (2026-07-28) — Audit log removed from the Administration module
+## Latest change (2026-08-05) — Phase 12 broken down into 29 subtasks
+
+**Planning only — no source, schema or test changed.** `TASKS.md` Phase 12 was four one-line items,
+each blocked on infrastructure and each too coarse to start. Now split so a partial session leaves a
+precise resume point: **12.1 ×6 · 12.2 ×10 · 12.3 ×6 · 12.4 ×7**. The originals stay as rollup
+parents, ticked only when their subtasks are.
+
+- **Order is forced, not preference:** `12.2 (staging) → 12.3 (secrets) → 12.4 (pen-test)`. The
+  pen-test needs a deployed staging; CI's RLS job needs a test user that only staging should hold.
+  **12.1 is independent of all three** — it needs a machine with Docker and nothing else, which makes
+  it the only item startable right now, offline, alone.
+- **Production is deliberately last (12.2.9)** and is *not* a copy of staging: it omits `seed.sql`
+  (which has no conflict guard) and omits the test user. ⚠️ With roles gone, any account is a
+  full-access account, so a file-stored test password belongs on staging only.
+- **Two traps promoted from prose into their own checkbox**, because both produce a *green* result
+  while being broken:
+  - **12.1.5** — a Docker build with the `NEXT_PUBLIC_*` build args omitted **exits 0** and ships a
+    browser Supabase client wired to `undefined`. A successful build is explicitly *not* a pass;
+    the subtask requires seeing the key inlined in the client chunks. 12.1.6 reproduces the failure
+    once on purpose, so nobody later tries to repair it with runtime env.
+  - **12.4.3** — a blocked `audit_log` write returns 0 rows and **no error**, so every attempt must
+    be re-read (the 13.34 gotcha). "No error" is not a pass.
+- **12.3.1 states the thing that was easy to miss:** `ci.yml` has **never executed** — it is absent
+  from `origin/main`, there is no `staging` branch, and every push has been direct with no PR. So CI
+  is unvalidated *in practice*, not merely unsecreted; secrets (12.3.3) are the second problem.
+- **Two orphaned `[~]` items folded in** rather than left floating: **7.3** (search `<500ms` budget,
+  never measured — 12.4.5, since staging is the first realistic dataset) and the **14.6 residual**
+  (the flat-CRUD flow has never been clicked through in a browser — 12.4.6).
+- **12.1.3 calls out BusyBox by name** — `addgroup/adduser --system --gid` are GNU-style flags on
+  Alpine applets and the single likeliest line to fail; verified via `id`, not by the build passing.
+- Build health unchanged (no code touched): last verified `tsc --noEmit` ✅ · `next lint` ✅ ·
+  `npm run build` ✅ · tests **105/0** live, **75/30** without `TEST_*`.
+
+---
+
+## Earlier change (2026-07-28) — Audit log removed from the Administration module
 
 The **Administration group is now Users only**. Deleted `app/(app)/audit/page.tsx` and
 `audit/DiffCell.tsx`, the `/audit` sidebar item, and `AuditIcon` (zero callers left).
