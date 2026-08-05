@@ -3,7 +3,7 @@ import { optionalString, optionalSafeText } from "@/lib/validation/common";
 import { siteSchema } from "@/lib/validation/site";
 import { vlanSchema } from "@/lib/validation/network";
 import { recorderSchema, cameraSchema } from "@/lib/validation/cctv";
-import { createUserSchema } from "@/lib/validation/user";
+import { createUserSchema, updateUserSchema } from "@/lib/validation/user";
 
 describe("optionalString", () => {
   it("normalises an empty string to undefined", () => {
@@ -159,5 +159,47 @@ describe("createUserSchema", () => {
     const r = createUserSchema.safeParse({ ...base, role: "hq_admin", country_code: "MY" });
     expect(r.success).toBe(true);
     expect(r.success && Object.keys(r.data).sort()).toEqual(["email", "full_name", "password"]);
+  });
+});
+
+describe("updateUserSchema", () => {
+  const base = { email: "m@example.com", full_name: "Mgr" };
+
+  it("accepts a name + email with no password", () => {
+    const r = updateUserSchema.safeParse(base);
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.password).toBeUndefined();
+  });
+
+  // A blank box means "keep the current password", so it must arrive as
+  // undefined — an empty string would reach the admin API as a password reset.
+  it("normalises an empty password to undefined", () => {
+    const r = updateUserSchema.safeParse({ ...base, password: "" });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.password).toBeUndefined();
+  });
+
+  it("accepts a replacement password", () => {
+    const r = updateUserSchema.safeParse({ ...base, password: "hunter2hunter2" });
+    expect(r.success && r.data.password).toBe("hunter2hunter2");
+  });
+
+  it("rejects a non-empty password under 8 characters", () => {
+    expect(updateUserSchema.safeParse({ ...base, password: "short7!" }).success).toBe(false);
+  });
+
+  it("rejects a password over 72 characters (bcrypt truncates past 72 bytes)", () => {
+    expect(updateUserSchema.safeParse({ ...base, password: "a".repeat(73) }).success).toBe(false);
+  });
+
+  it("rejects an invalid email and a blank name", () => {
+    expect(updateUserSchema.safeParse({ ...base, email: "nope" }).success).toBe(false);
+    expect(updateUserSchema.safeParse({ ...base, full_name: "   " }).success).toBe(false);
+  });
+
+  it("strips a role/country_code sent by a stale client", () => {
+    const r = updateUserSchema.safeParse({ ...base, role: "hq_admin", country_code: "MY" });
+    expect(r.success).toBe(true);
+    expect(r.success && Object.keys(r.data).sort()).toEqual(["email", "full_name"]);
   });
 });

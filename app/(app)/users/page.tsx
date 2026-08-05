@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { PageHead } from "@/components/ui/PageHead";
 import { Panel, PanelHeader, PanelEmpty } from "@/components/ui/Panel";
 import { Table, Thead, Tr, Td } from "@/components/ui/Table";
+import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { CreateUserForm } from "./CreateUserForm";
@@ -50,6 +52,13 @@ export default async function UsersPage() {
                     <Td mono>{new Date(p.created_at).toLocaleDateString("en-GB")}</Td>
                     <Td>
                       <div className="flex items-center justify-end gap-1">
+                        {/* Edit is offered on every row, own account included —
+                            unlike Delete, there is nothing unsafe about it. */}
+                        <Link href={`/users/${p.user_id}/edit`}>
+                          <Button sm variant="ghost">
+                            {t.common.edit}
+                          </Button>
+                        </Link>
                         {p.user_id === me?.id ? (
                           <Chip dot={false}>{t.users.you}</Chip>
                         ) : (

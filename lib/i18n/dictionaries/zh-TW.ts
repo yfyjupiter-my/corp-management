@@ -262,6 +262,11 @@ export const zhTW: Dictionary = {
     createUser: "建立使用者",
     createFailed: "建立使用者失敗。",
     created: "使用者已建立，現在即可使用此電子郵件與密碼登入。",
+    editTitle: (name: string) => `編輯 ${name}`,
+    editSubtitle: "可修改姓名或登入電子郵件。密碼欄留空即保留原密碼。",
+    fieldNewPassword: "新密碼",
+    newPasswordHelp: "留空則保留原密碼。若要更改，至少需 8 個字元。",
+    saveFailed: "無法儲存此使用者。",
   },
 
   search: {
@@ -521,6 +526,7 @@ export const zhTW: Dictionary = {
     conflict: "這筆記錄在您開啟後已被其他人修改。請重新載入以取得最新版本，再重新套用您的變更。",
     createUserFailed: "無法建立使用者，此電子郵件可能已被使用。",
     deleteUserFailed: "無法刪除該使用者，請再試一次。",
+    updateUserFailed: "無法更新該使用者，此電子郵件可能已被使用。",
     cannotDeleteSelf: "您無法刪除自己的帳號。",
     deleteFailed: "無法刪除這筆記錄，請再試一次。",
     invalidUserId: "使用者 ID 不正確",

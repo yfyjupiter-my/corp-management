@@ -287,6 +287,11 @@ export const en = {
     createUser: "Create user",
     createFailed: "Failed to create the user.",
     created: "User created. They can sign in with this email and password now.",
+    editTitle: (name: string) => `Edit ${name}`,
+    editSubtitle: "Change the name or sign-in email. Leave the password blank to keep the current one.",
+    fieldNewPassword: "New password",
+    newPasswordHelp: "Leave blank to keep the current password. At least 8 characters to change it.",
+    saveFailed: "Could not save the user.",
   },
 
   search: {
@@ -575,6 +580,7 @@ export const en = {
       "the latest version, then re-apply your changes.",
     createUserFailed: "Could not create the user. The email may already be in use.",
     deleteUserFailed: "Could not delete the user. Please try again.",
+    updateUserFailed: "Could not update the user. The email may already be in use.",
     cannotDeleteSelf: "You cannot delete your own account.",
     deleteFailed: "Could not delete this record. Please try again.",
     invalidUserId: "Invalid user id",

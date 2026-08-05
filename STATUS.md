@@ -2,11 +2,53 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-08-05 (**Users page gained a Delete action** — `DELETE /api/users/[id]`. Before that: Phase 12 broken down into 29 subtasks; audit log page removed. **Phase 12 is all that remains**) |
+| **Last updated** | 2026-08-05 (**Users page gained an Edit action** — `PATCH /api/users/[id]`. Same day: Delete action; Phase 12 broken into 29 subtasks; audit log page removed. **Phase 12 is all that remains**) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
-| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **105 passed / 0 skipped** against the live project · **75 passed / 30 skipped** without `TEST_*` |
+| **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **82 passed / 30 skipped** without `TEST_*` (was 75; +7 `updateUserSchema`) · **112 total** against a live project |
 
 > High-level rollup of `TASKS.md`. When a phase's status changes, update both files.
+
+---
+
+## Latest change (2026-08-05) — Users can now be edited from the Users page
+
+The Users page was create-list-delete; there was no way to fix a typo'd name, change a sign-in
+address, or reset a forgotten password without the Supabase dashboard. New **`PATCH
+/api/users/[id]`** plus an **Edit** button per row and a `/users/[id]/edit` page.
+
+- **Three fields: name, email, password.** Name lives in `profiles`, email and password in
+  `auth.users` — so the route uses `createAdminClient` for the same reason `POST`/`DELETE` do.
+  **No migration, no RLS change.**
+- **A blank password box keeps the current password**, it does not clear it. `updateUserSchema`
+  normalises `""` → `undefined`; the union is safe here because the `min(8)` branch *rejects* `""`
+  and falls through (the trap documented in `lib/validation/common.ts`). Same 72-char bcrypt cap as
+  creation.
+- **Email changes are applied with `email_confirm: true`** so the account stays usable immediately —
+  without it a changed address would wait on a confirmation mail, and SMTP is still unconfigured
+  (12.2). Comparison is case-insensitive, so a cosmetic re-casing is not treated as a change.
+- **Editing yourself is allowed** — unlike Delete, there is nothing unsafe about it, so the Edit
+  button shows on every row including the "You" one.
+- **Authorization is "is the caller signed in"**, matching `POST`/`DELETE` — there is no admin tier
+  left to gate on. Every user can rename, re-email and **reset the password of** every other user,
+  which is a real consequence of Phase 14 and is stated here rather than discovered later.
+- ⚠️ **No optimistic concurrency.** `profiles` has no `updated_at`, so there is no BUS-6 token to
+  echo: two simultaneous edits are last-write-wins. Accepted for a 3-field record.
+- **BUS-2 audit write carried over**, with the diff recording `full_name`/`email` from→to and a bare
+  `password_reset: true` — 🔴 **the new password is never written to the log**. Rate-limited on the
+  shared `createUserLimiter` (10/min, keyed `update-user:<uid>`), since this route can set another
+  account's password.
+- **The edit page reads through the service role** (the email is not visible to the anon key), which
+  makes its `getCurrentUser()` check load-bearing rather than decorative — middleware gates `(app)`,
+  and this is the second lock on the same door. A non-uuid segment, a missing profile, and an auth
+  user with no profile all 404, matching the route and 10.7.
+- **7 new dictionary keys in both locales** (`users.editTitle`/`editSubtitle`/`fieldNewPassword`/
+  `newPasswordHelp`/`saveFailed`, `errors.updateUserFailed`). Key-parity test green.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`;
+  `/users/[id]/edit` present in the route list) · tests **82 passed / 30 skipped** (+7 new
+  `updateUserSchema` tests covering the blank-password normalisation and the length bounds).
+- ⚠️ **Not driven live.** No account has actually been edited against the database. Worth folding
+  into the same staging check as delete (12.4.6): rename a user, change their email, sign in with
+  the new address, reset their password and sign in with the new one.
 
 ---
 
