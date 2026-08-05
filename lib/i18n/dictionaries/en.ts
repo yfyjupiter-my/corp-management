@@ -274,6 +274,10 @@ export const en = {
     none: "No users yet.",
     colName: "Name",
     colAdded: "Added",
+    you: "You",
+    deleteConfirm: (name: string) =>
+      `Delete the user “${name}”? They lose access immediately and this cannot be undone. ` +
+      `Records they created stay in the registry, and the audit log keeps their entries.`,
     createPanel: "Create a user",
     fieldFullName: "Full name",
     fieldEmail: "Email",
@@ -570,7 +574,11 @@ export const en = {
       "This record was changed by someone else since you opened it. Reload to see " +
       "the latest version, then re-apply your changes.",
     createUserFailed: "Could not create the user. The email may already be in use.",
+    deleteUserFailed: "Could not delete the user. Please try again.",
+    cannotDeleteSelf: "You cannot delete your own account.",
     deleteFailed: "Could not delete this record. Please try again.",
+    invalidUserId: "Invalid user id",
+    userNotFound: "User not found.",
     invalidSiteId: "Invalid site id",
     invalidDeviceId: "Invalid device id",
     invalidCircuitId: "Invalid circuit id",

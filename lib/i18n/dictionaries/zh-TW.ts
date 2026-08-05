@@ -249,6 +249,10 @@ export const zhTW: Dictionary = {
     none: "尚無任何使用者。",
     colName: "姓名",
     colAdded: "加入日期",
+    you: "您",
+    deleteConfirm: (name: string) =>
+      `確定要刪除使用者「${name}」嗎？他們將立即失去存取權限，且此操作無法復原。` +
+      `他們建立的記錄仍會保留在系統中，稽核紀錄也會保留其項目。`,
     createPanel: "建立使用者",
     fieldFullName: "姓名",
     fieldEmail: "電子郵件",
@@ -516,7 +520,11 @@ export const zhTW: Dictionary = {
     tooManyRequests: "請求過於頻繁，請稍後再試。",
     conflict: "這筆記錄在您開啟後已被其他人修改。請重新載入以取得最新版本，再重新套用您的變更。",
     createUserFailed: "無法建立使用者，此電子郵件可能已被使用。",
+    deleteUserFailed: "無法刪除該使用者，請再試一次。",
+    cannotDeleteSelf: "您無法刪除自己的帳號。",
     deleteFailed: "無法刪除這筆記錄，請再試一次。",
+    invalidUserId: "使用者 ID 不正確",
+    userNotFound: "找不到該使用者。",
     invalidSiteId: "據點 ID 不正確",
     invalidDeviceId: "設備 ID 不正確",
     invalidCircuitId: "線路 ID 不正確",

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-08-05 (**Phase 12 broken down into 29 subtasks** — planning only, no code changed. Before that: audit log page removed from Administration; Phase 14 roles removed. **Phase 12 is all that remains**) |
+| **Last updated** | 2026-08-05 (**Users page gained a Delete action** — `DELETE /api/users/[id]`. Before that: Phase 12 broken down into 29 subtasks; audit log page removed. **Phase 12 is all that remains**) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **105 passed / 0 skipped** against the live project · **75 passed / 30 skipped** without `TEST_*` |
 
@@ -10,7 +10,51 @@
 
 ---
 
-## Latest change (2026-08-05) — Phase 12 broken down into 29 subtasks
+## Latest change (2026-08-05) — Users can now be deleted from the Users page
+
+The Users page was create-and-list only; there was no way to remove an account short of the Supabase
+dashboard. New **`DELETE /api/users/[id]`** plus a Delete button in a new actions column, reusing the
+shared `DeleteButton` the Sites/Network/CCTV tables already use.
+
+- **It deletes the *auth* user, not the profile.** `profiles.user_id references auth.users on delete
+  cascade` (`0001_init.sql:21`) removes the profile row with it. Deleting the profile instead would
+  leave an auth user that still authenticates and lands on `/no-access` — the exact orphan shape
+  found and closed on 2026-07-28. Uses `createAdminClient` for the same reason `POST` does: the anon
+  key cannot touch `auth.users`. **No migration, no RLS change.**
+- 🔴 **Self-deletion is refused (`400`), and that guard is what keeps the app reachable.** With roles
+  gone every account is full-access, and public sign-up is disabled (2.7) — so an empty `profiles`
+  table means *nobody can ever sign in again*. Because a caller can never remove itself, the last
+  account standing cannot be deleted from inside the app. The page reflects this: the caller's own
+  row shows a **"You" chip** where the button would be, so the refusal is never reachable by
+  clicking. ⚠️ It is still reachable by hand — the route owns the guarantee, not the UI.
+- **Authorization is "is the caller signed in", matching `POST /api/users`** — there is no admin tier
+  left to gate on. Every user can delete every other user, including the account that created them.
+  This follows from Phase 14 and is stated here rather than discovered later.
+- ⚠️ **A deleted user's data stays.** `created_by` on the inventory tables and `actor` on `audit_log`
+  are plain `uuid` columns with **no FK**, so nothing cascades: the registry survives intact and the
+  audit trail keeps pointing at the removed account (`audit_log` already holds such rows from the
+  deleted RLS test users). Deliberate — an immutable log must not become editable by deleting whoever
+  wrote it.
+- **BUS-2 audit write carried over from `POST`:** `profiles` has no audit trigger and the cascade runs
+  as the service role (`actor` = NULL), so the acting user is logged explicitly, **after** the delete
+  succeeds so the log never claims a removal that did not happen. Rate-limited on the shared
+  `createUserLimiter` (10/min, keyed `delete-user:<uid>`) — the same budget as creation, since both
+  mutate the auth table.
+- **404 comes from a profile pre-read**, not from classifying `deleteUser`'s error; that read also
+  supplies the name for the audit diff.
+- **7 new dictionary keys in both locales** (`users.you`, `users.deleteConfirm`, `errors.deleteUserFailed`,
+  `cannotDeleteSelf`, `invalidUserId`, `userNotFound`). The confirm sentence spells out that access is
+  lost immediately, that it cannot be undone, and that their records remain. Key-parity test green.
+- Verified: `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`;
+  `/api/users/[id]` present in the route list) · tests **75 passed / 30 skipped** (unchanged — no new
+  unit test; the logic is route-level and needs a live env).
+- ⚠️ **Not driven live.** No account has actually been deleted against the database. Worth a check on
+  staging (12.4.6): delete a second user, confirm they can no longer sign in, confirm **0 orphans in
+  both directions**, and confirm the self-delete refusal.
+
+---
+
+## Earlier change (2026-08-05) — Phase 12 broken down into 29 subtasks
 
 **Planning only — no source, schema or test changed.** `TASKS.md` Phase 12 was four one-line items,
 each blocked on infrastructure and each too coarse to start. Now split so a partial session leaves a
