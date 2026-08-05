@@ -19,9 +19,9 @@ export const dynamic = "force-dynamic";
  */
 export default async function UsersPage() {
   const t = await getDictionary();
-  // The caller's own row gets a "You" chip instead of a Delete button: the route
-  // refuses self-deletion (it is what guarantees the last account can never be
-  // removed), so offering the button would only ever produce an error.
+  // The caller's own row is marked with a "You" chip beside the name and carries
+  // no Delete button: the route refuses self-deletion (it is what guarantees the
+  // last account can never be removed), so the button would only ever error.
   const me = await getCurrentUser();
   const supabase = await createClient();
   const { data: profiles } = await supabase
@@ -48,7 +48,12 @@ export default async function UsersPage() {
               <tbody>
                 {profiles.map((p) => (
                   <Tr key={p.user_id}>
-                    <Td>{p.full_name ?? "—"}</Td>
+                    <Td>
+                      <span className="inline-flex items-center gap-2">
+                        {p.full_name ?? "—"}
+                        {p.user_id === me?.id && <Chip dot={false}>{t.users.you}</Chip>}
+                      </span>
+                    </Td>
                     <Td mono>{new Date(p.created_at).toLocaleDateString("en-GB")}</Td>
                     <Td>
                       <div className="flex items-center justify-end gap-1">
@@ -59,14 +64,12 @@ export default async function UsersPage() {
                             {t.common.edit}
                           </Button>
                         </Link>
-                        {/* Fixed-width trailing slot: the "You" chip is narrower
-                            than the Delete button, so without a floor the Edit
-                            button would sit at a different offset on the caller's
-                            own row than on every other one. */}
+                        {/* Fixed-width trailing slot: the caller's own row has no
+                            Delete button (the route refuses self-deletion), so
+                            without a floor the Edit button would sit at a
+                            different offset there than on every other row. */}
                         <span className="inline-flex items-center justify-end gap-1 min-w-[72px]">
-                          {p.user_id === me?.id ? (
-                            <Chip dot={false}>{t.users.you}</Chip>
-                          ) : (
+                          {p.user_id !== me?.id && (
                             <DeleteButton
                               endpoint={`/api/users/${p.user_id}`}
                               confirm={t.users.deleteConfirm(p.full_name ?? p.user_id)}
