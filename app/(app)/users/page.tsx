@@ -59,14 +59,20 @@ export default async function UsersPage() {
                             {t.common.edit}
                           </Button>
                         </Link>
-                        {p.user_id === me?.id ? (
-                          <Chip dot={false}>{t.users.you}</Chip>
-                        ) : (
-                          <DeleteButton
-                            endpoint={`/api/users/${p.user_id}`}
-                            confirm={t.users.deleteConfirm(p.full_name ?? p.user_id)}
-                          />
-                        )}
+                        {/* Fixed-width trailing slot: the "You" chip is narrower
+                            than the Delete button, so without a floor the Edit
+                            button would sit at a different offset on the caller's
+                            own row than on every other one. */}
+                        <span className="inline-flex items-center justify-end gap-1 min-w-[72px]">
+                          {p.user_id === me?.id ? (
+                            <Chip dot={false}>{t.users.you}</Chip>
+                          ) : (
+                            <DeleteButton
+                              endpoint={`/api/users/${p.user_id}`}
+                              confirm={t.users.deleteConfirm(p.full_name ?? p.user_id)}
+                            />
+                          )}
+                        </span>
                       </div>
                     </Td>
                   </Tr>

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-08-05 (**Users page gained an Edit action** — `PATCH /api/users/[id]`. Same day: Delete action; Phase 12 broken into 29 subtasks; audit log page removed. **Phase 12 is all that remains**) |
+| **Last updated** | 2026-08-05 (**Users page gained an Edit action** — `PATCH /api/users/[id]`; row actions given a fixed-width trailing slot so Edit aligns on every row. Same day: Delete action; Phase 12 broken into 29 subtasks; audit log page removed. **Phase 12 is all that remains**) |
 | **Source of truth** | `TASKS.md` (phase-by-phase subtasks) |
 | **Build health** | `tsc --noEmit` ✅ · `next lint` ✅ (0 warnings) · `npm run build` ✅ (clean `.next`) · tests **82 passed / 30 skipped** without `TEST_*` (was 75; +7 `updateUserSchema`) · **112 total** against a live project |
 
